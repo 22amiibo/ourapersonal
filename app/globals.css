@@ -1,0 +1,141 @@
+@theme {
+  --color-bg: #08101f;
+  --color-surface: #101828;
+  --color-surface-2: #162038;
+  --color-ink: #e2eaf4;
+  --color-ink-2: #93b8d6;
+  --color-ink-3: #6688a8;
+  --color-accent: #2fe5b2;
+  --color-accent-dim: #12b380;
+  --color-line: #1d2d42;
+  --color-line-strong: #2a3e57;
+  --color-amber: #f59e0b;
+  --color-rose: #f43f5e;
+
+  --font-sans: "Geist", system-ui, sans-serif;
+  --font-mono: "Geist Mono", monospace;
+
+  --radius-control: 12px;
+  --radius-card: 20px;
+
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --shadow-glow: 0 0 20px 4px rgba(47, 229, 178, 0.18);
+}
+
+:root {
+  --color-bg: #08101f;
+  --color-surface: #101828;
+  --color-surface-2: #162038;
+  --color-ink: #e2eaf4;
+  --color-ink-2: #93b8d6;
+  --color-ink-3: #6688a8;
+  --color-accent: #2fe5b2;
+  --color-accent-dim: #12b380;
+  --color-line: #1d2d42;
+  --color-line-strong: #2a3e57;
+  --color-amber: #f59e0b;
+  --color-rose: #f43f5e;
+  --color-bg-soft: rgba(226, 234, 244, 0.04);
+  --font-sans: var(--font-geist-sans, "Geist", system-ui, sans-serif);
+  --font-mono: var(--font-geist-mono, "Geist Mono", monospace);
+  --radius-control: 12px;
+  --radius-card: 20px;
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --shadow-glow: 0 0 20px 4px rgba(47, 229, 178, 0.18);
+}
+
+html {
+  color-scheme: dark;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  background-image:
+    radial-gradient(ellipse 90% 50% at 70% -5%,
+      color-mix(in oklch, var(--color-accent) 7%, transparent), transparent 65%),
+    radial-gradient(ellipse 50% 30% at 0% 100%,
+      color-mix(in oklch, var(--color-amber) 4%, transparent), transparent 55%);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+button, nav, [role="tablist"], input, textarea, select {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+input, textarea, select {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+@keyframes ring-draw {
+  from { stroke-dashoffset: var(--dash); }
+  to { stroke-dashoffset: var(--off); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::placeholder {
+  color: var(--color-ink-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    transition-duration: .001ms !important;
+  }
+}
+
+@layer utilities {
+  .bg-bg { background-color: var(--color-bg); }
+  .bg-surface { background-color: var(--color-surface); }
+  .bg-surface-2 { background-color: var(--color-surface-2); }
+  .bg-ink { background-color: var(--color-ink); }
+  .bg-accent { background-color: var(--color-accent); }
+  .bg-line { background-color: var(--color-line); }
+  .bg-bg-soft { background-color: var(--color-bg-soft); }
+
+  .text-ink { color: var(--color-ink); }
+  .text-ink-2 { color: var(--color-ink-2); }
+  .text-ink-3 { color: var(--color-ink-3); }
+  .text-accent { color: var(--color-accent); }
+  .text-accent-dim { color: var(--color-accent-dim); }
+  .text-amber { color: var(--color-amber); }
+  .text-rose { color: var(--color-rose); }
+  .text-bg { color: var(--color-bg); }
+
+  .border-line { border-color: var(--color-line); }
+  .border-line-strong { border-color: var(--color-line-strong); }
+  .border-accent { border-color: var(--color-accent); }
+  .border-rose { border-color: var(--color-rose); }
+
+  .rounded-control { border-radius: var(--radius-control); }
+  .rounded-card { border-radius: var(--radius-card); }
+
+  .shadow-card { box-shadow: var(--shadow-card); }
+}
