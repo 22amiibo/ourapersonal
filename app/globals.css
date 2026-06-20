@@ -45,8 +45,25 @@
 }
 
 html {
-  color-scheme: dark;
+  color-scheme: dark light;
   -webkit-text-size-adjust: 100%;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --color-bg: #f5f7fa;
+    --color-surface: #ffffff;
+    --color-surface-2: #eef1f6;
+    --color-ink: #0f1923;
+    --color-ink-2: #364a5f;
+    --color-ink-3: #6b7f96;
+    --color-accent: #0da876;
+    --color-accent-dim: #0a8a60;
+    --color-line: #dde3eb;
+    --color-line-strong: #c8d0db;
+    --color-bg-soft: rgba(15, 25, 35, 0.04);
+    --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  }
 }
 
 body {

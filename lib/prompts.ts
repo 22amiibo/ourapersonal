@@ -46,29 +46,37 @@ export const reflectionExtractionTool: Anthropic.Tool = {
 
 export const briefingTool: Anthropic.Tool = {
   name: "write_briefing",
-  description: "Write the morning briefing plus a short list of concrete recommendations.",
+  description: "Write the morning briefing with a single headline card and 1–3 concrete actions.",
   input_schema: {
     type: "object",
     properties: {
+      headline: {
+        type: "string",
+        description:
+          "A single punchy sentence (≤ 12 words) naming the most important thing about today — e.g. 'Big day — 3 meetings, readiness 62. Protect your evening.' or 'Strong recovery. Good day to push hard.'",
+      },
       summary: {
         type: "string",
         description:
-          "A concise 2-paragraph morning briefing connecting recent reflections, sleep/recovery, and upcoming events.",
+          "A concise 1-paragraph briefing connecting recent reflections, sleep/recovery, and upcoming events.",
       },
-      recommendations: {
+      actions: {
         type: "array",
         items: { type: "string" },
-        description: "2 to 4 specific, practical suggestions for today (study focus, bedtime target, etc.).",
+        description: "1 to 3 specific, concrete actions for today. Each ≤ 10 words. Prioritize events > sleep > energy.",
+        minItems: 1,
+        maxItems: 3,
       },
     },
-    required: ["summary", "recommendations"],
+    required: ["headline", "summary", "actions"],
   },
 };
 
-export const BRIEFING_SYSTEM = `You are a personal study-and-recovery assistant writing a short morning briefing for one student.
-Use ONLY the data provided. If data is missing (no reflection on some days, no sleep data today), work with what's there and don't speculate about the gaps.
-Frame patterns as tentative observations, NEVER as proven cause and effect — e.g. "your two lowest-confidence days both followed short sleep, worth watching", not "poor sleep causes low confidence." There is not enough data for causal claims.
-Be specific and practical. Prioritize upcoming exams over assignments over other events. Keep it calm and encouraging, never alarming. Do not give medical advice.`;
+export const BRIEFING_SYSTEM = `You are a personal performance assistant writing a crisp morning briefing for one person.
+Use ONLY the data provided. Work with what's there; don't speculate about missing data.
+Frame patterns as tentative observations, NEVER as causal claims. Be specific and practical.
+Prioritize upcoming high-stakes events. Keep it calm and encouraging, never alarming. No medical advice.
+Write the headline first — it should work as a standalone notification text.`;
 
 export const weeklyNoteTool: Anthropic.Tool = {
   name: "write_weekly_note",
@@ -82,5 +90,21 @@ export const weeklyNoteTool: Anthropic.Tool = {
       },
     },
     required: ["notable_note"],
+  },
+};
+
+export const monthlyNarrativeTool: Anthropic.Tool = {
+  name: "write_monthly_narrative",
+  description: "Summarize the past month's patterns and offer one concrete suggestion.",
+  input_schema: {
+    type: "object",
+    properties: {
+      narrative: {
+        type: "string",
+        description:
+          "2–3 paragraphs summarizing sleep, readiness, HRV, and mood patterns over the month. Mention the strongest trend (positive or concerning). Close with one concrete suggestion for next month.",
+      },
+    },
+    required: ["narrative"],
   },
 };

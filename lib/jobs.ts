@@ -1,9 +1,10 @@
 import { sql } from "@/lib/db";
 import { extractWithTool, MODEL } from "@/lib/anthropic";
-import { briefingTool, BRIEFING_SYSTEM, weeklyNoteTool } from "@/lib/prompts";
+import { briefingTool, BRIEFING_SYSTEM, weeklyNoteTool, monthlyNarrativeTool } from "@/lib/prompts";
 import { syncOura } from "@/lib/oura";
 import { syncCalendar } from "@/lib/calendar";
 import { localDateStr, daysAgoStr, daysAheadStr, weekOfStr, isMonday } from "@/lib/dates";
+import { sendPushToUser } from "@/lib/push";
 
 export const USER_ID = 1;
 
@@ -12,7 +13,6 @@ export async function userTz(): Promise<string> {
   return (rows[0] as { timezone?: string })?.timezone || "America/New_York";
 }
 
-// ---- Daily briefing (Claude reads only the last 7 days) ----
 export async function generateBriefing(tz: string) {
   const today = localDateStr(tz);
   const weekAgo = daysAgoStr(tz, 7);
@@ -36,7 +36,7 @@ export async function generateBriefing(tz: string) {
 
   const context = { today, reflections, oura, upcoming_events: events };
 
-  const out = await extractWithTool<{ summary: string; recommendations: string[] }>({
+  const out = await extractWithTool<{ headline: string; summary: string; actions: string[] }>({
     system: BRIEFING_SYSTEM,
     userText: `Data for today's briefing (today is ${today}):\n\n${JSON.stringify(context, null, 2)}`,
     tool: briefingTool,
@@ -46,16 +46,21 @@ export async function generateBriefing(tz: string) {
   await sql`
     INSERT INTO briefings
       (user_id, briefing_date, summary_text, recommendations, context_window, model_version, generated_at)
-    VALUES (${USER_ID}, ${today}, ${out.summary}, ${JSON.stringify(out.recommendations)},
-            ${JSON.stringify(context)}, ${MODEL}, NOW())
+    VALUES (${USER_ID}, ${today}, ${out.summary}, ${JSON.stringify(out.actions ?? [])},
+            ${JSON.stringify({ ...context, headline: out.headline })}, ${MODEL}, NOW())
     ON CONFLICT (user_id, briefing_date) DO UPDATE
       SET summary_text = EXCLUDED.summary_text, recommendations = EXCLUDED.recommendations,
           context_window = EXCLUDED.context_window, model_version = EXCLUDED.model_version, generated_at = NOW()
   `;
+
+  try {
+    const pushBody = out.headline ?? out.summary?.slice(0, 120) ?? "Your morning briefing is ready.";
+    await sendPushToUser(USER_ID, "Morning briefing", pushBody);
+  } catch {}
+
   return out;
 }
 
-// ---- Weekly rollup (numbers via SQL; one short note via Claude) ----
 export async function weeklyRollup(tz: string) {
   const weekOf = weekOfStr(tz);
   const weekAgo = daysAgoStr(tz, 7);
@@ -108,7 +113,41 @@ export async function weeklyRollup(tz: string) {
   `;
 }
 
-// ---- The single daily job (run by cron, or the "Generate" button) ----
+export async function monthlyNarrative(tz: string) {
+  const today = localDateStr(tz);
+  const monthAgo = daysAgoStr(tz, 30);
+
+  const oura = await sql`
+    SELECT day, sleep_score, readiness_score, hrv_avg, resting_hr
+    FROM oura_daily WHERE user_id = ${USER_ID} AND day >= ${monthAgo} ORDER BY day ASC
+  `;
+  const reflections = await sql`
+    SELECT r.entry_date, r.raw_text, m.confidence_level FROM reflections r
+    LEFT JOIN reflection_metadata m ON m.reflection_id = r.id
+    WHERE r.user_id = ${USER_ID} AND r.entry_date >= ${monthAgo} ORDER BY r.entry_date ASC
+  `;
+
+  if (oura.length < 7) return;
+
+  const out = await extractWithTool<{ narrative: string }>({
+    userText: `Monthly health and reflection data (past 30 days ending ${today}):\n\n${JSON.stringify({ oura, reflections }, null, 2)}`,
+    tool: monthlyNarrativeTool,
+    maxTokens: 600,
+  });
+
+  const monthOf = `${today.slice(0, 7)}-01`;
+  await sql`
+    INSERT INTO narratives (user_id, month_of, narrative, model_ver, created_at)
+    VALUES (${USER_ID}, ${monthOf}, ${out.narrative}, ${MODEL}, NOW())
+    ON CONFLICT (user_id, month_of) DO UPDATE
+      SET narrative = EXCLUDED.narrative, model_ver = EXCLUDED.model_ver, created_at = NOW()
+  `;
+}
+
+function isFirstOfMonth(tz: string): boolean {
+  return localDateStr(tz).endsWith("-01");
+}
+
 export async function runDailyJob() {
   const tz = await userTz();
   const results: Record<string, unknown> = {};
@@ -118,6 +157,29 @@ export async function runDailyJob() {
   } catch (e) {
     results.oura = { error: String(e) };
   }
+
+  // Check readiness drop vs 7-day average
+  try {
+    const today = localDateStr(tz);
+    const weekAgo = daysAgoStr(tz, 7);
+    const readinessRows = await sql`
+      SELECT to_char(day, 'YYYY-MM-DD') AS day, readiness_score
+      FROM oura_daily WHERE user_id = ${USER_ID} AND day >= ${weekAgo} AND day <= ${today}
+      ORDER BY day DESC
+    `;
+    if (readinessRows.length >= 2) {
+      const todayRow = readinessRows[0] as { day: string; readiness_score: number | null };
+      const prevRows = (readinessRows.slice(1) as { readiness_score: number | null }[]).filter(
+        (r) => r.readiness_score != null
+      );
+      if (prevRows.length > 0 && todayRow.readiness_score != null) {
+        const avgPrev = prevRows.reduce((s, r) => s + r.readiness_score!, 0) / prevRows.length;
+        if (todayRow.readiness_score <= avgPrev - 15) {
+          await sendPushToUser(USER_ID, "Low readiness today", "Readiness is low — protect your evening.");
+        }
+      }
+    }
+  } catch {}
 
   try {
     results.calendar = await syncCalendar(USER_ID);
@@ -139,5 +201,15 @@ export async function runDailyJob() {
       results.weeklyRollup = { error: String(e) };
     }
   }
+
+  if (isFirstOfMonth(tz)) {
+    try {
+      await monthlyNarrative(tz);
+      results.monthlyNarrative = "done";
+    } catch (e) {
+      results.monthlyNarrative = { error: String(e) };
+    }
+  }
+
   return results;
 }

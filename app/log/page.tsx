@@ -21,5 +21,5 @@ export default async function LogPage() {
     // Table doesn't exist yet; the first POST to /api/log/intake will create it
   }
 
-  return <LogTab initialEntries={entries} />;
+  return <LogTab initialEntries={entries} initialDate={today} />;
 }

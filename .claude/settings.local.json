@@ -8,7 +8,9 @@
       "PowerShell(Stop-Process *)",
       "PowerShell(Get-Process *)",
       "PowerShell(taskkill *)",
-      "PowerShell(npx eslint app/components/TabBar.tsx app/api/log/intake/route.ts app/api/oura/route.ts app/api/calendar/route.ts app/api/briefing/run/route.ts app/api/cron/daily/route.ts)"
+      "PowerShell(npx eslint app/components/TabBar.tsx app/api/log/intake/route.ts app/api/oura/route.ts app/api/calendar/route.ts app/api/briefing/run/route.ts app/api/cron/daily/route.ts)",
+      "PowerShell(npx tsc --noEmit -p tsconfig.json 2>&1 | Select-Object -First 60)",
+      "Bash(node *)"
     ]
   },
   "enabledMcpjsonServers": [

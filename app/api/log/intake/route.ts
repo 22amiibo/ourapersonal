@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
-import { USER_ID } from "@/lib/jobs";
+import { USER_ID, userTz } from "@/lib/jobs";
 
-type IntakeType = "caffeine" | "alcohol" | "note";
-const VALID_TYPES: IntakeType[] = ["caffeine", "alcohol", "note"];
+type IntakeType = "caffeine" | "alcohol" | "note" | "mood" | "workout" | "weight" | "meal";
+const VALID_TYPES: IntakeType[] = ["caffeine", "alcohol", "note", "mood", "workout", "weight", "meal"];
 
 async function ensureTable() {
   await sql`
@@ -19,6 +19,43 @@ async function ensureTable() {
   `;
   // Migration: drop old CHECK constraint that excluded 'note' type
   await sql`ALTER TABLE intake_log DROP CONSTRAINT IF EXISTS intake_log_type_check`;
+}
+
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const date = searchParams.get("date");
+  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return NextResponse.json({ error: "date must be YYYY-MM-DD" }, { status: 400 });
+  }
+
+  try {
+    const tz = await userTz();
+    const entries = await sql`
+      SELECT id, type, quantity::float8, unit, timestamp, note
+      FROM intake_log
+      WHERE user_id = ${USER_ID}
+        AND DATE(timestamp AT TIME ZONE ${tz}) = ${date}::date
+      ORDER BY timestamp DESC
+    `;
+    return NextResponse.json({ entries });
+  } catch (e) {
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const id = Number(searchParams.get("id"));
+  if (!Number.isInteger(id) || id <= 0) {
+    return NextResponse.json({ error: "id must be a positive integer" }, { status: 400 });
+  }
+
+  try {
+    await sql`DELETE FROM intake_log WHERE id = ${id} AND user_id = ${USER_ID}`;
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    return NextResponse.json({ error: String(e) }, { status: 500 });
+  }
 }
 
 export async function POST(req: Request) {
@@ -43,33 +80,32 @@ export async function POST(req: Request) {
 
   const intakeType = type as IntakeType;
 
-  if (intakeType !== "note") {
+  const quantityOptional: IntakeType[] = ["note", "mood", "workout", "meal"];
+  if (!quantityOptional.includes(intakeType)) {
     if (typeof quantity !== "number" || quantity <= 0) {
       return NextResponse.json({ error: "quantity must be a positive number" }, { status: 400 });
     }
   }
 
-  if (intakeType === "note") {
-    if (typeof note !== "string" || !note.trim()) {
-      return NextResponse.json({ error: "note text is required" }, { status: 400 });
-    }
+  if (intakeType === "note" && (typeof note !== "string" || !note.trim())) {
+    return NextResponse.json({ error: "note text is required" }, { status: 400 });
   }
 
-  const qty = intakeType === "note" ? 0 : (quantity as number);
+  const quantityOptional2: IntakeType[] = ["note", "mood", "workout", "meal"];
+  const qty = quantityOptional2.includes(intakeType) ? (typeof quantity === "number" ? quantity : 0) : (quantity as number);
 
   const ts = timestamp ? new Date(timestamp as string) : new Date();
   if (isNaN(ts.getTime())) {
     return NextResponse.json({ error: "invalid timestamp" }, { status: 400 });
   }
 
+  const defaultUnit: Partial<Record<IntakeType, string>> = {
+    caffeine: "mg", alcohol: "drinks", weight: "kg", workout: "min",
+  };
   const unitVal =
-    intakeType === "note"
-      ? ""
-      : typeof unit === "string" && unit.trim()
+    typeof unit === "string" && unit.trim()
       ? unit.trim()
-      : intakeType === "caffeine"
-      ? "mg"
-      : "drinks";
+      : defaultUnit[intakeType] ?? "";
 
   let rows;
   try {

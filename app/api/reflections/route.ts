@@ -5,6 +5,48 @@ import { reflectionExtractionTool } from "@/lib/prompts";
 import { USER_ID } from "@/lib/jobs";
 import { localDateStr } from "@/lib/dates";
 
+function prevDate(date: string): string {
+  const [y, m, d] = date.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() - 1);
+  return dt.toISOString().slice(0, 10);
+}
+
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const limit = Math.min(Math.max(Number(searchParams.get("limit")) || 10, 1), 100);
+
+  const tzRows = await sql`SELECT timezone FROM users WHERE id = ${USER_ID}`;
+  const tz = (tzRows[0] as { timezone?: string })?.timezone || "America/New_York";
+  const today = localDateStr(tz);
+
+  const reflections = await sql`
+    SELECT r.id, to_char(r.entry_date, 'YYYY-MM-DD') AS entry_date, r.raw_text, m.confidence_level
+    FROM reflections r LEFT JOIN reflection_metadata m ON m.reflection_id = r.id
+    WHERE r.user_id = ${USER_ID}
+    ORDER BY r.entry_date DESC
+    LIMIT ${limit}
+  `;
+
+  const dateRows = await sql`
+    SELECT DISTINCT to_char(entry_date, 'YYYY-MM-DD') AS entry_date
+    FROM reflections
+    WHERE user_id = ${USER_ID}
+    ORDER BY entry_date DESC
+    LIMIT 90
+  `;
+  const dates = new Set(dateRows.map((d) => (d as { entry_date: string }).entry_date));
+
+  let streak = 0;
+  let cursor = today;
+  while (dates.has(cursor)) {
+    streak++;
+    cursor = prevDate(cursor);
+  }
+
+  return NextResponse.json({ reflections, streak });
+}
+
 export async function POST(req: Request) {
   let text = "";
   try {

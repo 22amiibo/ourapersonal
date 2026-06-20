@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { SESSION_COOKIE, sessionValue, checkPassword } from "@/lib/auth";
+import { SESSION_COOKIE, createSessionToken, checkPassword } from "@/lib/auth";
 
 export async function POST(req: Request) {
   let typed = "";
@@ -9,17 +9,6 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ ok: false, error: "Bad request" }, { status: 400 });
   }
-
-  // ---- TEMP DIAGNOSTIC: remove these 6 lines once login works. ----
-  // Prints to YOUR terminal only. The %o shows quotes + hidden characters,
-  // so if there's a stray space or \r you'll see it.
-  console.log(
-    "[login] typed=%o  env=%o  envLen=%d",
-    typed,
-    process.env.DASHBOARD_PASSWORD,
-    (process.env.DASHBOARD_PASSWORD ?? "").length
-  );
-  // -----------------------------------------------------------------
 
   if (!process.env.DASHBOARD_PASSWORD) {
     return NextResponse.json(
@@ -33,7 +22,7 @@ export async function POST(req: Request) {
   }
 
   const res = NextResponse.json({ ok: true });
-  res.cookies.set(SESSION_COOKIE, sessionValue(), {
+  res.cookies.set(SESSION_COOKIE, createSessionToken(), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production", // lets http://localhost work in dev
     sameSite: "lax",

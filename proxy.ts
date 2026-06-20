@@ -1,21 +1,10 @@
-// Next.js 16 renamed "middleware" to "proxy". This file replaces middleware.ts.
-// DELETE your old middleware.ts after adding this.
-//
-// It does a lightweight check: is the session cookie present and correct?
-// If not, bounce to /login. (Authoritative logic lives in the routes/pages.)
-
 import { NextRequest, NextResponse } from "next/server";
-import { SESSION_COOKIE, sessionValue } from "@/lib/auth";
+import { SESSION_COOKIE, verifySessionToken, isLegacySession } from "@/lib/auth";
 
 export function proxy(req: NextRequest) {
   const cookie = req.cookies.get(SESSION_COOKIE)?.value;
 
-  let ok = false;
-  try {
-    ok = !!cookie && cookie === sessionValue();
-  } catch {
-    ok = false;
-  }
+  const ok = !!cookie && (verifySessionToken(cookie) || isLegacySession(cookie));
 
   if (!ok) {
     const loginUrl = req.nextUrl.clone();
@@ -25,15 +14,21 @@ export function proxy(req: NextRequest) {
   return NextResponse.next();
 }
 
-// Only these paths require login. (Oura + cron routes are intentionally excluded:
-// the Oura callback comes from Oura with no cookie, and cron uses CRON_SECRET.)
 export const config = {
   matcher: [
     "/dashboard/:path*",
     "/reflect/:path*",
     "/settings/:path*",
+    "/weekly/:path*",
+    "/health/:path*",
+    "/log/:path*",
     "/api/reflections/:path*",
     "/api/briefing/:path*",
     "/api/calendar/:path*",
+    "/api/export/:path*",
+    "/api/goals/:path*",
+    "/api/log/:path*",
+    "/api/settings/:path*",
+    "/api/push/:path*",
   ],
 };

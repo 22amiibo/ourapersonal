@@ -26,6 +26,43 @@ function nowDatetimeLocal(): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+function shiftDate(date: string, days: number): string {
+  const [y, m, d] = date.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${dt.getUTCFullYear()}-${pad(dt.getUTCMonth() + 1)}-${pad(dt.getUTCDate())}`;
+}
+
+function formatDateLabel(date: string, today: string): string {
+  if (date === today) return "Today";
+  const [y, m, d] = date.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d, 12)).toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function TrashIcon() {
+  return (
+    <svg
+      className="h-4 w-4"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+      <line x1="10" y1="11" x2="10" y2="17" />
+      <line x1="14" y1="11" x2="14" y2="17" />
+    </svg>
+  );
+}
+
 function CoffeeIcon() {
   return (
     <svg
@@ -82,7 +119,13 @@ function NoteIcon() {
   );
 }
 
-export default function LogTab({ initialEntries }: { initialEntries: IntakeEntry[] }) {
+export default function LogTab({
+  initialEntries,
+  initialDate,
+}: {
+  initialEntries: IntakeEntry[];
+  initialDate: string;
+}) {
   const [entries, setEntries] = useState<IntakeEntry[]>(initialEntries);
   const [modal, setModal] = useState<ModalState>(null);
   const [quantity, setQuantity] = useState("");
@@ -90,12 +133,49 @@ export default function LogTab({ initialEntries }: { initialEntries: IntakeEntry
   const [timestamp, setTimestamp] = useState(nowDatetimeLocal);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
+  const [caffeineWarning, setCaffeineWarning] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(initialDate);
+  const [loading, setLoading] = useState(false);
+
+  const isToday = selectedDate === initialDate;
+
+  async function loadDate(date: string) {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/log/intake?date=${date}`);
+      if (res.ok) {
+        const { entries: loaded } = (await res.json()) as { entries: IntakeEntry[] };
+        setEntries(loaded);
+        setSelectedDate(date);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function goPrev() {
+    if (loading) return;
+    loadDate(shiftDate(selectedDate, -1));
+  }
+
+  function goNext() {
+    if (loading || isToday) return;
+    loadDate(shiftDate(selectedDate, 1));
+  }
+
+  async function deleteEntry(id: number) {
+    const res = await fetch(`/api/log/intake?id=${id}`, { method: "DELETE" });
+    if (res.ok) {
+      setEntries((prev) => prev.filter((e) => e.id !== id));
+    }
+  }
 
   function openModal(type: "caffeine" | "alcohol" | "note") {
     setQuantity(type === "caffeine" ? "100" : type === "alcohol" ? "1" : "");
     setNoteText("");
     setTimestamp(nowDatetimeLocal());
     setError("");
+    setCaffeineWarning(false);
     setModal({ type });
   }
 
@@ -145,6 +225,9 @@ export default function LogTab({ initialEntries }: { initialEntries: IntakeEntry
       if (res.ok) {
         const { entry } = (await res.json()) as { entry: IntakeEntry };
         setEntries((prev) => [entry, ...prev]);
+        if (entry.type === "caffeine" && new Date(entry.timestamp).getHours() >= 14) {
+          setCaffeineWarning(true);
+        }
         closeModal();
       } else {
         const err = await res.json().catch(() => ({}));
@@ -174,6 +257,12 @@ export default function LogTab({ initialEntries }: { initialEntries: IntakeEntry
           <h1 className="text-2xl font-semibold tracking-tight text-ink">Log</h1>
           <p className="mt-0.5 text-sm text-ink-2">Track today's intake</p>
         </header>
+
+        {caffeineWarning && (
+          <div className="rounded-control border border-amber/30 bg-amber/5 p-3.5 text-sm text-amber">
+            Heads up — caffeine after 2 pm may affect tonight's sleep.
+          </div>
+        )}
 
         {/* Day totals */}
         <div className="flex gap-2.5">
@@ -220,9 +309,32 @@ export default function LogTab({ initialEntries }: { initialEntries: IntakeEntry
 
         {/* Timeline */}
         <section>
-          <p className="mb-2.5 text-xs font-medium uppercase tracking-wider text-ink-3">
-            Today's entries
-          </p>
+          <div className="mb-2.5 flex items-center justify-between">
+            <button
+              onClick={goPrev}
+              disabled={loading}
+              aria-label="Previous day"
+              className="flex h-8 w-8 items-center justify-center rounded-control border border-line text-ink-2 transition-transform active:scale-95 disabled:opacity-40"
+            >
+              ←
+            </button>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium uppercase tracking-wider text-ink-3">
+                {formatDateLabel(selectedDate, initialDate)}
+              </span>
+              {loading && (
+                <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink-3 border-t-transparent" />
+              )}
+            </div>
+            <button
+              onClick={goNext}
+              disabled={loading || isToday}
+              aria-label="Next day"
+              className="flex h-8 w-8 items-center justify-center rounded-control border border-line text-ink-2 transition-transform active:scale-95 disabled:opacity-40"
+            >
+              →
+            </button>
+          </div>
           {entries.length === 0 ? (
             <div className="rounded-card border border-line bg-surface p-4 shadow-card">
               <p className="text-sm text-ink-3">
@@ -262,6 +374,13 @@ export default function LogTab({ initialEntries }: { initialEntries: IntakeEntry
                       </p>
                     )}
                   </div>
+                  <button
+                    onClick={() => deleteEntry(entry.id)}
+                    aria-label="Delete entry"
+                    className="mt-0.5 shrink-0 text-ink-3 transition-colors hover:text-rose active:scale-95"
+                  >
+                    <TrashIcon />
+                  </button>
                 </li>
               ))}
             </ul>

@@ -1,6 +1,6 @@
 import { sql } from "@/lib/db";
 import { USER_ID } from "@/lib/jobs";
-import { localDateStr, daysAgoStr } from "@/lib/dates";
+import { localDateStr, daysAgoStr, getGreeting } from "@/lib/dates";
 import ChartContainer from "@/app/components/ui/ChartContainer";
 import Ring from "@/app/components/ui/Ring";
 import RunButton from "./RunButton";
@@ -17,9 +17,16 @@ export default async function DashboardPage() {
   const weekAgo = daysAgoStr(tz, 7);
 
   const briefingRows = await sql`
-    SELECT summary_text, recommendations FROM briefings
+    SELECT summary_text, recommendations, context_window FROM briefings
     WHERE user_id = ${USER_ID} ORDER BY briefing_date DESC LIMIT 1`;
-  const briefing = briefingRows[0] as { summary_text: string; recommendations: string[] } | undefined;
+  const briefingRow = briefingRows[0] as {
+    summary_text: string;
+    recommendations: string[];
+    context_window: Record<string, unknown>;
+  } | undefined;
+
+  const headline = briefingRow?.context_window?.headline as string | undefined;
+  const briefing = briefingRow;
 
   const reflections = await sql`
     SELECT r.entry_date, r.raw_text, m.confidence_level
@@ -42,13 +49,20 @@ export default async function DashboardPage() {
   return (
     <main className="mx-auto max-w-md space-y-5 px-4 pb-24 pt-[calc(env(safe-area-inset-top)+1rem)]">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">Good morning</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-ink">{getGreeting(tz)}</h1>
         <p className="mt-0.5 text-sm text-ink-2">
           {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
         </p>
       </header>
 
-      {/* Glance: last night, one grouped card */}
+      {/* Headline briefing card */}
+      {headline && (
+        <section className="rounded-card border border-accent/30 bg-accent/5 p-4 shadow-card">
+          <p className="text-sm font-medium leading-snug text-ink">{headline}</p>
+        </section>
+      )}
+
+      {/* Glance: last night */}
       <section className="rounded-card border border-line bg-surface p-4 shadow-card">
         <p className="mb-3 text-xs font-medium uppercase tracking-wider text-ink-3">Last night</p>
         {oura ? (
@@ -73,7 +87,7 @@ export default async function DashboardPage() {
         )}
       </section>
 
-      {/* Briefing */}
+      {/* Briefing detail */}
       <section className="rounded-card border border-line bg-surface p-4 shadow-card">
         <p className="mb-2.5 text-xs font-medium uppercase tracking-wider text-ink-3">Briefing</p>
         {briefing ? (
@@ -98,7 +112,6 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      {/* Today's metrics + 14-day trends (Oura) */}
       <Metrics />
 
       <ChartContainer title="Upcoming">

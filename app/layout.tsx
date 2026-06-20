@@ -8,7 +8,7 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const viewport: Viewport = {
-  themeColor: "#08101f",
+  themeColor: "#0b0c0e",
   viewportFit: "cover",        // lets content extend under the island; env() insets handle it
   width: "device-width",
   initialScale: 1,

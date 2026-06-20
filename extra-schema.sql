@@ -23,3 +23,72 @@ CREATE TABLE IF NOT EXISTS intake_log (
   timestamp  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   note       TEXT
 );
+
+-- =============================================================
+-- Phase 1.1: Web Push subscriptions
+-- =============================================================
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  user_id    INTEGER NOT NULL,
+  endpoint   TEXT PRIMARY KEY,
+  p256dh     TEXT NOT NULL,
+  auth       TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- =============================================================
+-- Phase 1.3: WebAuthn / passkey credentials
+-- =============================================================
+CREATE TABLE IF NOT EXISTS webauthn_credentials (
+  user_id       INTEGER NOT NULL,
+  credential_id TEXT PRIMARY KEY,
+  public_key    BYTEA NOT NULL,
+  counter       BIGINT NOT NULL DEFAULT 0,
+  transports    TEXT[],
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- =============================================================
+-- Phase 2.2: Reflection embeddings (requires pgvector)
+-- Run first: CREATE EXTENSION IF NOT EXISTS vector;
+-- =============================================================
+-- CREATE TABLE IF NOT EXISTS reflection_embeddings (
+--   reflection_id INTEGER PRIMARY KEY REFERENCES reflections(id) ON DELETE CASCADE,
+--   embedding     vector(1024),
+--   model         TEXT NOT NULL DEFAULT 'voyage-3',
+--   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+-- );
+-- CREATE INDEX ON reflection_embeddings USING hnsw (embedding vector_cosine_ops);
+
+-- =============================================================
+-- Phase 2.3: AI monthly narratives
+-- =============================================================
+CREATE TABLE IF NOT EXISTS narratives (
+  id          SERIAL PRIMARY KEY,
+  user_id     INTEGER NOT NULL,
+  month_of    DATE NOT NULL,
+  narrative   TEXT NOT NULL,
+  model_ver   TEXT,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (user_id, month_of)
+);
+
+-- =============================================================
+-- Phase 2.4: Goals / habits
+-- =============================================================
+CREATE TABLE IF NOT EXISTS goals (
+  id          SERIAL PRIMARY KEY,
+  user_id     INTEGER NOT NULL,
+  kind        TEXT NOT NULL,
+  label       TEXT NOT NULL,
+  target_json JSONB,
+  active      BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- =============================================================
+-- Phase 3.3: Performance views (no materialized view needed;
+-- the daily job pre-computes correlation deltas via SQL)
+-- =============================================================
+CREATE OR REPLACE VIEW mv_daily_scores AS
+SELECT user_id, day, sleep_score, readiness_score, hrv_avg, resting_hr, total_sleep_seconds
+FROM oura_daily;

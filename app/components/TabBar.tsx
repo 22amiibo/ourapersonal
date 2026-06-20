@@ -4,16 +4,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-const tabs = [
+const PRIMARY_TABS = [
   { href: "/dashboard", label: "Today", emoji: "🏠" },
   { href: "/log", label: "Log", emoji: "📥" },
   { href: "/health", label: "Health", emoji: "📈" },
+  { href: "/weekly", label: "Weekly", emoji: "📅" },
   { href: "/reflect", label: "Reflect", emoji: "✏️" },
   { href: "/settings", label: "Settings", emoji: "⚙️" },
 ];
 
-// Hide the bar only on a deliberate downward scroll; smaller deltas are
-// treated as jitter (iOS rubber-banding, tap-scrolls) and ignored.
 const HIDE_THRESHOLD = 10;
 
 export default function TabBar() {
@@ -23,22 +22,29 @@ export default function TabBar() {
 
   useEffect(() => {
     lastY.current = window.scrollY;
-
     const onScroll = () => {
       const y = window.scrollY;
       const delta = y - lastY.current;
-
-      if (delta > HIDE_THRESHOLD) {
-        setHidden(true); // fast scroll down
-      } else if (delta < 0) {
-        setHidden(false); // any scroll up reveals immediately
-      }
-
+      if (delta > HIDE_THRESHOLD) setHidden(true);
+      else if (delta < 0) setHidden(false);
       lastY.current = y;
     };
-
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Clear badge on app focus
+  useEffect(() => {
+    const clearBadge = () => {
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.ready.then((reg) => {
+          reg.active?.postMessage({ type: "CLEAR_BADGE" });
+        });
+      }
+    };
+    window.addEventListener("focus", clearBadge);
+    clearBadge();
+    return () => window.removeEventListener("focus", clearBadge);
   }, []);
 
   if (path === "/login") return null;
@@ -48,13 +54,11 @@ export default function TabBar() {
       role="tablist"
       aria-label="Primary navigation"
       className={`fixed inset-x-0 bottom-0 z-20 flex justify-center pb-[calc(env(safe-area-inset-bottom)+0.75rem)] transform-gpu transition-transform duration-300 ease-out will-change-transform ${
-        hidden
-          ? "translate-y-[calc(100%+env(safe-area-inset-bottom)+0.75rem)]"
-          : "translate-y-0"
+        hidden ? "translate-y-[calc(100%+env(safe-area-inset-bottom)+0.75rem)]" : "translate-y-0"
       }`}
     >
       <div className="flex items-center gap-1 rounded-full border border-line bg-surface/90 px-2 py-1.5 backdrop-blur-2xl">
-        {tabs.map((t) => {
+        {PRIMARY_TABS.map((t) => {
           const active =
             path === t.href ||
             (t.href === "/dashboard" && path === "/") ||

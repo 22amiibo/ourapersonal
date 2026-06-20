@@ -1,6 +1,15 @@
 import { NextResponse } from "next/server";
-import { setCalendarUrl, syncCalendar } from "@/lib/calendar";
+import { getCalendarUrl, setCalendarUrl, syncCalendar } from "@/lib/calendar";
 import { USER_ID } from "@/lib/jobs";
+
+export async function GET() {
+  try {
+    const url = await getCalendarUrl();
+    return NextResponse.json({ url });
+  } catch (e) {
+    return NextResponse.json({ url: null, error: String(e) }, { status: 500 });
+  }
+}
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));

@@ -32,3 +32,17 @@ export function isMonday(tz: string, d: Date = new Date()): boolean {
   const [y, m, day] = localDateStr(tz, d).split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, day, 12)).getUTCDay() === 1;
 }
+
+// Time-of-day greeting in the user's timezone.
+export function getGreeting(tz: string, now: Date = new Date()): string {
+  const hour = Number(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: tz,
+      hour: "numeric",
+      hourCycle: "h23",
+    }).format(now)
+  );
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
