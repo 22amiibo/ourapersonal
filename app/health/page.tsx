@@ -7,11 +7,13 @@ type DayRow = {
   day: string;
   sleep_score: number | null;
   readiness_score: number | null;
+  hrv_avg: number | null;
+  resting_hr: number | null;
 };
 
 export default async function HealthPage() {
   const rows = (await sql`
-    SELECT to_char(day, 'YYYY-MM-DD') AS day, sleep_score, readiness_score
+    SELECT to_char(day, 'YYYY-MM-DD') AS day, sleep_score, readiness_score, hrv_avg, resting_hr
     FROM oura_daily
     WHERE user_id = ${USER_ID}
     ORDER BY day DESC
