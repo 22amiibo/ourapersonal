@@ -51,19 +51,31 @@ export default function HabitCheckins() {
   if (loading || goals.length === 0) return null;
 
   const completedCount = goals.filter((g) => done[g.id]).length;
+  const allDone = completedCount === goals.length;
+  const progress = goals.length > 0 ? completedCount / goals.length : 0;
 
   return (
     <section
-      className="mx-4 rounded-card border border-line bg-surface p-5 shadow-card animate-spring-in"
+      className="mx-4 rounded-card glass-1 p-5 animate-spring-in"
       style={{ animationDelay: "400ms" }}
     >
       <div className="mb-3 flex items-center justify-between">
         <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">
           Today&apos;s Goals
         </p>
-        <span className="text-[12px] font-medium tabular-nums text-ink-3">
+        <span
+          className="text-[12px] font-semibold tabular-nums"
+          style={{ color: allDone ? "var(--color-accent)" : "var(--color-ink-3)" }}
+        >
           {completedCount}/{goals.length}
         </span>
+      </div>
+      {/* Progress bar */}
+      <div className="mb-3 h-1 w-full overflow-hidden rounded-full bg-surface-3">
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{ width: `${progress * 100}%`, background: "var(--color-accent)" }}
+        />
       </div>
       <ul className="space-y-2">
         {goals.map((g) => {
@@ -98,6 +110,11 @@ export default function HabitCheckins() {
           );
         })}
       </ul>
+      {allDone && goals.length > 0 && (
+        <p className="mt-3 text-center text-[12px] font-medium text-accent">
+          All goals complete — great day.
+        </p>
+      )}
     </section>
   );
 }

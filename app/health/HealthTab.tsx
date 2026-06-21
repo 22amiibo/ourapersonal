@@ -39,6 +39,63 @@ type SleepStageAvg = {
 const RANGES = [7, 30, 90] as const;
 type Range = (typeof RANGES)[number];
 
+type Alert = { severity: "warning" | "positive"; message: string; detail: string };
+
+function detectAlerts(allDays: DayRow[], hrvBaseline: HrvBaseline, streak: number): Alert[] {
+  const alerts: Alert[] = [];
+  const last7 = allDays.slice(-7);
+
+  // Consecutive low readiness (3+ days < 60)
+  let lowReadinessStreak = 0;
+  for (let i = last7.length - 1; i >= 0; i--) {
+    if ((last7[i].readiness_score ?? 100) < 60) lowReadinessStreak++;
+    else break;
+  }
+  if (lowReadinessStreak >= 3) {
+    alerts.push({
+      severity: "warning",
+      message: `${lowReadinessStreak}-day low readiness streak`,
+      detail: "Reduce training intensity and prioritize sleep.",
+    });
+  }
+
+  // Declining sleep (3+ nights progressively worse)
+  const recentSleep = last7.map((d) => d.sleep_score).filter((s): s is number => s != null);
+  if (recentSleep.length >= 3) {
+    const last3 = recentSleep.slice(-3);
+    if (last3.slice(1).every((v, i) => v < last3[i] - 2)) {
+      alerts.push({
+        severity: "warning",
+        message: "Sleep declining 3 nights in a row",
+        detail: "Establish a consistent wind-down routine.",
+      });
+    }
+  }
+
+  // HRV well below baseline
+  if (hrvBaseline && hrvBaseline.baseline_30d > 0 && hrvBaseline.current_7d < hrvBaseline.baseline_30d * 0.88) {
+    const dropPct = Math.round(
+      ((hrvBaseline.baseline_30d - hrvBaseline.current_7d) / hrvBaseline.baseline_30d) * 100,
+    );
+    alerts.push({
+      severity: "warning",
+      message: `HRV ${dropPct}% below personal baseline`,
+      detail: "Nervous system under stress — prioritize recovery.",
+    });
+  }
+
+  // Positive: strong sleep streak
+  if (streak >= 5) {
+    alerts.push({
+      severity: "positive",
+      message: `${streak}-day sleep streak above 75`,
+      detail: "Excellent consistency. Your body is adapting well.",
+    });
+  }
+
+  return alerts;
+}
+
 function weekdayLabel(day: string, total: number): string {
   if (total > 14) return day.slice(5);
   const [y, m, d] = day.split("-").map(Number);
@@ -117,6 +174,8 @@ export default function HealthTab({
   const hasRecords =
     personalRecords.bestSleep || personalRecords.bestReadiness || personalRecords.bestHrv;
 
+  const alerts = detectAlerts(allDays, hrvBaseline, streak);
+
   return (
     <main className="mx-auto max-w-md space-y-4 pb-28 pt-[calc(env(safe-area-inset-top)+1.25rem)]">
       <header className="flex items-center justify-between px-4 animate-spring-in">
@@ -143,6 +202,48 @@ export default function HealthTab({
           ))}
         </div>
       </header>
+
+      {/* ── Signals / Alerts ─────────────────────────────────── */}
+      {alerts.length > 0 && (
+        <section className="mx-4 space-y-2 animate-spring-in" style={{ animationDelay: "60ms" }}>
+          {alerts.map((alert, i) => (
+            <div
+              key={i}
+              className="flex items-start gap-3 rounded-card border p-4 shadow-card"
+              style={{
+                borderColor:
+                  alert.severity === "warning"
+                    ? "color-mix(in oklch, var(--color-rose) 30%, transparent)"
+                    : "color-mix(in oklch, var(--color-accent) 30%, transparent)",
+                background:
+                  alert.severity === "warning"
+                    ? "color-mix(in oklch, var(--color-rose) 5%, transparent)"
+                    : "color-mix(in oklch, var(--color-accent) 5%, transparent)",
+              }}
+            >
+              <div
+                className="mt-[3px] h-2 w-2 shrink-0 rounded-full"
+                style={{
+                  background:
+                    alert.severity === "warning" ? "var(--color-rose)" : "var(--color-accent)",
+                }}
+              />
+              <div>
+                <p
+                  className="text-[13px] font-semibold"
+                  style={{
+                    color:
+                      alert.severity === "warning" ? "var(--color-rose)" : "var(--color-accent)",
+                  }}
+                >
+                  {alert.message}
+                </p>
+                <p className="mt-0.5 text-[12px] text-ink-3">{alert.detail}</p>
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
 
       {/* ── HRV Baseline & Zone ──────────────────────────────── */}
       {hrvBaseline && zone && (
@@ -184,17 +285,17 @@ export default function HealthTab({
           <>
             <div className="space-y-1.5">
               <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Sleep Score</p>
-              <TrendChart data={sleepData} labels={labels} min={0} max={100} />
+              <TrendChart data={sleepData} labels={labels} min={0} max={100} color="var(--color-accent-blue)" threshold={75} />
             </div>
             <div className="h-px bg-line" />
             <div className="space-y-1.5">
               <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Readiness Score</p>
-              <TrendChart data={readyData} labels={labels} min={0} max={100} />
+              <TrendChart data={readyData} labels={labels} min={0} max={100} color="var(--color-accent)" threshold={70} />
             </div>
             <div className="h-px bg-line" />
             <div className="space-y-1.5">
               <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">HRV</p>
-              <TrendChart data={hrvData} labels={labels} min={0} max={120} />
+              <TrendChart data={hrvData} labels={labels} min={0} max={120} color="var(--color-amber)" />
             </div>
           </>
         ) : (

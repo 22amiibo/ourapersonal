@@ -1,47 +1,137 @@
 @theme {
-  --color-bg: #08101f;
-  --color-surface: #101828;
-  --color-surface-2: #162038;
-  --color-ink: #e2eaf4;
-  --color-ink-2: #93b8d6;
-  --color-ink-3: #6688a8;
+  --color-bg: #000000;
+  --color-surface: #0a0a0f;
+  --color-surface-2: #111118;
+  --color-surface-3: #1a1a22;
+  --color-ink: #f5f5fa;
+  --color-ink-2: #9090a3;
+  --color-ink-3: #56566a;
   --color-accent: #2fe5b2;
   --color-accent-dim: #12b380;
-  --color-line: #1d2d42;
-  --color-line-strong: #2a3e57;
+  --color-accent-blue: #5e96f7;
+  --color-line: #1e1e26;
+  --color-line-strong: #2a2a36;
   --color-amber: #f59e0b;
   --color-rose: #f43f5e;
+  --color-attention: #f59e0b;
+  --color-low: #f43f5e;
 
   --font-sans: "Geist", system-ui, sans-serif;
   --font-mono: "Geist Mono", monospace;
 
   --radius-control: 12px;
   --radius-card: 20px;
+  --radius-sheet: 28px;
 
-  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04);
-  --shadow-glow: 0 0 20px 4px rgba(47, 229, 178, 0.18);
+  --shadow-card: 0 1px 4px rgba(0,0,0,.5), 0 0 0 .5px rgba(255,255,255,.05);
+  --shadow-elevated: 0 8px 40px rgba(0,0,0,.7), 0 0 0 .5px rgba(255,255,255,.06);
+  --shadow-glow: 0 0 28px 8px rgba(47,229,178,.20);
+  --shadow-glow-blue: 0 0 28px 8px rgba(94,150,247,.20);
+  --shadow-glow-amber: 0 0 28px 8px rgba(245,158,11,.18);
 }
 
 :root {
-  --color-bg: #08101f;
-  --color-surface: #101828;
-  --color-surface-2: #162038;
-  --color-ink: #e2eaf4;
-  --color-ink-2: #93b8d6;
-  --color-ink-3: #6688a8;
+  --color-bg: #000000;
+  --color-surface: #0a0a0f;
+  --color-surface-2: #111118;
+  --color-surface-3: #1a1a22;
+  --color-ink: #f5f5fa;
+  --color-ink-2: #9090a3;
+  --color-ink-3: #56566a;
   --color-accent: #2fe5b2;
   --color-accent-dim: #12b380;
-  --color-line: #1d2d42;
-  --color-line-strong: #2a3e57;
+  --color-accent-blue: #5e96f7;
+  --color-line: #1e1e26;
+  --color-line-strong: #2a2a36;
   --color-amber: #f59e0b;
   --color-rose: #f43f5e;
-  --color-bg-soft: rgba(226, 234, 244, 0.04);
+  --color-attention: #f59e0b;
+  --color-low: #f43f5e;
+  --color-bg-soft: rgba(245,245,250,.04);
+
   --font-sans: var(--font-geist-sans, "Geist", system-ui, sans-serif);
   --font-mono: var(--font-geist-mono, "Geist Mono", monospace);
+
   --radius-control: 12px;
   --radius-card: 20px;
-  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04);
-  --shadow-glow: 0 0 20px 4px rgba(47, 229, 178, 0.18);
+  --radius-sheet: 28px;
+
+  --shadow-card: 0 1px 4px rgba(0,0,0,.5), 0 0 0 .5px rgba(255,255,255,.05);
+  --shadow-elevated: 0 8px 40px rgba(0,0,0,.7), 0 0 0 .5px rgba(255,255,255,.06);
+  --shadow-glow: 0 0 28px 8px rgba(47,229,178,.20);
+  --shadow-glow-blue: 0 0 28px 8px rgba(94,150,247,.20);
+  --shadow-glow-amber: 0 0 28px 8px rgba(245,158,11,.18);
+
+  /* ── Type scale ────────────────────────────────────────────
+     A real ramp so the hero headline has presence and the
+     11px eyebrows recede. Mono numerics keep their inline sizes. */
+  --text-display:  clamp(30px, 8.5vw, 38px);
+  --text-title-l:  22px;
+  --text-title-m:  18px;
+  --text-body-l:   15px;
+  --text-body-m:   14px;
+  --text-body-s:   13px;
+  --text-label:    11px;
+  --text-micro:    10px;
+  --tracking-display: -0.02em;
+
+  /* ── Glass elevation tiers ─────────────────────────────────
+     Tier 1: standard card. Tier 2: hero / briefing / key panels.
+     The translucent fills let the circadian canvas glow through. */
+  --glass-1-bg:     rgba(255,255,255,0.045);
+  --glass-1-border: rgba(255,255,255,0.075);
+  --glass-1-blur:   blur(20px) saturate(150%);
+  --shadow-glass-1: 0 1px 3px rgba(0,0,0,.45), inset 0 0.5px 0 rgba(255,255,255,.06);
+
+  --glass-2-bg:     rgba(255,255,255,0.065);
+  --glass-2-border: rgba(255,255,255,0.10);
+  --glass-2-blur:   blur(32px) saturate(170%);
+  --shadow-glass-2: 0 8px 32px rgba(0,0,0,.55), inset 0 0.5px 0 rgba(255,255,255,.10);
+
+  /* ── Circadian canvas ──────────────────────────────────────
+     CircadianBackground sets --circ-* by local hour. Defaults
+     here = daytime, so SSR matches the live state closely. */
+  --circ-hue-top:     168;
+  --circ-hue-bottom:  38;
+  --circ-top-alpha:   0.11;
+  --circ-bottom-alpha:0.06;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --color-bg: #f2f2f7;
+    --color-surface: #ffffff;
+    --color-surface-2: #e5e5ea;
+    --color-surface-3: #d1d1d6;
+    --color-ink: #08080f;
+    --color-ink-2: #6c6c7a;
+    --color-ink-3: #ababbc;
+    --color-accent: #00977a;
+    --color-accent-dim: #007a63;
+    --color-accent-blue: #2872e3;
+    --color-line: #dddde8;
+    --color-line-strong: #c5c5d3;
+    --color-attention: #b4730a;
+    --color-low: #d62b46;
+    --color-bg-soft: rgba(8,8,15,.04);
+    --shadow-card: 0 1px 4px rgba(0,0,0,.06), 0 0 0 .5px rgba(0,0,0,.06);
+    --shadow-elevated: 0 8px 40px rgba(0,0,0,.12), 0 0 0 .5px rgba(0,0,0,.06);
+    --shadow-glow: 0 0 28px 8px rgba(0,151,122,.16);
+    --shadow-glow-blue: 0 0 28px 8px rgba(40,114,227,.16);
+
+    --glass-1-bg:     rgba(255,255,255,0.55);
+    --glass-1-border: rgba(0,0,0,0.06);
+    --glass-1-blur:   blur(20px) saturate(180%);
+    --shadow-glass-1: 0 1px 3px rgba(0,0,0,.08), inset 0 0.5px 0 rgba(255,255,255,.6);
+
+    --glass-2-bg:     rgba(255,255,255,0.72);
+    --glass-2-border: rgba(0,0,0,0.08);
+    --glass-2-blur:   blur(32px) saturate(190%);
+    --shadow-glass-2: 0 8px 32px rgba(0,0,0,.12), inset 0 0.5px 0 rgba(255,255,255,.7);
+
+    --circ-top-alpha:    0.05;
+    --circ-bottom-alpha: 0.03;
+  }
 }
 
 html {
@@ -49,67 +139,110 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    --color-bg: #f5f7fa;
-    --color-surface: #ffffff;
-    --color-surface-2: #eef1f6;
-    --color-ink: #0f1923;
-    --color-ink-2: #364a5f;
-    --color-ink-3: #6b7f96;
-    --color-accent: #0da876;
-    --color-accent-dim: #0a8a60;
-    --color-line: #dde3eb;
-    --color-line-strong: #c8d0db;
-    --color-bg-soft: rgba(15, 25, 35, 0.04);
-    --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
-  }
-}
-
 body {
   background: var(--color-bg);
   color: var(--color-ink);
   font-family: var(--font-sans);
-  background-image:
-    radial-gradient(ellipse 90% 50% at 70% -5%,
-      color-mix(in oklch, var(--color-accent) 7%, transparent), transparent 65%),
-    radial-gradient(ellipse 50% 30% at 0% 100%,
-      color-mix(in oklch, var(--color-amber) 4%, transparent), transparent 55%);
-  background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
 }
 
-button, nav, [role="tablist"], input, textarea, select {
+/* ── Circadian canvas layer ──────────────────────────────────
+   A single fixed gradient behind all content. The top lobe shifts
+   hue across the day (dawn indigo → day mint → golden amber → dusk
+   indigo); the warm bottom lobe anchors it. Glass surfaces blur
+   this, producing layered depth. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -10%;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(ellipse 80% 55% at 65% -5%,
+      hsl(var(--circ-hue-top) 70% 50% / var(--circ-top-alpha)),
+      transparent 70%),
+    radial-gradient(ellipse 60% 40% at -8% 102%,
+      hsl(var(--circ-hue-bottom) 78% 50% / var(--circ-bottom-alpha)),
+      transparent 64%);
+  transition: background-image 1.6s ease, opacity 1.6s ease;
+  animation: circadian-breathe 14s ease-in-out infinite;
+}
+
+@media (prefers-color-scheme: light) {
+  body::before { animation: none; }
+}
+
+button, nav, [role="tablist"], select {
   -webkit-user-select: none;
   user-select: none;
 }
 
-input, textarea, select {
+input, textarea {
   -webkit-user-select: text;
   user-select: text;
 }
 
+/* ── Keyframes ───────────────────────────────────────────── */
+
 @keyframes ring-draw {
   from { stroke-dashoffset: var(--dash); }
-  to { stroke-dashoffset: var(--off); }
+  to   { stroke-dashoffset: var(--off); }
 }
 
 @keyframes fade-in {
   from { opacity: 0; }
-  to { opacity: 1; }
+  to   { opacity: 1; }
 }
 
 @keyframes slide-up {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spring-in {
+  0%   { opacity: 0; transform: scale(.94) translateY(12px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes score-pop {
+  0%  { transform: scale(.85); opacity: 0; }
+  60% { transform: scale(1.04); }
+  100%{ transform: scale(1); opacity: 1; }
 }
 
 @keyframes pulse-subtle {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  50%       { opacity: .7; }
 }
+
+@keyframes circadian-breathe {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .82; }
+}
+
+@keyframes sheet-up {
+  from { opacity: 0; transform: translateY(100%); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scrim-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ── Focus ───────────────────────────────────────────────── */
 
 :focus-visible {
   outline: 2px solid var(--color-accent);
@@ -117,9 +250,7 @@ input, textarea, select {
   border-radius: 4px;
 }
 
-::placeholder {
-  color: var(--color-ink-3);
-}
+::placeholder { color: var(--color-ink-3); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -128,31 +259,84 @@ input, textarea, select {
   }
 }
 
+/* ── Utilities ───────────────────────────────────────────── */
+
 @layer utilities {
-  .bg-bg { background-color: var(--color-bg); }
-  .bg-surface { background-color: var(--color-surface); }
+  .bg-bg        { background-color: var(--color-bg); }
+  .bg-surface   { background-color: var(--color-surface); }
   .bg-surface-2 { background-color: var(--color-surface-2); }
-  .bg-ink { background-color: var(--color-ink); }
-  .bg-accent { background-color: var(--color-accent); }
-  .bg-line { background-color: var(--color-line); }
-  .bg-bg-soft { background-color: var(--color-bg-soft); }
+  .bg-surface-3 { background-color: var(--color-surface-3); }
+  .bg-ink       { background-color: var(--color-ink); }
+  .bg-accent    { background-color: var(--color-accent); }
+  .bg-line      { background-color: var(--color-line); }
+  .bg-bg-soft   { background-color: var(--color-bg-soft); }
 
-  .text-ink { color: var(--color-ink); }
-  .text-ink-2 { color: var(--color-ink-2); }
-  .text-ink-3 { color: var(--color-ink-3); }
-  .text-accent { color: var(--color-accent); }
+  .text-ink        { color: var(--color-ink); }
+  .text-ink-2      { color: var(--color-ink-2); }
+  .text-ink-3      { color: var(--color-ink-3); }
+  .text-accent     { color: var(--color-accent); }
   .text-accent-dim { color: var(--color-accent-dim); }
-  .text-amber { color: var(--color-amber); }
-  .text-rose { color: var(--color-rose); }
-  .text-bg { color: var(--color-bg); }
+  .text-accent-blue{ color: var(--color-accent-blue); }
+  .text-amber      { color: var(--color-amber); }
+  .text-rose       { color: var(--color-rose); }
+  .text-bg         { color: var(--color-bg); }
 
-  .border-line { border-color: var(--color-line); }
+  .border-line        { border-color: var(--color-line); }
   .border-line-strong { border-color: var(--color-line-strong); }
-  .border-accent { border-color: var(--color-accent); }
-  .border-rose { border-color: var(--color-rose); }
+  .border-accent      { border-color: var(--color-accent); }
+  .border-rose        { border-color: var(--color-rose); }
 
   .rounded-control { border-radius: var(--radius-control); }
-  .rounded-card { border-radius: var(--radius-card); }
+  .rounded-card    { border-radius: var(--radius-card); }
+  .rounded-sheet   { border-radius: var(--radius-sheet); }
 
-  .shadow-card { box-shadow: var(--shadow-card); }
+  .shadow-card     { box-shadow: var(--shadow-card); }
+  .shadow-elevated { box-shadow: var(--shadow-elevated); }
+
+  /* Type scale */
+  .text-display {
+    font-size: var(--text-display);
+    letter-spacing: var(--tracking-display);
+    line-height: 1.04;
+  }
+  .text-title-m { font-size: var(--text-title-m); line-height: 1.25; }
+
+  /* Glass elevation — replaces `bg-surface border border-line shadow-card`
+     on surfaces that should read as floating glass. */
+  .glass-1 {
+    background: var(--glass-1-bg);
+    backdrop-filter: var(--glass-1-blur);
+    -webkit-backdrop-filter: var(--glass-1-blur);
+    border: 0.5px solid var(--glass-1-border);
+    box-shadow: var(--shadow-glass-1);
+  }
+  .glass-2 {
+    background: var(--glass-2-bg);
+    backdrop-filter: var(--glass-2-blur);
+    -webkit-backdrop-filter: var(--glass-2-blur);
+    border: 0.5px solid var(--glass-2-border);
+    box-shadow: var(--shadow-glass-2);
+  }
+
+  .animate-spring-in  { animation: spring-in .5s cubic-bezier(.22,1,.36,1) both; }
+  .animate-fade-up    { animation: fade-up .4s cubic-bezier(.22,1,.36,1) both; }
+  .animate-score-pop  { animation: score-pop .6s cubic-bezier(.22,1,.36,1) both; }
+  .animate-fade-in    { animation: fade-in .3s ease both; }
+  .animate-slide-up   { animation: slide-up .4s cubic-bezier(.22,1,.36,1) both; }
+  .animate-sheet-up   { animation: sheet-up .42s cubic-bezier(.22,1,.36,1) both; }
+  .animate-scrim-in   { animation: scrim-in .25s ease both; }
+
+  /* Skeleton shimmer */
+  .skeleton {
+    background:
+      linear-gradient(100deg,
+        var(--color-surface-2) 30%,
+        var(--color-surface-3) 50%,
+        var(--color-surface-2) 70%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease-in-out infinite;
+  }
+
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 }

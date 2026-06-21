@@ -99,6 +99,7 @@ export async function computeCorrelations(userId: number): Promise<CorrelationRe
     intake.filter((r) => r.type === "caffeine" && r.hour >= 14).map((r) => r.day)
   );
   const lateIntakeDays = new Set(intake.filter((r) => r.hour >= 21).map((r) => r.day));
+  const workoutDays = new Set(intake.filter((r) => r.type === "workout").map((r) => r.day));
 
   const results: CorrelationResult[] = [
     correlate("alcohol_sleep", "alcohol → sleep score", alcoholDays, (r) => r.sleep_score, oura, 1),
@@ -106,6 +107,8 @@ export async function computeCorrelations(userId: number): Promise<CorrelationRe
     correlate("alcohol_hrv", "alcohol → HRV", alcoholDays, (r) => r.hrv_avg, oura, 1),
     correlate("caffeine14_sleep", "late caffeine (after 2 pm) → sleep", caffeine14Days, (r) => r.sleep_score, oura, 1),
     correlate("lateintake_sleep", "late intake (after 9 pm) → sleep", lateIntakeDays, (r) => r.sleep_score, oura, 1),
+    correlate("workout_readiness", "workout → next-day readiness", workoutDays, (r) => r.readiness_score, oura, 1),
+    correlate("workout_hrv", "workout → next-day HRV", workoutDays, (r) => r.hrv_avg, oura, 1),
   ];
 
   return results;

@@ -65,6 +65,16 @@ function EntryIcon({ type }: { type: IntakeEntry["type"] }) {
   return <NoteIcon s="h-5 w-5" />;
 }
 
+const QUICK_ADDS = [
+  { label: "Coffee",   type: "caffeine" as const, quantity: 100, unit: "mg",    note: undefined },
+  { label: "Espresso", type: "caffeine" as const, quantity: 75,  unit: "mg",    note: undefined },
+  { label: "Tea",      type: "caffeine" as const, quantity: 40,  unit: "mg",    note: undefined },
+  { label: "Energy",   type: "caffeine" as const, quantity: 160, unit: "mg",    note: undefined },
+  { label: "Run",      type: "workout"  as const, quantity: 30,  unit: "min",   note: "Run"    },
+  { label: "Lift",     type: "workout"  as const, quantity: 45,  unit: "min",   note: "Lift"   },
+  { label: "Drink",    type: "alcohol"  as const, quantity: 1,   unit: "drinks",note: undefined },
+];
+
 type WeeklyStats = { caffeine_mg: number; alcohol_drinks: number; workout_days: number } | null;
 
 export default function LogTab({
@@ -201,6 +211,28 @@ export default function LogTab({
     });
   }
 
+  async function quickAdd(item: typeof QUICK_ADDS[number]) {
+    const body = {
+      type: item.type,
+      quantity: item.quantity,
+      unit: item.unit,
+      timestamp: new Date().toISOString(),
+      note: item.note ?? undefined,
+    };
+    const res = await fetch("/api/log/intake", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (res.ok) {
+      const { entry } = (await res.json()) as { entry: IntakeEntry };
+      setEntries((prev) => [entry, ...prev]);
+      if (entry.type === "caffeine" && new Date(entry.timestamp).getHours() >= 14) {
+        setCaffeineWarning(true);
+      }
+    }
+  }
+
   const todayCaffeine = entries
     .filter((e) => e.type === "caffeine")
     .reduce((sum, e) => sum + e.quantity, 0);
@@ -218,8 +250,8 @@ export default function LogTab({
     <>
       <main className="mx-auto max-w-md space-y-4 pb-28 pt-[calc(env(safe-area-inset-top)+1.25rem)]">
         <header className="px-4 animate-spring-in">
-          <h1 className="text-[22px] font-semibold tracking-tight text-ink">Log</h1>
-          <p className="mt-0.5 text-[14px] text-ink-2">Track daily intake</p>
+          <h1 className="text-[22px] font-semibold tracking-tight text-ink">Daily Log</h1>
+          <p className="mt-0.5 text-[14px] text-ink-2">Caffeine, alcohol, workouts &amp; notes</p>
         </header>
 
         {weeklyStats && (
@@ -248,50 +280,63 @@ export default function LogTab({
         <div className="flex gap-2.5 px-4 animate-spring-in" style={{ animationDelay: "80ms" }}>
           <div className="flex-1 rounded-card border border-line bg-surface p-4 shadow-card">
             <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Caffeine</p>
-            <p className="mt-1.5 font-mono text-lg font-medium tabular-nums text-ink">
+            <p className="mt-1.5 font-mono text-lg font-medium tabular-nums"
+              style={{ color: todayCaffeine > 400 ? "var(--color-rose)" : todayCaffeine > 200 ? "var(--color-amber)" : "var(--color-ink)" }}>
               {todayCaffeine}
               <span className="ml-1 text-[11px] font-normal text-ink-3">mg</span>
             </p>
+            {todayCaffeine > 400 && (
+              <p className="mt-0.5 text-[10px]" style={{ color: "var(--color-rose)" }}>Over daily limit</p>
+            )}
+            {todayCaffeine > 200 && todayCaffeine <= 400 && (
+              <p className="mt-0.5 text-[10px]" style={{ color: "var(--color-amber)" }}>Moderate intake</p>
+            )}
           </div>
           <div className="flex-1 rounded-card border border-line bg-surface p-4 shadow-card">
             <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Alcohol</p>
-            <p className="mt-1.5 font-mono text-lg font-medium tabular-nums text-ink">
+            <p className="mt-1.5 font-mono text-lg font-medium tabular-nums"
+              style={{ color: todayAlcohol >= 3 ? "var(--color-rose)" : todayAlcohol >= 2 ? "var(--color-amber)" : "var(--color-ink)" }}>
               {todayAlcohol}
               <span className="ml-1 text-[11px] font-normal text-ink-3">drinks</span>
             </p>
+            {todayAlcohol >= 3 && (
+              <p className="mt-0.5 text-[10px]" style={{ color: "var(--color-rose)" }}>Will impact sleep</p>
+            )}
           </div>
         </div>
 
+        {/* Quick-add chips — one-tap common items */}
+        {isToday && (
+          <div className="px-4 animate-spring-in" style={{ animationDelay: "120ms" }}>
+            <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.08em] text-ink-3">Quick Add</p>
+            <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+              {QUICK_ADDS.map((item) => (
+                <button
+                  key={item.label}
+                  onClick={() => quickAdd(item)}
+                  className="shrink-0 rounded-full border border-line bg-surface-2 px-3.5 py-1.5 text-[12px] font-medium text-ink transition-all active:scale-95 min-h-[36px]"
+                >
+                  {item.label}
+                  <span className="ml-1 font-mono text-[10px] text-ink-3">
+                    {item.type === "caffeine" ? `${item.quantity}mg` : item.type === "workout" ? `${item.quantity}m` : "×1"}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Intake buttons */}
         <div className="grid grid-cols-4 gap-2 px-4 animate-spring-in" style={{ animationDelay: "160ms" }}>
-          <button
-            onClick={() => openModal("caffeine")}
-            className="flex flex-col items-center gap-2 rounded-card border border-line bg-surface py-5 shadow-card transition-transform active:scale-[0.97] min-h-[44px]"
-          >
-            <CoffeeIcon />
-            <span className="text-[11px] font-medium text-ink">Caffeine</span>
-          </button>
-          <button
-            onClick={() => openModal("alcohol")}
-            className="flex flex-col items-center gap-2 rounded-card border border-line bg-surface py-5 shadow-card transition-transform active:scale-[0.97] min-h-[44px]"
-          >
-            <DrinkIcon />
-            <span className="text-[11px] font-medium text-ink">Alcohol</span>
-          </button>
-          <button
-            onClick={() => openModal("workout")}
-            className="flex flex-col items-center gap-2 rounded-card border border-line bg-surface py-5 shadow-card transition-transform active:scale-[0.97] min-h-[44px]"
-          >
-            <WorkoutIcon />
-            <span className="text-[11px] font-medium text-ink">Workout</span>
-          </button>
-          <button
-            onClick={() => openModal("note")}
-            className="flex flex-col items-center gap-2 rounded-card border border-line bg-surface py-5 shadow-card transition-transform active:scale-[0.97] min-h-[44px]"
-          >
-            <NoteIcon />
-            <span className="text-[11px] font-medium text-ink">Note</span>
-          </button>
+          {(["caffeine", "alcohol", "workout", "note"] as const).map((type) => (
+            <button
+              key={type}
+              onClick={() => openModal(type)}
+              className="rounded-control border border-line bg-surface px-2 py-3 text-[11px] font-medium text-ink shadow-card transition-transform active:scale-[0.97] min-h-[44px] capitalize"
+            >
+              {type}
+            </button>
+          ))}
         </div>
 
         {/* Timeline */}
@@ -323,10 +368,9 @@ export default function LogTab({
             </button>
           </div>
           {entries.length === 0 ? (
-            <div className="rounded-card border border-line bg-surface p-5 shadow-card">
-              <p className="text-[14px] leading-relaxed text-ink-3">
-                No entries yet. Tap a button above to log intake.
-              </p>
+            <div className="rounded-card border border-line bg-surface p-5 shadow-card text-center">
+              <p className="text-[14px] font-medium text-ink">Nothing logged {isToday ? "today" : "this day"}.</p>
+              <p className="mt-1 text-[13px] text-ink-3">Tap a button above to start tracking.</p>
             </div>
           ) : (
             <ul className="space-y-2">
