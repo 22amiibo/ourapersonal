@@ -14,14 +14,20 @@ type InsightRow = {
 };
 
 async function getInsights(): Promise<InsightRow[]> {
-  const rows = await sql`
-    SELECT claim, evidence_count, confidence, life_area, explanation, status
-    FROM insights
-    WHERE user_id = ${USER_ID} AND status IN ('active', 'weakening')
-    ORDER BY confidence DESC, evidence_count DESC
-    LIMIT 20
-  `;
-  return rows as InsightRow[];
+  // The insights table is part of the intelligence layer and may not be
+  // migrated in every environment — degrade to the empty state instead of 500.
+  try {
+    const rows = await sql`
+      SELECT claim, evidence_count, confidence, life_area, explanation, status
+      FROM insights
+      WHERE user_id = ${USER_ID} AND status IN ('active', 'weakening')
+      ORDER BY confidence DESC, evidence_count DESC
+      LIMIT 20
+    `;
+    return rows as InsightRow[];
+  } catch {
+    return [];
+  }
 }
 
 function fmtPct(n: number): string {
