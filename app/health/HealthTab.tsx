@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import TrendChart from "@/app/components/ui/TrendChart";
+import CalendarHeatmap from "@/app/components/ui/CalendarHeatmap";
+import CorrelationBar from "@/app/components/ui/CorrelationBar";
 import type { CorrelationResult } from "@/lib/correlation-utils";
-import { formatInsight } from "@/lib/correlation-utils";
 
 type DayRow = {
   day: string;
@@ -19,6 +20,22 @@ type LastNight = {
   resting_hr: number | null;
 } | null;
 
+type HrvBaseline = { baseline_30d: number; current_7d: number } | null;
+
+type PersonalRecords = {
+  bestSleep: { day: string; score: number } | null;
+  bestReadiness: { day: string; score: number } | null;
+  bestHrv: { day: string; hrv: number } | null;
+};
+
+type SleepStageAvg = {
+  rem_pct: number;
+  deep_pct: number;
+  light_pct: number;
+  awake_pct: number;
+  nights: number;
+} | null;
+
 const RANGES = [7, 30, 90] as const;
 type Range = (typeof RANGES)[number];
 
@@ -28,14 +45,48 @@ function weekdayLabel(day: string, total: number): string {
   return new Date(Date.UTC(y, m - 1, d, 12)).toLocaleDateString(undefined, { weekday: "short" });
 }
 
+function hrvZone(baseline: number, current: number): { label: string; color: string } {
+  const ratio = current / baseline;
+  if (ratio >= 1.10) return { label: "Peak", color: "var(--color-accent)" };
+  if (ratio >= 1.03) return { label: "Above baseline", color: "var(--color-accent-blue)" };
+  if (ratio >= 0.97) return { label: "At baseline", color: "var(--color-ink-2)" };
+  if (ratio >= 0.90) return { label: "Below baseline", color: "var(--color-amber)" };
+  return { label: "Recovery needed", color: "var(--color-rose)" };
+}
+
+function StageBar({ label, pct, color, optimal }: { label: string; pct: number; color: string; optimal: string }) {
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <span className="text-[12px] font-medium text-ink">{label}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-ink-3">{optimal}</span>
+          <span className="font-mono text-[13px] font-semibold tabular-nums text-ink">{pct}%</span>
+        </div>
+      </div>
+      <div className="h-[6px] w-full rounded-full overflow-hidden bg-surface-3">
+        <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(pct, 100)}%`, background: color }} />
+      </div>
+    </div>
+  );
+}
+
 export default function HealthTab({
   allDays,
   lastNight,
   correlations,
+  streak,
+  hrvBaseline,
+  personalRecords,
+  sleepStageAvg,
 }: {
   allDays: DayRow[];
   lastNight: LastNight;
   correlations: CorrelationResult[];
+  streak: number;
+  hrvBaseline: HrvBaseline;
+  personalRecords: PersonalRecords;
+  sleepStageAvg: SleepStageAvg;
 }) {
   const [range, setRange] = useState<Range>(7);
 
@@ -46,21 +97,38 @@ export default function HealthTab({
   const hrvData = days.map((r) => r.hrv_avg ?? 0);
   const hasData = sleepData.some((v) => v > 0);
 
-  const insights = correlations.map(formatInsight).filter(Boolean);
+  const significantCorrelations = correlations.filter((r) => r.significant);
 
   const lastNightStats = [
-    { label: "Sleep Score",  val: lastNight?.sleep_score,   unit: "" },
-    { label: "Readiness",    val: lastNight?.readiness_score, unit: "" },
-    { label: "HRV",          val: lastNight?.hrv_avg != null ? Math.round(lastNight.hrv_avg) : null, unit: "ms" },
-    { label: "Resting HR",   val: lastNight?.resting_hr != null ? Math.round(lastNight.resting_hr) : null, unit: "bpm" },
+    { label: "Sleep Score", val: lastNight?.sleep_score, unit: "" },
+    { label: "Readiness", val: lastNight?.readiness_score, unit: "" },
+    { label: "HRV", val: lastNight?.hrv_avg != null ? Math.round(lastNight.hrv_avg) : null, unit: "ms" },
+    { label: "Resting HR", val: lastNight?.resting_hr != null ? Math.round(lastNight.resting_hr) : null, unit: "bpm" },
   ];
-
   const hasLastNight = lastNightStats.some((s) => s.val != null);
+
+  const heatmapDays = allDays.map((d) => ({ day: d.day, score: d.readiness_score }));
+
+  const zone = hrvBaseline ? hrvZone(hrvBaseline.baseline_30d, hrvBaseline.current_7d) : null;
+  const hrvDeviation = hrvBaseline
+    ? ((hrvBaseline.current_7d - hrvBaseline.baseline_30d) / hrvBaseline.baseline_30d) * 100
+    : null;
+
+  const hasRecords =
+    personalRecords.bestSleep || personalRecords.bestReadiness || personalRecords.bestHrv;
 
   return (
     <main className="mx-auto max-w-md space-y-4 pb-28 pt-[calc(env(safe-area-inset-top)+1.25rem)]">
       <header className="flex items-center justify-between px-4 animate-spring-in">
-        <h1 className="text-[22px] font-semibold tracking-tight text-ink">Health</h1>
+        <div className="flex items-baseline gap-3">
+          <h1 className="text-[22px] font-semibold tracking-tight text-ink">Health</h1>
+          {streak >= 2 && (
+            <span className="flex items-center gap-1 text-[13px] font-medium text-amber">
+              <span aria-hidden>🔥</span>
+              <span>{streak}d streak</span>
+            </span>
+          )}
+        </div>
         <div className="flex min-h-[44px] items-center gap-1 rounded-control border border-line bg-bg p-1">
           {RANGES.map((r) => (
             <button
@@ -76,28 +144,41 @@ export default function HealthTab({
         </div>
       </header>
 
-      {insights.length > 0 && (
-        <section
-          className="mx-4 rounded-card border border-accent/30 bg-accent/5 p-5 shadow-card space-y-2.5 animate-spring-in"
-          style={{ animationDelay: "80ms" }}
-        >
-          <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-accent">Insights</p>
-          <ul className="space-y-2">
-            {insights.map((ins, i) => (
-              <li key={i} className="flex gap-2.5 text-[14px] leading-relaxed text-ink">
-                <span aria-hidden className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
-                <span>{ins}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="text-[11px] text-ink-3">Correlation only — not causal. Min 4 nights required.</p>
+      {/* ── HRV Baseline & Zone ──────────────────────────────── */}
+      {hrvBaseline && zone && (
+        <section className="mx-4 rounded-card border border-line bg-surface p-5 shadow-card animate-spring-in" style={{ animationDelay: "80ms" }}>
+          <p className="mb-4 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">HRV Baseline</p>
+          <div className="flex items-end gap-6">
+            <div>
+              <p className="text-[11px] text-ink-3">7-day avg</p>
+              <p className="mt-1 font-mono text-[30px] font-semibold tabular-nums text-ink leading-none">
+                {Math.round(hrvBaseline.current_7d)}
+                <span className="ml-1 text-[13px] font-normal text-ink-3">ms</span>
+              </p>
+            </div>
+            <div className="pb-1">
+              <p className="text-[11px] text-ink-3">30-day baseline</p>
+              <p className="mt-0.5 font-mono text-[18px] font-medium tabular-nums text-ink-2">
+                {Math.round(hrvBaseline.baseline_30d)}ms
+              </p>
+            </div>
+          </div>
+          <div
+            className="mt-4 rounded-control px-3.5 py-2.5"
+            style={{ background: `color-mix(in oklch, ${zone.color} 10%, transparent)` }}
+          >
+            <p className="text-[14px] font-semibold" style={{ color: zone.color }}>{zone.label}</p>
+            <p className="mt-0.5 text-[11px] text-ink-3">
+              {hrvDeviation != null && (
+                <>{hrvDeviation >= 0 ? "+" : ""}{hrvDeviation.toFixed(1)}% vs personal baseline</>
+              )}
+            </p>
+          </div>
         </section>
       )}
 
-      <section
-        className="mx-4 rounded-card border border-line bg-surface p-5 shadow-card space-y-5 animate-spring-in"
-        style={{ animationDelay: "160ms" }}
-      >
+      {/* ── Health Trends ────────────────────────────────────── */}
+      <section className="mx-4 rounded-card border border-line bg-surface p-5 shadow-card space-y-5 animate-spring-in" style={{ animationDelay: "160ms" }}>
         <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Health Trends</p>
         {hasData ? (
           <>
@@ -123,10 +204,29 @@ export default function HealthTab({
         )}
       </section>
 
-      <section
-        className="mx-4 rounded-card border border-line bg-surface p-5 shadow-card animate-spring-in"
-        style={{ animationDelay: "240ms" }}
-      >
+      {/* ── 90-Day Readiness Calendar ────────────────────────── */}
+      {heatmapDays.length > 0 && (
+        <section className="mx-4 rounded-card border border-line bg-surface p-5 shadow-card animate-spring-in" style={{ animationDelay: "200ms" }}>
+          <CalendarHeatmap days={heatmapDays} label="90-Day Readiness" />
+        </section>
+      )}
+
+      {/* ── Sleep Stage Averages ─────────────────────────────── */}
+      {sleepStageAvg && (
+        <section className="mx-4 rounded-card border border-line bg-surface p-5 shadow-card space-y-4 animate-spring-in" style={{ animationDelay: "220ms" }}>
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Sleep Stage Averages</p>
+            <span className="text-[11px] text-ink-3">{sleepStageAvg.nights} nights</span>
+          </div>
+          <StageBar label="REM" pct={sleepStageAvg.rem_pct} color="var(--color-accent-blue)" optimal="20–25%" />
+          <StageBar label="Deep" pct={sleepStageAvg.deep_pct} color="var(--color-accent)" optimal="15–20%" />
+          <StageBar label="Light" pct={sleepStageAvg.light_pct} color="var(--color-ink-3)" optimal="~55%" />
+          <StageBar label="Awake" pct={sleepStageAvg.awake_pct} color="var(--color-rose)" optimal="<5%" />
+        </section>
+      )}
+
+      {/* ── Last Night ───────────────────────────────────────── */}
+      <section className="mx-4 rounded-card border border-line bg-surface p-5 shadow-card animate-spring-in" style={{ animationDelay: "240ms" }}>
         <p className="mb-4 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Last Night</p>
         {hasLastNight ? (
           <div className="grid grid-cols-2 gap-2">
@@ -146,14 +246,56 @@ export default function HealthTab({
           <div className="rounded-control border border-line bg-surface-2 p-3.5">
             <p className="text-[14px] leading-relaxed text-ink-3">
               Connect Oura in{" "}
-              <a href="/settings" className="text-accent underline-offset-2 hover:underline">
-                Settings
-              </a>{" "}
+              <a href="/settings" className="text-accent underline-offset-2 hover:underline">Settings</a>{" "}
               to see last night&apos;s data.
             </p>
           </div>
         )}
       </section>
+
+      {/* ── Personal Records ─────────────────────────────────── */}
+      {hasRecords && (
+        <section className="mx-4 rounded-card border border-line bg-surface p-5 shadow-card animate-spring-in" style={{ animationDelay: "280ms" }}>
+          <p className="mb-4 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Personal Records</p>
+          <div className="grid grid-cols-3 gap-2">
+            {personalRecords.bestSleep && (
+              <div className="rounded-control border border-line bg-surface-2 p-3">
+                <p className="text-[10px] font-medium uppercase tracking-[0.06em] text-ink-3">Sleep</p>
+                <p className="mt-1 font-mono text-[20px] font-semibold tabular-nums text-accent">{personalRecords.bestSleep.score}</p>
+                <p className="mt-0.5 text-[10px] text-ink-3">{personalRecords.bestSleep.day.slice(5)}</p>
+              </div>
+            )}
+            {personalRecords.bestReadiness && (
+              <div className="rounded-control border border-line bg-surface-2 p-3">
+                <p className="text-[10px] font-medium uppercase tracking-[0.06em] text-ink-3">Readiness</p>
+                <p className="mt-1 font-mono text-[20px] font-semibold tabular-nums text-accent">{personalRecords.bestReadiness.score}</p>
+                <p className="mt-0.5 text-[10px] text-ink-3">{personalRecords.bestReadiness.day.slice(5)}</p>
+              </div>
+            )}
+            {personalRecords.bestHrv && (
+              <div className="rounded-control border border-line bg-surface-2 p-3">
+                <p className="text-[10px] font-medium uppercase tracking-[0.06em] text-ink-3">HRV</p>
+                <p className="mt-1 font-mono text-[20px] font-semibold tabular-nums text-accent">{Math.round(personalRecords.bestHrv.hrv)}</p>
+                <p className="mt-0.5 text-[10px] text-ink-3">{personalRecords.bestHrv.day.slice(5)}</p>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* ── Insights (Correlation Bar Charts) ───────────────── */}
+      {significantCorrelations.length > 0 && (
+        <section className="mx-4 rounded-card border border-accent/30 bg-accent/5 p-5 shadow-card space-y-5 animate-spring-in" style={{ animationDelay: "320ms" }}>
+          <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-accent">Insights</p>
+          {significantCorrelations.map((r, i) => (
+            <div key={r.id}>
+              {i > 0 && <div className="h-px bg-line mb-5" />}
+              <CorrelationBar r={r} />
+            </div>
+          ))}
+          <p className="text-[10px] text-ink-3 pt-1">Correlation only — not causal. Min 4 nights required.</p>
+        </section>
+      )}
     </main>
   );
 }

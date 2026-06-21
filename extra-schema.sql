@@ -92,3 +92,15 @@ CREATE TABLE IF NOT EXISTS goals (
 CREATE OR REPLACE VIEW mv_daily_scores AS
 SELECT user_id, day, sleep_score, readiness_score, hrv_avg, resting_hr, total_sleep_seconds
 FROM oura_daily;
+
+-- =============================================================
+-- Phase 4.1: Habit check-ins (daily goal completion tracking)
+-- =============================================================
+CREATE TABLE IF NOT EXISTS habit_completions (
+  id             SERIAL PRIMARY KEY,
+  user_id        INTEGER NOT NULL,
+  goal_id        INTEGER NOT NULL,
+  completed_date DATE NOT NULL,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (user_id, goal_id, completed_date)
+);

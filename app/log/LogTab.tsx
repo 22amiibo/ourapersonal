@@ -4,14 +4,16 @@ import { useState, useTransition } from "react";
 
 export type IntakeEntry = {
   id: number;
-  type: "caffeine" | "alcohol" | "note";
+  type: "caffeine" | "alcohol" | "note" | "workout";
   quantity: number;
   unit: string;
   timestamp: string;
   note: string | null;
 };
 
-type ModalState = { type: "caffeine" | "alcohol" | "note" } | null;
+type ModalState = { type: "caffeine" | "alcohol" | "note" | "workout" } | null;
+
+const WORKOUT_TYPES = ["Run", "Lift", "Yoga", "Swim", "Cardio", "Walk", "Bike", "HIIT", "Other"];
 
 function formatTime(ts: string): string {
   return new Date(ts).toLocaleTimeString(undefined, {
@@ -44,77 +46,35 @@ function formatDateLabel(date: string, today: string): string {
   });
 }
 
-function ChevronLeft() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
+const ChevronLeft = () => <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden><path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+const ChevronRight = () => <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden><path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+const TrashIcon = () => <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>;
 
-function ChevronRight() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function TrashIcon() {
-  return (
-    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <polyline points="3 6 5 6 21 6" />
-      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-      <line x1="10" y1="11" x2="10" y2="17" />
-      <line x1="14" y1="11" x2="14" y2="17" />
-    </svg>
-  );
-}
-
-function CoffeeIcon({ className = "h-7 w-7" }: { className?: string }) {
-  return (
-    <svg className={`${className} text-amber`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
-      <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
-      <line x1="6" y1="1" x2="6" y2="4" />
-      <line x1="10" y1="1" x2="10" y2="4" />
-      <line x1="14" y1="1" x2="14" y2="4" />
-    </svg>
-  );
-}
-
-function DrinkIcon({ className = "h-7 w-7" }: { className?: string }) {
-  return (
-    <svg className={`${className} text-rose`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M8 22h8M12 11v11M3 2l2.5 14.5a2 2 0 0 0 2 1.5h9a2 2 0 0 0 2-1.5L21 2H3z" />
-    </svg>
-  );
-}
-
-function NoteIcon({ className = "h-7 w-7" }: { className?: string }) {
-  return (
-    <svg className={`${className} text-ink-2`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-      <line x1="16" y1="13" x2="8" y2="13" />
-      <line x1="16" y1="17" x2="8" y2="17" />
-      <polyline points="10 9 9 9 8 9" />
-    </svg>
-  );
-}
+const SVG = ({ c, children }: { c: string; children: React.ReactNode }) => (
+  <svg className={c} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>{children}</svg>
+);
+const CoffeeIcon = ({ s = "h-7 w-7" }) => <SVG c={`${s} text-amber`}><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></SVG>;
+const DrinkIcon = ({ s = "h-7 w-7" }) => <SVG c={`${s} text-rose`}><path d="M8 22h8M12 11v11M3 2l2.5 14.5a2 2 0 0 0 2 1.5h9a2 2 0 0 0 2-1.5L21 2H3z"/></SVG>;
+const NoteIcon  = ({ s = "h-7 w-7" }) => <SVG c={`${s} text-ink-2`}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></SVG>;
+const WorkoutIcon = ({ s = "h-7 w-7" }) => <SVG c={`${s} text-accent`}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></SVG>;
 
 function EntryIcon({ type }: { type: IntakeEntry["type"] }) {
-  if (type === "caffeine") return <CoffeeIcon className="h-5 w-5" />;
-  if (type === "alcohol") return <DrinkIcon className="h-5 w-5" />;
-  return <NoteIcon className="h-5 w-5" />;
+  if (type === "caffeine") return <CoffeeIcon s="h-5 w-5" />;
+  if (type === "alcohol") return <DrinkIcon s="h-5 w-5" />;
+  if (type === "workout") return <WorkoutIcon s="h-5 w-5" />;
+  return <NoteIcon s="h-5 w-5" />;
 }
+
+type WeeklyStats = { caffeine_mg: number; alcohol_drinks: number; workout_days: number } | null;
 
 export default function LogTab({
   initialEntries,
   initialDate,
+  weeklyStats,
 }: {
   initialEntries: IntakeEntry[];
   initialDate: string;
+  weeklyStats?: WeeklyStats;
 }) {
   const [entries, setEntries] = useState<IntakeEntry[]>(initialEntries);
   const [modal, setModal] = useState<ModalState>(null);
@@ -126,6 +86,7 @@ export default function LogTab({
   const [caffeineWarning, setCaffeineWarning] = useState(false);
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const [loading, setLoading] = useState(false);
+  const [workoutType, setWorkoutType] = useState(WORKOUT_TYPES[0]);
 
   const isToday = selectedDate === initialDate;
 
@@ -160,12 +121,13 @@ export default function LogTab({
     }
   }
 
-  function openModal(type: "caffeine" | "alcohol" | "note") {
-    setQuantity(type === "caffeine" ? "100" : type === "alcohol" ? "1" : "");
+  function openModal(type: "caffeine" | "alcohol" | "note" | "workout") {
+    setQuantity(type === "caffeine" ? "100" : type === "alcohol" ? "1" : type === "workout" ? "30" : "");
     setNoteText("");
     setTimestamp(nowDatetimeLocal());
     setError("");
     setCaffeineWarning(false);
+    setWorkoutType(WORKOUT_TYPES[0]);
     setModal({ type });
   }
 
@@ -189,6 +151,19 @@ export default function LogTab({
         unit: "",
         timestamp: new Date(timestamp).toISOString(),
         note: noteText.trim(),
+      };
+    } else if (modal.type === "workout") {
+      const qty = parseFloat(quantity);
+      if (isNaN(qty) || qty <= 0) {
+        setError("Enter a valid duration.");
+        return;
+      }
+      body = {
+        type: "workout",
+        quantity: qty,
+        unit: "min",
+        timestamp: new Date(timestamp).toISOString(),
+        note: workoutType + (noteText.trim() ? ` — ${noteText.trim()}` : ""),
       };
     } else {
       const qty = parseFloat(quantity);
@@ -234,11 +209,10 @@ export default function LogTab({
     .reduce((sum, e) => sum + e.quantity, 0);
 
   const modalTitle =
-    modal?.type === "caffeine"
-      ? "Log Caffeine"
-      : modal?.type === "alcohol"
-      ? "Log Alcohol"
-      : "Log Note";
+    modal?.type === "caffeine" ? "Log Caffeine"
+    : modal?.type === "alcohol" ? "Log Alcohol"
+    : modal?.type === "workout" ? "Log Workout"
+    : "Log Note";
 
   return (
     <>
@@ -247,6 +221,22 @@ export default function LogTab({
           <h1 className="text-[22px] font-semibold tracking-tight text-ink">Log</h1>
           <p className="mt-0.5 text-[14px] text-ink-2">Track daily intake</p>
         </header>
+
+        {weeklyStats && (
+          <div className="flex gap-2 px-4 animate-spring-in">
+            {[
+              { label: "Caffeine", val: `${weeklyStats.caffeine_mg}mg` },
+              { label: "Alcohol", val: `${weeklyStats.alcohol_drinks} drinks` },
+              { label: "Workouts", val: `${weeklyStats.workout_days}×` },
+            ].map((s) => (
+              <div key={s.label} className="flex-1 rounded-card border border-line bg-surface p-3 shadow-card text-center">
+                <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-ink-3">{s.label}</p>
+                <p className="mt-1 font-mono text-[15px] font-semibold tabular-nums text-ink">{s.val}</p>
+                <p className="text-[9px] text-ink-3">7-day</p>
+              </div>
+            ))}
+          </div>
+        )}
 
         {caffeineWarning && (
           <div className="mx-4 rounded-control border border-amber/30 bg-amber/5 px-4 py-3.5 text-[14px] text-amber animate-spring-in">
@@ -273,27 +263,34 @@ export default function LogTab({
         </div>
 
         {/* Intake buttons */}
-        <div className="grid grid-cols-3 gap-2 px-4 animate-spring-in" style={{ animationDelay: "160ms" }}>
+        <div className="grid grid-cols-4 gap-2 px-4 animate-spring-in" style={{ animationDelay: "160ms" }}>
           <button
             onClick={() => openModal("caffeine")}
             className="flex flex-col items-center gap-2 rounded-card border border-line bg-surface py-5 shadow-card transition-transform active:scale-[0.97] min-h-[44px]"
           >
             <CoffeeIcon />
-            <span className="text-[13px] font-medium text-ink">Caffeine</span>
+            <span className="text-[11px] font-medium text-ink">Caffeine</span>
           </button>
           <button
             onClick={() => openModal("alcohol")}
             className="flex flex-col items-center gap-2 rounded-card border border-line bg-surface py-5 shadow-card transition-transform active:scale-[0.97] min-h-[44px]"
           >
             <DrinkIcon />
-            <span className="text-[13px] font-medium text-ink">Alcohol</span>
+            <span className="text-[11px] font-medium text-ink">Alcohol</span>
+          </button>
+          <button
+            onClick={() => openModal("workout")}
+            className="flex flex-col items-center gap-2 rounded-card border border-line bg-surface py-5 shadow-card transition-transform active:scale-[0.97] min-h-[44px]"
+          >
+            <WorkoutIcon />
+            <span className="text-[11px] font-medium text-ink">Workout</span>
           </button>
           <button
             onClick={() => openModal("note")}
             className="flex flex-col items-center gap-2 rounded-card border border-line bg-surface py-5 shadow-card transition-transform active:scale-[0.97] min-h-[44px]"
           >
             <NoteIcon />
-            <span className="text-[13px] font-medium text-ink">Note</span>
+            <span className="text-[11px] font-medium text-ink">Note</span>
           </button>
         </div>
 
@@ -408,6 +405,40 @@ export default function LogTab({
                     className="w-full resize-none rounded-control border border-line bg-bg px-4 py-3 text-[14px] text-ink focus:border-accent focus:outline-none"
                   />
                 </div>
+              ) : modal.type === "workout" ? (
+                <>
+                  <div>
+                    <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Type</label>
+                    <select
+                      value={workoutType}
+                      onChange={(e) => setWorkoutType(e.target.value)}
+                      className="w-full rounded-control border border-line bg-bg px-4 py-3 text-[14px] text-ink focus:border-accent focus:outline-none min-h-[48px]"
+                    >
+                      {WORKOUT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Duration (min)</label>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      value={quantity}
+                      onChange={(e) => setQuantity(e.target.value)}
+                      placeholder="e.g. 30"
+                      className="w-full rounded-control border border-line bg-bg px-4 py-3.5 font-mono text-[15px] text-ink focus:border-accent focus:outline-none min-h-[48px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Note (optional)</label>
+                    <input
+                      type="text"
+                      value={noteText}
+                      onChange={(e) => setNoteText(e.target.value)}
+                      placeholder="e.g. Morning tempo run"
+                      className="w-full rounded-control border border-line bg-bg px-4 py-3.5 text-[14px] text-ink focus:border-accent focus:outline-none min-h-[48px]"
+                    />
+                  </div>
+                </>
               ) : (
                 <>
                   <div>
