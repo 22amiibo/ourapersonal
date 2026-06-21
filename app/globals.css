@@ -242,6 +242,11 @@ input, textarea {
   100% { background-position: 200% 0; }
 }
 
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* ── Focus ───────────────────────────────────────────────── */
 
 :focus-visible {
@@ -325,6 +330,7 @@ input, textarea {
   .animate-slide-up   { animation: slide-up .4s cubic-bezier(.22,1,.36,1) both; }
   .animate-sheet-up   { animation: sheet-up .42s cubic-bezier(.22,1,.36,1) both; }
   .animate-scrim-in   { animation: scrim-in .25s ease both; }
+  .page-enter         { animation: page-enter .38s cubic-bezier(.22,1,.36,1) both; }
 
   /* Skeleton shimmer */
   .skeleton {
