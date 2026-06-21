@@ -78,15 +78,15 @@
   /* ── Glass elevation tiers ─────────────────────────────────
      Tier 1: standard card. Tier 2: hero / briefing / key panels.
      The translucent fills let the circadian canvas glow through. */
-  --glass-1-bg:     rgba(255,255,255,0.045);
-  --glass-1-border: rgba(255,255,255,0.075);
-  --glass-1-blur:   blur(20px) saturate(150%);
-  --shadow-glass-1: 0 1px 3px rgba(0,0,0,.45), inset 0 0.5px 0 rgba(255,255,255,.06);
+  --glass-1-bg:     linear-gradient(157deg, rgba(255,255,255,0.11) 0%, rgba(255,255,255,0.035) 100%);
+  --glass-1-border: rgba(255,255,255,0.14);
+  --glass-1-blur:   blur(24px) saturate(165%);
+  --shadow-glass-1: 0 4px 18px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.18), inset 0 -1px 0 rgba(0,0,0,.12);
 
-  --glass-2-bg:     rgba(255,255,255,0.065);
-  --glass-2-border: rgba(255,255,255,0.10);
-  --glass-2-blur:   blur(32px) saturate(170%);
-  --shadow-glass-2: 0 8px 32px rgba(0,0,0,.55), inset 0 0.5px 0 rgba(255,255,255,.10);
+  --glass-2-bg:     linear-gradient(157deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%);
+  --glass-2-border: rgba(255,255,255,0.20);
+  --glass-2-blur:   blur(40px) saturate(185%);
+  --shadow-glass-2: 0 14px 44px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.24), inset 0 -1px 0 rgba(0,0,0,.14);
 
   /* ── Circadian canvas ──────────────────────────────────────
      CircadianBackground sets --circ-* by local hour. Defaults
@@ -119,15 +119,15 @@
     --shadow-glow: 0 0 28px 8px rgba(0,151,122,.16);
     --shadow-glow-blue: 0 0 28px 8px rgba(40,114,227,.16);
 
-    --glass-1-bg:     rgba(255,255,255,0.55);
-    --glass-1-border: rgba(0,0,0,0.06);
+    --glass-1-bg:     linear-gradient(157deg, rgba(255,255,255,0.78) 0%, rgba(255,255,255,0.58) 100%);
+    --glass-1-border: rgba(0,0,0,0.08);
     --glass-1-blur:   blur(20px) saturate(180%);
-    --shadow-glass-1: 0 1px 3px rgba(0,0,0,.08), inset 0 0.5px 0 rgba(255,255,255,.6);
+    --shadow-glass-1: 0 4px 18px rgba(0,0,0,.08), inset 0 1px 0 rgba(255,255,255,.85);
 
-    --glass-2-bg:     rgba(255,255,255,0.72);
-    --glass-2-border: rgba(0,0,0,0.08);
+    --glass-2-bg:     linear-gradient(157deg, rgba(255,255,255,0.88) 0%, rgba(255,255,255,0.68) 100%);
+    --glass-2-border: rgba(0,0,0,0.10);
     --glass-2-blur:   blur(32px) saturate(190%);
-    --shadow-glass-2: 0 8px 32px rgba(0,0,0,.12), inset 0 0.5px 0 rgba(255,255,255,.7);
+    --shadow-glass-2: 0 14px 44px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.92);
 
     --circ-top-alpha:    0.05;
     --circ-bottom-alpha: 0.03;
