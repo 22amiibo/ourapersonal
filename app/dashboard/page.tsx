@@ -106,7 +106,7 @@ export default async function DashboardPage() {
   const today = localDateStr(tz);
   const weekAgo = daysAgoStr(tz, 7);
 
-  const [briefingRows, ouraRows, trendRows, events, sleepDebtRows, predictionRows] = await Promise.all([
+  const [briefingRows, ouraRows, trendRows, events, sleepDebtRows] = await Promise.all([
     sql`
       SELECT summary_text, recommendations, context_window FROM briefings
       WHERE user_id = ${USER_ID} ORDER BY briefing_date DESC LIMIT 1`,
@@ -128,12 +128,20 @@ export default async function DashboardPage() {
              COUNT(*) AS nights
       FROM oura_daily
       WHERE user_id = ${USER_ID} AND day >= ${weekAgo} AND total_sleep_seconds IS NOT NULL`,
-    sql`
+  ]);
+
+  // prediction_records is part of the intelligence layer and may not be
+  // migrated in every environment — degrade to empty rather than 500.
+  let predictionRows: unknown[] = [];
+  try {
+    predictionRows = await sql`
       SELECT prediction_type, prediction, confidence, target_date
       FROM prediction_records
       WHERE user_id = ${USER_ID} AND evaluated_at IS NULL AND target_date >= CURRENT_DATE
-      ORDER BY target_date ASC LIMIT 5`,
-  ]);
+      ORDER BY target_date ASC LIMIT 5`;
+  } catch {
+    predictionRows = [];
+  }
 
   const briefingRow = briefingRows[0] as {
     summary_text: string;
