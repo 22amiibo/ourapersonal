@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 
 export const MODEL = "claude-sonnet-4-6";
+export const HAIKU_MODEL = "claude-haiku-4-5-20251001";
 
 let _client: Anthropic | null = null;
 function client(): Anthropic {
@@ -19,9 +20,10 @@ export async function extractWithTool<T = unknown>(opts: {
   userText: string;
   tool: Anthropic.Tool;
   maxTokens?: number;
+  model?: string;
 }): Promise<T> {
   const msg = await client().messages.create({
-    model: MODEL,
+    model: opts.model ?? MODEL,
     max_tokens: opts.maxTokens ?? 1024,
     system: opts.system,
     tools: [opts.tool],

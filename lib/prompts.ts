@@ -108,3 +108,145 @@ export const monthlyNarrativeTool: Anthropic.Tool = {
     required: ["narrative"],
   },
 };
+
+// =============================================================
+// Personal Intelligence System — processing pipeline tools
+// =============================================================
+
+export const dailyFactsExtractionTool: Anthropic.Tool = {
+  name: "extract_daily_facts",
+  description: "Extract structured facts from a daily reflection entry. Only extract what is explicitly present.",
+  input_schema: {
+    type: "object",
+    properties: {
+      facts: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            fact_type: { type: "string", description: "One of: high_stress_signal | study_method_active_recall | study_method_flashcards | study_method_rereading | unusual_event | positive_mood_signal" },
+            life_area: { type: "string", description: "One of: sleep | recovery | academics | productivity | mood | nutrition | fitness | stress" },
+            value_text: { type: "string", description: "Short description of the fact" },
+            confidence: { type: "number", minimum: 0, maximum: 1, description: "Confidence that this fact is present" },
+          },
+          required: ["fact_type", "life_area", "confidence"],
+        },
+      },
+    },
+    required: ["facts"],
+  },
+};
+
+export const dailySummaryTool: Anthropic.Tool = {
+  name: "write_daily_summary",
+  description: "Write a terse 2-3 sentence daily health and performance summary.",
+  input_schema: {
+    type: "object",
+    properties: {
+      summary_text: { type: "string", description: "2-3 sentences describing the day's health, energy, and notable events" },
+      key_events: { type: "array", items: { type: "string" }, description: "Up to 3 notable events or facts from this day" },
+      top_insights: { type: "array", items: { type: "string" }, description: "Up to 2 insight slugs that are relevant to this day, if any" },
+      life_area: { type: "string", description: "Primary life area for this day: sleep | recovery | academics | productivity | mood | fitness" },
+    },
+    required: ["summary_text", "key_events", "life_area"],
+  },
+};
+
+export const weeklyIntelligenceReviewTool: Anthropic.Tool = {
+  name: "write_weekly_intelligence_review",
+  description: "Write a structured weekly intelligence review from 7 daily summaries.",
+  input_schema: {
+    type: "object",
+    properties: {
+      summary_text: { type: "string", description: "2-3 paragraph weekly synthesis" },
+      positive_patterns: { type: "array", items: { type: "string" }, description: "Patterns that helped this week" },
+      negative_patterns: { type: "array", items: { type: "string" }, description: "Patterns that hurt this week" },
+      recommendations: { type: "array", items: { type: "string" }, description: "1-3 concrete recommendations for next week" },
+      focus_trends: { type: "array", items: { type: "string" }, description: "Focus and productivity observations" },
+      energy_trends: { type: "array", items: { type: "string" }, description: "Energy level observations" },
+      academic_trends: { type: "array", items: { type: "string" }, description: "Academic performance observations if relevant" },
+    },
+    required: ["summary_text", "positive_patterns", "negative_patterns", "recommendations"],
+  },
+};
+
+export const monthlyNarrativeIntelligenceTool: Anthropic.Tool = {
+  name: "write_monthly_narrative_intelligence",
+  description: "Write a structured monthly intelligence narrative from weekly summaries.",
+  input_schema: {
+    type: "object",
+    properties: {
+      narrative: { type: "string", description: "3-4 paragraph monthly narrative" },
+      major_trends: { type: "array", items: { type: "string" }, description: "The 2-4 biggest trends of the month" },
+      recurring_themes: { type: "array", items: { type: "string" }, description: "Patterns that repeat across weeks" },
+      predictions: { type: "array", items: { type: "string" }, description: "Forward-looking observations for next month" },
+    },
+    required: ["narrative", "major_trends", "recurring_themes"],
+  },
+};
+
+export const patternExplanationTool: Anthropic.Tool = {
+  name: "explain_patterns",
+  description: "Write natural-language descriptions of statistical correlation candidates and identify knowledge graph edges.",
+  input_schema: {
+    type: "object",
+    properties: {
+      explanations: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            feature_x: { type: "string" },
+            feature_y: { type: "string" },
+            lag_days: { type: "integer" },
+            description: { type: "string", description: "One sentence describing this relationship" },
+            graph_edge: {
+              type: "object",
+              properties: {
+                subject: { type: "string" },
+                relation: { type: "string", enum: ["improves", "reduces", "predicts", "correlates_with"] },
+                object: { type: "string" },
+                weight: { type: "number", minimum: -1, maximum: 1 },
+              },
+              required: ["subject", "relation", "object", "weight"],
+            },
+          },
+          required: ["feature_x", "feature_y", "lag_days", "description", "graph_edge"],
+        },
+      },
+    },
+    required: ["explanations"],
+  },
+};
+
+export const insightGenerationTool: Anthropic.Tool = {
+  name: "generate_insights",
+  description: "Generate insight records from confirmed statistical patterns.",
+  input_schema: {
+    type: "object",
+    properties: {
+      insights: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            insight_key: { type: "string", description: "Stable kebab-case slug like 'sleep_biology_performance'" },
+            category: { type: "string", enum: ["sleep", "academic", "habit", "recovery", "nutrition", "mood"] },
+            life_area: { type: "string" },
+            claim: { type: "string", description: "One-sentence claim, e.g. 'Sleep >8h before Biology exams correlates with higher confidence'" },
+            explanation: { type: "string", description: "2-3 sentence evidence-based explanation" },
+            evidence_summary: { type: "string", description: "Brief statistical summary" },
+          },
+          required: ["insight_key", "category", "life_area", "claim", "evidence_summary"],
+        },
+      },
+    },
+    required: ["insights"],
+  },
+};
+
+export const DAILY_SUMMARY_SYSTEM = `You are a terse health data analyst. Write compact, factual daily summaries from structured data. Do not speculate. Report what happened.`;
+
+export const WEEKLY_INTELLIGENCE_SYSTEM = `You are a personal performance coach reviewing one week of health and productivity data. Identify patterns. Be specific. Reference actual numbers. Frame patterns as observations, not medical claims.`;
+
+export const MONTHLY_INTELLIGENCE_SYSTEM = `You are a long-term health analyst synthesizing a month of weekly summaries. Identify recurring themes, significant trends, and forward-looking observations. Be analytical and specific.`;

@@ -5,6 +5,13 @@ import { syncOura } from "@/lib/oura";
 import { syncCalendar } from "@/lib/calendar";
 import { localDateStr, daysAgoStr, daysAheadStr, weekOfStr, isMonday } from "@/lib/dates";
 import { sendPushToUser } from "@/lib/push";
+import { advanceFacts } from "@/lib/pipeline/facts";
+import { advanceFeatureVectors } from "@/lib/pipeline/features";
+import { advanceDailySummary, advanceWeeklySummary, advanceMonthlySummary, advanceEmbeddings } from "@/lib/pipeline/summaries";
+// The following stages are implemented by Agent 3 (patterns / insights / predictions).
+import { advancePatterns, advanceAnomalies } from "@/lib/pipeline/patterns";
+import { advanceInsights, evaluateInsightDecay } from "@/lib/pipeline/insights";
+import { advancePredictions, evaluatePredictions } from "@/lib/pipeline/predictions";
 
 export const USER_ID = 1;
 
@@ -187,6 +194,17 @@ export async function runDailyJob() {
     results.calendar = { error: String(e) };
   }
 
+  // Cursor-based processing pipeline (statistics → rules → LLM).
+  try { await advanceFacts(USER_ID, tz); results.facts = "done"; } catch (e) { results.facts = { error: String(e) }; }
+  try { await advanceFeatureVectors(USER_ID, tz); results.featureVectors = "done"; } catch (e) { results.featureVectors = { error: String(e) }; }
+  try { await advanceDailySummary(USER_ID, tz); results.dailySummary = "done"; } catch (e) { results.dailySummary = { error: String(e) }; }
+  try { await advanceEmbeddings(USER_ID); results.embeddings = "done"; } catch (e) { results.embeddings = { error: String(e) }; }
+  try { await advanceAnomalies(USER_ID); results.anomalies = "done"; } catch (e) { results.anomalies = { error: String(e) }; }
+  try { await advancePatterns(USER_ID); results.patterns = "done"; } catch (e) { results.patterns = { error: String(e) }; }
+  try { await advanceInsights(USER_ID); results.insights = "done"; } catch (e) { results.insights = { error: String(e) }; }
+  try { await advancePredictions(USER_ID, tz); results.predictions = "done"; } catch (e) { results.predictions = { error: String(e) }; }
+  try { await evaluatePredictions(USER_ID); results.predictionEval = "done"; } catch (e) { results.predictionEval = { error: String(e) }; }
+
   try {
     results.briefing = await generateBriefing(tz);
   } catch (e) {
@@ -200,6 +218,7 @@ export async function runDailyJob() {
     } catch (e) {
       results.weeklyRollup = { error: String(e) };
     }
+    try { await advanceWeeklySummary(USER_ID, tz); results.weeklySummary = "done"; } catch (e) { results.weeklySummary = { error: String(e) }; }
   }
 
   if (isFirstOfMonth(tz)) {
@@ -209,6 +228,8 @@ export async function runDailyJob() {
     } catch (e) {
       results.monthlyNarrative = { error: String(e) };
     }
+    try { await advanceMonthlySummary(USER_ID, tz); results.monthlySummary = "done"; } catch (e) { results.monthlySummary = { error: String(e) }; }
+    try { await evaluateInsightDecay(USER_ID); results.insightDecay = "done"; } catch (e) { results.insightDecay = { error: String(e) }; }
   }
 
   return results;
