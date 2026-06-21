@@ -247,7 +247,7 @@ export default function HealthTab({
 
       {/* ── HRV Baseline & Zone ──────────────────────────────── */}
       {hrvBaseline && zone && (
-        <section className="mx-4 rounded-card border border-line bg-surface p-5 shadow-card animate-spring-in" style={{ animationDelay: "80ms" }}>
+        <section className="mx-4 rounded-card glass-1 p-5 animate-spring-in" style={{ animationDelay: "80ms" }}>
           <p className="mb-4 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">HRV Baseline</p>
           <div className="flex items-end gap-6">
             <div>
@@ -279,7 +279,7 @@ export default function HealthTab({
       )}
 
       {/* ── Health Trends ────────────────────────────────────── */}
-      <section className="mx-4 rounded-card border border-line bg-surface p-5 shadow-card space-y-5 animate-spring-in" style={{ animationDelay: "160ms" }}>
+      <section className="mx-4 rounded-card glass-1 p-5 space-y-5 animate-spring-in" style={{ animationDelay: "160ms" }}>
         <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Health Trends</p>
         {hasData ? (
           <>
@@ -307,14 +307,14 @@ export default function HealthTab({
 
       {/* ── 90-Day Readiness Calendar ────────────────────────── */}
       {heatmapDays.length > 0 && (
-        <section className="mx-4 rounded-card border border-line bg-surface p-5 shadow-card animate-spring-in" style={{ animationDelay: "200ms" }}>
+        <section className="mx-4 rounded-card glass-1 p-5 animate-spring-in" style={{ animationDelay: "200ms" }}>
           <CalendarHeatmap days={heatmapDays} label="90-Day Readiness" />
         </section>
       )}
 
       {/* ── Sleep Stage Averages ─────────────────────────────── */}
       {sleepStageAvg && (
-        <section className="mx-4 rounded-card border border-line bg-surface p-5 shadow-card space-y-4 animate-spring-in" style={{ animationDelay: "220ms" }}>
+        <section className="mx-4 rounded-card glass-1 p-5 space-y-4 animate-spring-in" style={{ animationDelay: "220ms" }}>
           <div className="flex items-center justify-between">
             <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Sleep Stage Averages</p>
             <span className="text-[11px] text-ink-3">{sleepStageAvg.nights} nights</span>
@@ -327,7 +327,7 @@ export default function HealthTab({
       )}
 
       {/* ── Last Night ───────────────────────────────────────── */}
-      <section className="mx-4 rounded-card border border-line bg-surface p-5 shadow-card animate-spring-in" style={{ animationDelay: "240ms" }}>
+      <section className="mx-4 rounded-card glass-1 p-5 animate-spring-in" style={{ animationDelay: "240ms" }}>
         <p className="mb-4 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Last Night</p>
         {hasLastNight ? (
           <div className="grid grid-cols-2 gap-2">
@@ -356,7 +356,7 @@ export default function HealthTab({
 
       {/* ── Personal Records ─────────────────────────────────── */}
       {hasRecords && (
-        <section className="mx-4 rounded-card border border-line bg-surface p-5 shadow-card animate-spring-in" style={{ animationDelay: "280ms" }}>
+        <section className="mx-4 rounded-card glass-1 p-5 animate-spring-in" style={{ animationDelay: "280ms" }}>
           <p className="mb-4 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Personal Records</p>
           <div className="grid grid-cols-3 gap-2">
             {personalRecords.bestSleep && (

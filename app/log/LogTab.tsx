@@ -261,7 +261,7 @@ export default function LogTab({
               { label: "Alcohol", val: `${weeklyStats.alcohol_drinks} drinks` },
               { label: "Workouts", val: `${weeklyStats.workout_days}×` },
             ].map((s) => (
-              <div key={s.label} className="flex-1 rounded-card border border-line bg-surface p-3 shadow-card text-center">
+              <div key={s.label} className="flex-1 rounded-card glass-1 p-3 text-center">
                 <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-ink-3">{s.label}</p>
                 <p className="mt-1 font-mono text-[15px] font-semibold tabular-nums text-ink">{s.val}</p>
                 <p className="text-[9px] text-ink-3">7-day</p>
@@ -278,7 +278,7 @@ export default function LogTab({
 
         {/* Day totals */}
         <div className="flex gap-2.5 px-4 animate-spring-in" style={{ animationDelay: "80ms" }}>
-          <div className="flex-1 rounded-card border border-line bg-surface p-4 shadow-card">
+          <div className="flex-1 rounded-card glass-1 p-4">
             <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Caffeine</p>
             <p className="mt-1.5 font-mono text-lg font-medium tabular-nums"
               style={{ color: todayCaffeine > 400 ? "var(--color-rose)" : todayCaffeine > 200 ? "var(--color-amber)" : "var(--color-ink)" }}>
@@ -292,7 +292,7 @@ export default function LogTab({
               <p className="mt-0.5 text-[10px]" style={{ color: "var(--color-amber)" }}>Moderate intake</p>
             )}
           </div>
-          <div className="flex-1 rounded-card border border-line bg-surface p-4 shadow-card">
+          <div className="flex-1 rounded-card glass-1 p-4">
             <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Alcohol</p>
             <p className="mt-1.5 font-mono text-lg font-medium tabular-nums"
               style={{ color: todayAlcohol >= 3 ? "var(--color-rose)" : todayAlcohol >= 2 ? "var(--color-amber)" : "var(--color-ink)" }}>
@@ -332,7 +332,7 @@ export default function LogTab({
             <button
               key={type}
               onClick={() => openModal(type)}
-              className="rounded-control border border-line bg-surface px-2 py-3 text-[11px] font-medium text-ink shadow-card transition-transform active:scale-[0.97] min-h-[44px] capitalize"
+              className="rounded-control glass-1 px-2 py-3 text-[11px] font-medium text-ink transition-transform active:scale-[0.97] min-h-[44px] capitalize"
             >
               {type}
             </button>
@@ -368,7 +368,7 @@ export default function LogTab({
             </button>
           </div>
           {entries.length === 0 ? (
-            <div className="rounded-card border border-line bg-surface p-5 shadow-card text-center">
+            <div className="rounded-card glass-1 p-5 text-center">
               <p className="text-[14px] font-medium text-ink">Nothing logged {isToday ? "today" : "this day"}.</p>
               <p className="mt-1 text-[13px] text-ink-3">Tap a button above to start tracking.</p>
             </div>
@@ -377,7 +377,7 @@ export default function LogTab({
               {entries.map((entry) => (
                 <li
                   key={entry.id}
-                  className="flex items-start gap-3 rounded-card border border-line bg-surface px-4 py-4 shadow-card"
+                  className="flex items-start gap-3 rounded-card glass-1 px-4 py-4"
                 >
                   <span className="mt-0.5 shrink-0 text-ink-2">
                     <EntryIcon type={entry.type} />
@@ -427,7 +427,7 @@ export default function LogTab({
           onClick={closeModal}
         >
           <div
-            className="w-full rounded-t-[28px] border-t border-line bg-surface px-5 pt-5 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] shadow-[0_-4px_24px_rgba(0,0,0,0.35)]"
+            className="w-full rounded-t-sheet glass-2 px-5 pt-5 pb-[calc(env(safe-area-inset-bottom)+1.5rem)]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Drag handle */}

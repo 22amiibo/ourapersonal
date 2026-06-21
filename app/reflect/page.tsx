@@ -133,7 +133,7 @@ export default function ReflectPage() {
       </header>
 
       {showSearch && (
-        <section className="mx-4 space-y-3 rounded-card border border-line bg-surface p-5 shadow-card animate-spring-in">
+        <section className="mx-4 space-y-3 rounded-card glass-1 p-5 animate-spring-in">
           <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Search past reflections</p>
           <div className="flex gap-2">
             <input
@@ -169,7 +169,7 @@ export default function ReflectPage() {
       )}
 
       {/* Today's prompt + compose area */}
-      <section className="mx-4 rounded-card border border-line bg-surface p-5 shadow-card animate-spring-in" style={{ animationDelay: "80ms" }}>
+      <section className="mx-4 rounded-card glass-1 p-5 animate-spring-in" style={{ animationDelay: "80ms" }}>
         <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Today&apos;s Prompt</p>
         <p className="mb-4 text-[15px] font-medium leading-relaxed text-ink">{prompt}</p>
         <div className="h-px bg-line mb-4" />
@@ -203,7 +203,7 @@ export default function ReflectPage() {
       </div>
       </section>
 
-      <section className="mx-4 rounded-card border border-line bg-surface p-5 shadow-card animate-spring-in" style={{ animationDelay: "240ms" }}>
+      <section className="mx-4 rounded-card glass-1 p-5 animate-spring-in" style={{ animationDelay: "240ms" }}>
         <p className="mb-4 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Past Reflections</p>
         {reflections.length ? (
           <ul className="space-y-3">
