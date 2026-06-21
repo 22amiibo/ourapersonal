@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { sql } from "@/lib/db";
 import { extractWithTool, MODEL } from "@/lib/anthropic";
 import { briefingTool, BRIEFING_SYSTEM, weeklyNoteTool, monthlyNarrativeTool } from "@/lib/prompts";
@@ -8,10 +9,11 @@ import { sendPushToUser } from "@/lib/push";
 import { advanceFacts } from "@/lib/pipeline/facts";
 import { advanceFeatureVectors } from "@/lib/pipeline/features";
 import { advanceDailySummary, advanceWeeklySummary, advanceMonthlySummary, advanceEmbeddings } from "@/lib/pipeline/summaries";
-// The following stages are implemented by Agent 3 (patterns / insights / predictions).
 import { advancePatterns, advanceAnomalies } from "@/lib/pipeline/patterns";
 import { advanceInsights, evaluateInsightDecay } from "@/lib/pipeline/insights";
 import { advancePredictions, evaluatePredictions } from "@/lib/pipeline/predictions";
+import { semanticRetrieve, fullTextRetrieve, logRetrieval, RETRIEVAL_BUDGETS } from "@/lib/memory";
+import { embedText } from "@/lib/embeddings";
 
 export const USER_ID = 1;
 
@@ -20,49 +22,114 @@ export async function userTz(): Promise<string> {
   return (rows[0] as { timezone?: string })?.timezone || "America/New_York";
 }
 
-export async function generateBriefing(tz: string) {
+type BriefingOutput = {
+  headline: string;
+  key_risk: string;
+  key_opportunity: string;
+  important_event?: string;
+  recommended_action: string;
+  sources: string[];
+};
+
+export async function generateBriefing(tz: string): Promise<BriefingOutput> {
   const today = localDateStr(tz);
-  const weekAgo = daysAgoStr(tz, 7);
   const twoWeeksAhead = daysAheadStr(tz, 14);
 
-  const reflections = await sql`
-    SELECT r.entry_date, r.raw_text, m.confidence_level, m.topics, m.pending_work, m.blockers
-    FROM reflections r LEFT JOIN reflection_metadata m ON m.reflection_id = r.id
-    WHERE r.user_id = ${USER_ID} AND r.entry_date >= ${weekAgo}
-    ORDER BY r.entry_date ASC
-  `;
-  const oura = await sql`
-    SELECT day, sleep_score, readiness_score, hrv_avg, resting_hr, total_sleep_seconds
-    FROM oura_daily WHERE user_id = ${USER_ID} AND day >= ${weekAgo} ORDER BY day ASC
-  `;
-  const events = await sql`
-    SELECT title, kind, starts_at FROM calendar_events
-    WHERE user_id = ${USER_ID} AND starts_at >= ${today} AND starts_at <= ${twoWeeksAhead}
-    ORDER BY starts_at ASC
-  `;
+  // Compute data_hash from four signals (spec §4.3)
+  const [ouraRow, calRow, insightRow, predRow] = await Promise.all([
+    sql`SELECT COALESCE(MAX(day)::text, '') AS v FROM oura_daily WHERE user_id = ${USER_ID}`,
+    sql`SELECT COALESCE(MAX(starts_at::text), '') AS v FROM calendar_events WHERE user_id = ${USER_ID} AND starts_at >= ${today}`,
+    sql`SELECT COALESCE(MAX(updated_at::text), '') AS v FROM insights WHERE user_id = ${USER_ID} AND status = 'active'`,
+    sql`SELECT COUNT(*)::text AS v FROM prediction_records WHERE user_id = ${USER_ID} AND evaluated_at IS NULL AND target_date >= ${today}`,
+  ]);
+  const dataHash = crypto.createHash("sha256").update(
+    [(ouraRow[0] as { v: string }).v, (calRow[0] as { v: string }).v,
+     (insightRow[0] as { v: string }).v, (predRow[0] as { v: string }).v].join("|")
+  ).digest("hex");
 
-  const context = { today, reflections, oura, upcoming_events: events };
+  // Return cached briefing when data unchanged
+  const cached = await sql`
+    SELECT context_window, data_hash FROM briefings
+    WHERE user_id = ${USER_ID} AND briefing_date = ${today} LIMIT 1
+  `;
+  if (cached.length > 0) {
+    const row = cached[0] as { context_window: Record<string, unknown>; data_hash: string | null };
+    if (row.data_hash === dataHash) return row.context_window as BriefingOutput;
+  }
 
-  const out = await extractWithTool<{ headline: string; summary: string; actions: string[] }>({
+  // Retrieve context from memory (spec §9) — semantic with full-text fallback
+  const budget = RETRIEVAL_BUDGETS.morning_briefing;
+  let memRecords = await (async () => {
+    try {
+      const vec = await embedText(`morning briefing health performance ${today}`);
+      return await semanticRetrieve(USER_ID, vec, budget);
+    } catch {
+      return fullTextRetrieve(USER_ID, `health performance ${today}`, budget);
+    }
+  })();
+  if (memRecords.length > 0) logRetrieval(USER_ID, memRecords, "morning_briefing", dataHash).catch(() => {});
+
+  // Calendar events + predictions — chronological, not semantic
+  const [calendarEvents, predictions, featureRows] = await Promise.all([
+    sql`SELECT title, kind, starts_at FROM calendar_events
+        WHERE user_id = ${USER_ID} AND starts_at >= ${today} AND starts_at <= ${twoWeeksAhead}
+        ORDER BY starts_at ASC LIMIT 5`,
+    sql`SELECT prediction_type, prediction, confidence::text, target_date::text FROM prediction_records
+        WHERE user_id = ${USER_ID} AND evaluated_at IS NULL AND target_date >= ${today}
+        ORDER BY target_date ASC LIMIT 3`,
+    sql`SELECT wellness_score, academic_momentum, recovery_index, cognitive_load_index
+        FROM daily_feature_vectors WHERE user_id = ${USER_ID} AND vector_date = ${today} LIMIT 1`,
+  ]);
+
+  const dailySummaries = memRecords.filter((r) => r.source_type === "daily_summary");
+  const insights = memRecords.filter((r) => r.source_type === "insight");
+  const sourceTypes = [...new Set(memRecords.map((r) => r.source_type))];
+  if (featureRows.length > 0) sourceTypes.push("feature_vector");
+
+  type CalRow = { title: string; kind: string; starts_at: string };
+  type PredRow = { prediction: string; confidence: string; target_date: string };
+
+  const lines = [
+    `Today is ${today}.`, "",
+    "RECENT DAILY SUMMARIES:",
+    ...(dailySummaries.length > 0 ? dailySummaries.map((r) => `${r.source_date}: ${r.content}`) : ["(none yet)"]),
+    "", "ACTIVE INSIGHTS:",
+    ...(insights.length > 0 ? insights.map((r) => `• ${r.content}`) : ["(none yet)"]),
+    "", "UPCOMING EVENTS:",
+    ...(calendarEvents.length > 0
+      ? (calendarEvents as CalRow[]).map((e) => `${e.starts_at}: ${e.title} (${e.kind})`)
+      : ["(none)"]),
+    "", "ACTIVE PREDICTIONS:",
+    ...(predictions.length > 0
+      ? (predictions as PredRow[]).map((p) => `${p.target_date}: ${p.prediction} (confidence ${p.confidence})`)
+      : ["(none)"]),
+  ];
+  if (featureRows.length > 0) {
+    const fv = featureRows[0] as Record<string, unknown>;
+    lines.push("", `TODAY'S SCORES: wellness=${fv.wellness_score}, academic=${fv.academic_momentum}, recovery=${fv.recovery_index}, cognitive_load=${fv.cognitive_load_index}`);
+  }
+
+  const out = await extractWithTool<BriefingOutput>({
     system: BRIEFING_SYSTEM,
-    userText: `Data for today's briefing (today is ${today}):\n\n${JSON.stringify(context, null, 2)}`,
+    userText: lines.join("\n"),
     tool: briefingTool,
-    maxTokens: 1500,
+    maxTokens: 1000,
   });
+  if (!out.sources || out.sources.length === 0) out.sources = sourceTypes;
 
   await sql`
     INSERT INTO briefings
-      (user_id, briefing_date, summary_text, recommendations, context_window, model_version, generated_at)
-    VALUES (${USER_ID}, ${today}, ${out.summary}, ${JSON.stringify(out.actions ?? [])},
-            ${JSON.stringify({ ...context, headline: out.headline })}, ${MODEL}, NOW())
+      (user_id, briefing_date, summary_text, recommendations, context_window, model_version, data_hash, generated_at)
+    VALUES (${USER_ID}, ${today}, ${out.key_risk ?? ""}, ${JSON.stringify([out.recommended_action ?? ""])},
+            ${JSON.stringify(out)}, ${MODEL}, ${dataHash}, NOW())
     ON CONFLICT (user_id, briefing_date) DO UPDATE
       SET summary_text = EXCLUDED.summary_text, recommendations = EXCLUDED.recommendations,
-          context_window = EXCLUDED.context_window, model_version = EXCLUDED.model_version, generated_at = NOW()
+          context_window = EXCLUDED.context_window, model_version = EXCLUDED.model_version,
+          data_hash = EXCLUDED.data_hash, generated_at = NOW()
   `;
 
   try {
-    const pushBody = out.headline ?? out.summary?.slice(0, 120) ?? "Your morning briefing is ready.";
-    await sendPushToUser(USER_ID, "Morning briefing", pushBody);
+    await sendPushToUser(USER_ID, "Morning briefing", out.headline ?? out.key_risk?.slice(0, 120) ?? "Your briefing is ready.");
   } catch {}
 
   return out;

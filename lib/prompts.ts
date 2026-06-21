@@ -46,37 +46,49 @@ export const reflectionExtractionTool: Anthropic.Tool = {
 
 export const briefingTool: Anthropic.Tool = {
   name: "write_briefing",
-  description: "Write the morning briefing with a single headline card and 1–3 concrete actions.",
+  description: "Write the morning briefing as a structured intelligence card (spec Section 9.2).",
   input_schema: {
     type: "object",
     properties: {
       headline: {
         type: "string",
         description:
-          "A single punchy sentence (≤ 12 words) naming the most important thing about today — e.g. 'Big day — 3 meetings, readiness 62. Protect your evening.' or 'Strong recovery. Good day to push hard.'",
+          "A single punchy sentence (≤ 12 words) naming today's single most important thing. Works standalone as a push notification.",
       },
-      summary: {
+      key_risk: {
         type: "string",
         description:
-          "A concise 1-paragraph briefing connecting recent reflections, sleep/recovery, and upcoming events.",
+          "The most important risk or challenge to manage today. 1–2 sentences. Specific, not generic.",
       },
-      actions: {
+      key_opportunity: {
+        type: "string",
+        description:
+          "The most actionable positive opportunity available today. 1–2 sentences.",
+      },
+      important_event: {
+        type: "string",
+        description:
+          "The single most time-sensitive upcoming event or deadline within 7 days. Omit if none.",
+      },
+      recommended_action: {
+        type: "string",
+        description: "One specific, concrete action for today. ≤ 15 words.",
+      },
+      sources: {
         type: "array",
         items: { type: "string" },
-        description: "1 to 3 specific, concrete actions for today. Each ≤ 10 words. Prioritize events > sleep > energy.",
-        minItems: 1,
-        maxItems: 3,
+        description: "Source types used, e.g. ['daily_summary', 'insight', 'prediction', 'feature_vector'].",
       },
     },
-    required: ["headline", "summary", "actions"],
+    required: ["headline", "key_risk", "key_opportunity", "recommended_action", "sources"],
   },
 };
 
-export const BRIEFING_SYSTEM = `You are a personal performance assistant writing a crisp morning briefing for one person.
-Use ONLY the data provided. Work with what's there; don't speculate about missing data.
+export const BRIEFING_SYSTEM = `You are a personal performance assistant writing a structured morning intelligence briefing for one person.
+Use ONLY the data provided. Work with what's there; do not speculate about missing data.
 Frame patterns as tentative observations, NEVER as causal claims. Be specific and practical.
-Prioritize upcoming high-stakes events. Keep it calm and encouraging, never alarming. No medical advice.
-Write the headline first — it should work as a standalone notification text.`;
+Prioritize upcoming high-stakes events. Stay calm and encouraging, never alarming. No medical advice.
+Write the headline first — it must work as a standalone push notification.`;
 
 export const weeklyNoteTool: Anthropic.Tool = {
   name: "write_weekly_note",
