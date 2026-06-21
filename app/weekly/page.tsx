@@ -1,6 +1,10 @@
 import { sql } from "@/lib/db";
 import { USER_ID } from "@/lib/jobs";
+import { gradeFromScore, type Grade } from "@/lib/scores";
 import WeeklyShareButton from "./WeeklyShareButton";
+
+// Per-user data backed by the DB — render per request, never prerender at build.
+export const dynamic = "force-dynamic";
 
 type WeeklyRow = {
   week_of: string;
@@ -38,16 +42,8 @@ function formatMonthLabel(monthOf: string): string {
   });
 }
 
-type Grade = { letter: string; color: string };
-
 function grade(score: string | null): Grade {
-  const n = Number(score);
-  if (!score || !Number.isFinite(n)) return { letter: "—", color: "var(--color-ink-3)" };
-  if (n >= 85) return { letter: "A", color: "var(--color-accent)" };
-  if (n >= 75) return { letter: "B", color: "var(--color-accent-blue)" };
-  if (n >= 65) return { letter: "C", color: "var(--color-amber)" };
-  if (n >= 55) return { letter: "D", color: "var(--color-amber)" };
-  return { letter: "F", color: "var(--color-rose)" };
+  return gradeFromScore(score == null ? null : Number(score));
 }
 
 function delta(a: string | null, b: string | null): string | null {
@@ -64,17 +60,25 @@ function deltaColor(d: string | null): string {
 }
 
 function Stat({ label, value, g, change }: { label: string; value: string; g: Grade; change?: string | null }) {
+  const arrow = change
+    ? change.startsWith("+") ? " ↑" : change.startsWith("-") ? " ↓" : ""
+    : "";
   return (
     <div className="rounded-control border border-line bg-surface-2 p-3">
       <div className="flex items-center justify-between mb-0.5">
         <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-ink-3">{label}</p>
-        <span className="font-mono text-[15px] font-bold" style={{ color: g.color }}>{g.letter}</span>
+        <span
+          className="rounded px-1.5 py-0.5 font-mono text-[13px] font-bold"
+          style={{ color: g.color, background: `color-mix(in oklch, ${g.color} 12%, transparent)` }}
+        >
+          {g.letter}
+        </span>
       </div>
-      <div className="flex items-baseline gap-2">
+      <div className="flex items-baseline gap-1.5">
         <p className="font-mono text-[18px] font-semibold tabular-nums text-ink">{value}</p>
         {change && (
           <span className="font-mono text-[11px] tabular-nums" style={{ color: deltaColor(change) }}>
-            {change}
+            {change}{arrow}
           </span>
         )}
       </div>
@@ -122,7 +126,7 @@ export default async function WeeklyPage() {
       {narratives.length > 0 && (
         <section className="space-y-3 animate-spring-in" style={{ animationDelay: "80ms" }}>
           {narratives.map((n) => (
-            <div key={n.month_of} className="mx-4 rounded-card border border-line bg-surface p-5 shadow-card">
+            <div key={n.month_of} className="mx-4 rounded-card glass-1 p-5">
               <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">
                 {formatMonthLabel(n.month_of)}
               </p>
@@ -137,13 +141,41 @@ export default async function WeeklyPage() {
       )}
 
       {weeks.length === 0 ? (
-        <div className="mx-4 rounded-card border border-line bg-surface p-5 shadow-card animate-spring-in" style={{ animationDelay: "160ms" }}>
-          <p className="text-[14px] leading-relaxed text-ink-3">
-            No weekly data yet. Your patterns will appear here after a week of tracking.
-          </p>
+        <div className="mx-4 rounded-card glass-1 p-5 animate-spring-in text-center" style={{ animationDelay: "160ms" }}>
+          <p className="text-[15px] font-medium text-ink">No data yet.</p>
+          <p className="mt-1 text-[13px] text-ink-3">Your weekly patterns appear after 7+ days of Oura data.</p>
         </div>
       ) : (
-        weeks.map((w, i) => {
+        <>
+          {weeks.length >= 4 && (() => {
+            const validSleep = weeks.filter((w) => w.sleep_avg != null);
+            const validReady = weeks.filter((w) => w.readiness_avg != null);
+            const avgSleep = validSleep.length
+              ? (validSleep.reduce((s, w) => s + Number(w.sleep_avg), 0) / validSleep.length).toFixed(1)
+              : null;
+            const avgReady = validReady.length
+              ? (validReady.reduce((s, w) => s + Number(w.readiness_avg), 0) / validReady.length).toFixed(1)
+              : null;
+            const bestSleepWeek = validSleep.length
+              ? validSleep.reduce((best, w) => Number(w.sleep_avg) > Number(best.sleep_avg) ? w : best)
+              : null;
+            return (
+              <section className="mx-4 rounded-card glass-1 p-5 animate-spring-in" style={{ animationDelay: "160ms" }}>
+                <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">12-Week Overview</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {avgSleep && <StatPlain label="Avg Sleep" value={avgSleep} />}
+                  {avgReady && <StatPlain label="Avg Readiness" value={avgReady} />}
+                </div>
+                {bestSleepWeek && (
+                  <p className="mt-3 text-[12px] text-ink-3">
+                    Best sleep: <span className="font-semibold text-accent">{fmt(bestSleepWeek.sleep_avg)}</span> — {formatWeekRange(bestSleepWeek.week_of)}
+                  </p>
+                )}
+              </section>
+            );
+          })()}
+
+        {weeks.map((w, i) => {
           const prev = weeks[i + 1] ?? null;
           const sleepGrade = grade(w.sleep_avg);
           const readyGrade = grade(w.readiness_avg);
@@ -153,7 +185,7 @@ export default async function WeeklyPage() {
           return (
             <section
               key={w.week_of}
-              className="mx-4 space-y-4 rounded-card border border-line bg-surface p-5 shadow-card animate-spring-in"
+              className="mx-4 space-y-4 rounded-card glass-1 p-5 animate-spring-in"
               style={{ animationDelay: `${(i + 2) * 60}ms` }}
             >
               <div className="flex items-center justify-between">
@@ -183,7 +215,8 @@ export default async function WeeklyPage() {
               )}
             </section>
           );
-        })
+        })}
+        </>
       )}
     </main>
   );

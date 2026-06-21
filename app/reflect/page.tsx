@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import ChartContainer from "@/app/components/ui/ChartContainer";
 
 type PastReflection = {
   id: number;
   entry_date: string;
   raw_text: string;
   confidence_level: number | null;
+  readiness_score: number | null;
+  sleep_score: number | null;
 };
 
 const PROMPTS = [
@@ -113,10 +114,13 @@ export default function ReflectPage() {
       <header className="flex items-start justify-between px-4 animate-spring-in">
         <div>
           <h1 className="text-[22px] font-semibold tracking-tight text-ink">Reflect</h1>
-          {streak > 0 && (
-            <p className="mt-0.5 text-[13px] font-medium text-accent">
-              {streak}-day streak
-            </p>
+          {streak > 0 ? (
+            <div className="mt-1 flex items-center gap-1.5">
+              <span className="flex h-2 w-2 rounded-full bg-accent" />
+              <p className="text-[13px] font-medium text-accent">{streak}-day streak</p>
+            </div>
+          ) : (
+            <p className="mt-0.5 text-[13px] text-ink-3">Write tonight to start a streak.</p>
           )}
         </div>
         <button
@@ -129,7 +133,7 @@ export default function ReflectPage() {
       </header>
 
       {showSearch && (
-        <section className="mx-4 space-y-3 rounded-card border border-line bg-surface p-5 shadow-card animate-spring-in">
+        <section className="mx-4 space-y-3 rounded-card glass-1 p-5 animate-spring-in">
           <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Search past reflections</p>
           <div className="flex gap-2">
             <input
@@ -164,19 +168,19 @@ export default function ReflectPage() {
         </section>
       )}
 
-      {/* Today's prompt — styled as a quote block */}
-      <div className="px-4 animate-spring-in" style={{ animationDelay: "80ms" }}>
-        <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Today&apos;s Prompt</p>
-        <p className="text-[16px] font-medium leading-relaxed text-ink">{prompt}</p>
-      </div>
+      {/* Today's prompt + compose area */}
+      <section className="mx-4 rounded-card glass-1 p-5 animate-spring-in" style={{ animationDelay: "80ms" }}>
+        <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Today&apos;s Prompt</p>
+        <p className="mb-4 text-[15px] font-medium leading-relaxed text-ink">{prompt}</p>
+        <div className="h-px bg-line mb-4" />
 
-      <section className="px-4 space-y-3 animate-spring-in" style={{ animationDelay: "160ms" }}>
+      <div className="space-y-3">
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
-          rows={7}
+          rows={6}
           placeholder="Write freely — or respond to the prompt above…"
-          className="w-full rounded-control border border-line bg-surface px-4 py-3.5 text-[15px] leading-relaxed text-ink placeholder-ink-3 transition-all duration-200 focus:border-accent focus:outline-none"
+          className="w-full rounded-control border border-line bg-bg px-4 py-3.5 text-[15px] leading-relaxed text-ink placeholder-ink-3 transition-all duration-200 focus:border-accent focus:outline-none"
         />
         <button
           onClick={save}
@@ -196,35 +200,58 @@ export default function ReflectPage() {
             {msg}
           </div>
         )}
+      </div>
       </section>
 
-      <div className="mx-4 animate-spring-in" style={{ animationDelay: "240ms" }}>
-        <ChartContainer title="Past reflections">
-          {reflections.length ? (
-            <ul className="space-y-3">
-              {reflections.map((r) => (
-                <li key={r.id} className="rounded-control border border-line bg-surface-2 p-3.5">
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="font-mono text-[11px] tabular-nums text-ink-3">{r.entry_date}</span>
-                    {"share" in (typeof navigator !== "undefined" ? navigator : {}) && (
-                      <button
-                        onClick={() => shareReflection(r.raw_text)}
-                        aria-label="Share"
-                        className="text-ink-3 transition-colors hover:text-ink active:scale-95 flex min-h-[36px] min-w-[36px] items-center justify-center"
-                      >
-                        <ShareIcon />
-                      </button>
+      <section className="mx-4 rounded-card glass-1 p-5 animate-spring-in" style={{ animationDelay: "240ms" }}>
+        <p className="mb-4 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Past Reflections</p>
+        {reflections.length ? (
+          <ul className="space-y-3">
+            {reflections.map((r) => (
+              <li key={r.id} className="rounded-control border border-line bg-surface-2 p-3.5">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="font-mono text-[11px] tabular-nums text-ink-3 shrink-0">{r.entry_date}</span>
+                    {r.readiness_score != null && (
+                      <span className="rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold tabular-nums"
+                        style={{ color: "var(--color-accent)", background: "color-mix(in oklch, var(--color-accent) 10%, transparent)" }}>
+                        R{r.readiness_score}
+                      </span>
+                    )}
+                    {r.sleep_score != null && (
+                      <span className="rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold tabular-nums"
+                        style={{ color: "var(--color-accent-blue)", background: "color-mix(in oklch, var(--color-accent-blue) 10%, transparent)" }}>
+                        S{r.sleep_score}
+                      </span>
+                    )}
+                    {r.confidence_level != null && (
+                      <span className="rounded px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-ink-3"
+                        style={{ background: "var(--color-surface-3)" }}>
+                        {r.confidence_level}/10
+                      </span>
                     )}
                   </div>
-                  <p className="text-[14px] leading-relaxed text-ink-2">{r.raw_text}</p>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-[14px] leading-relaxed text-ink-3">No reflections yet. Write your first above.</p>
-          )}
-        </ChartContainer>
-      </div>
+                  {"share" in (typeof navigator !== "undefined" ? navigator : {}) && (
+                    <button
+                      onClick={() => shareReflection(r.raw_text)}
+                      aria-label="Share"
+                      className="text-ink-3 transition-colors hover:text-ink active:scale-95 flex min-h-[36px] min-w-[36px] items-center justify-center shrink-0"
+                    >
+                      <ShareIcon />
+                    </button>
+                  )}
+                </div>
+                <p className="text-[14px] leading-relaxed text-ink-2">{r.raw_text}</p>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="rounded-control border border-line bg-surface-2 p-4 text-center">
+            <p className="text-[14px] font-medium text-ink">No reflections yet.</p>
+            <p className="mt-1 text-[13px] text-ink-3">Your first entry above starts a streak.</p>
+          </div>
+        )}
+      </section>
     </main>
   );
 }

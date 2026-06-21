@@ -13,34 +13,44 @@ export default function CorrelationBar({ r }: { r: CorrelationResult }) {
   const withPct = Math.max(0, Math.min(100, r.withFactor * scale));
   const withoutPct = Math.max(0, Math.min(100, r.withoutFactor * scale));
 
+  // When delta < 0 (factor hurts), "with" is worse → rose; "without" is better → accent
+  // When delta > 0 (factor helps), "with" is better → accent; "without" is worse → rose
+  const withColor = negative ? "var(--color-rose)" : "var(--color-accent)";
+  const withoutColor = negative ? "var(--color-accent)" : "var(--color-rose)";
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-[13px] font-medium text-ink capitalize">{factor}</p>
-          {metric && <p className="text-[10px] text-ink-3 capitalize">{metric}</p>}
+          <p className="text-[13px] font-semibold text-ink capitalize">{factor}</p>
+          {metric && <p className="mt-0.5 text-[11px] text-ink-3 capitalize">→ {metric}</p>}
         </div>
-        <span className={`shrink-0 tabular-nums font-mono text-[13px] font-semibold ${negative ? "text-rose" : "text-accent"}`}>
-          {r.delta > 0 ? "+" : ""}{r.delta.toFixed(1)}
-        </span>
+        <div className="shrink-0 text-right">
+          <span
+            className="font-mono text-[15px] font-bold tabular-nums"
+            style={{ color: negative ? "var(--color-rose)" : "var(--color-accent)" }}
+          >
+            {r.delta > 0 ? "+" : ""}{r.delta.toFixed(1)}
+          </span>
+          <p className="text-[10px] text-ink-3">{r.n} nights</p>
+        </div>
       </div>
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <div className="flex items-center gap-2">
           <span className="w-[46px] shrink-0 text-right text-[10px] text-ink-3">With</span>
-          <div className="flex-1 h-[5px] rounded-full overflow-hidden bg-surface-3">
-            <div className="h-full rounded-full bg-rose transition-all" style={{ width: `${withPct}%` }} />
+          <div className="flex-1 h-[6px] rounded-full overflow-hidden bg-surface-3">
+            <div className="h-full rounded-full transition-all" style={{ width: `${withPct}%`, background: withColor }} />
           </div>
-          <span className="w-[24px] shrink-0 text-right font-mono text-[11px] tabular-nums text-ink-2">{r.withFactor}</span>
+          <span className="w-[26px] shrink-0 text-right font-mono text-[11px] tabular-nums text-ink-2">{r.withFactor}</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="w-[46px] shrink-0 text-right text-[10px] text-ink-3">Without</span>
-          <div className="flex-1 h-[5px] rounded-full overflow-hidden bg-surface-3">
-            <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${withoutPct}%` }} />
+          <div className="flex-1 h-[6px] rounded-full overflow-hidden bg-surface-3">
+            <div className="h-full rounded-full transition-all" style={{ width: `${withoutPct}%`, background: withoutColor }} />
           </div>
-          <span className="w-[24px] shrink-0 text-right font-mono text-[11px] tabular-nums text-ink-2">{r.withoutFactor}</span>
+          <span className="w-[26px] shrink-0 text-right font-mono text-[11px] tabular-nums text-ink-2">{r.withoutFactor}</span>
         </div>
       </div>
-      <p className="text-[10px] text-ink-3">{r.n} nights of data</p>
     </div>
   );
 }

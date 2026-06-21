@@ -22,6 +22,28 @@ export const zoneLabel: Record<Zone, string> = {
   low: "Low",
 };
 
+export type Grade = { letter: string; color: string };
+
+/**
+ * Single source of truth for letter grades across the app (dashboard
+ * Wellness, Weekly review). Returns the letter plus its semantic color
+ * so callers never re-invent thresholds. Pass null for missing data.
+ */
+export function gradeFromScore(score: number | null | undefined): Grade {
+  if (score == null || !Number.isFinite(score)) {
+    return { letter: "—", color: "var(--color-ink-3)" };
+  }
+  if (score >= 90) return { letter: "A+", color: "var(--color-accent)" };
+  if (score >= 85) return { letter: "A",  color: "var(--color-accent)" };
+  if (score >= 80) return { letter: "A−", color: "var(--color-accent)" };
+  if (score >= 75) return { letter: "B+", color: "var(--color-accent-blue)" };
+  if (score >= 70) return { letter: "B",  color: "var(--color-accent-blue)" };
+  if (score >= 65) return { letter: "B−", color: "var(--color-accent-blue)" };
+  if (score >= 60) return { letter: "C",  color: "var(--color-amber)" };
+  if (score >= 55) return { letter: "D",  color: "var(--color-amber)" };
+  return { letter: "F", color: "var(--color-rose)" };
+}
+
 export type FeatureVector = {
   user_id: number;
   vector_date: string;

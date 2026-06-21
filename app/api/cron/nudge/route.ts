@@ -13,13 +13,32 @@ export async function GET(req: Request) {
   try {
     const tz = await userTz();
     const today = localDateStr(tz);
+    const results: Record<string, unknown> = {};
+
+    // Check wind-down time setting
+    const windDownRows = await sql`SELECT value FROM settings WHERE key = 'wind_down_time'`;
+    const windDownTime = (windDownRows[0] as { value: string } | undefined)?.value ?? null;
+    if (windDownTime) {
+      const nowInTz = new Date(new Date().toLocaleString("en-US", { timeZone: tz }));
+      const currentHHMM = `${String(nowInTz.getHours()).padStart(2, "0")}:${String(nowInTz.getMinutes()).padStart(2, "0")}`;
+      // Fire wind-down push if within 15 minutes of configured time
+      const toMins = (hhmm: string) => {
+        const [h, m] = hhmm.split(":").map(Number);
+        return h * 60 + m;
+      };
+      const diff = toMins(currentHHMM) - toMins(windDownTime);
+      if (diff >= 0 && diff < 15) {
+        await sendPushToUser(USER_ID, "Wind-down time", "Time to wind down — dim the lights and unplug for a better night's sleep.");
+        results.windDown = "sent";
+      }
+    }
 
     const rows = await sql`
       SELECT COUNT(*)::int AS cnt FROM reflections
       WHERE user_id = ${USER_ID} AND to_char(entry_date, 'YYYY-MM-DD') = ${today}
     `;
     const count = (rows[0] as { cnt: number }).cnt;
-    if (count > 0) return NextResponse.json({ ok: true, skipped: "already reflected" });
+    if (count > 0) return NextResponse.json({ ok: true, skipped: "already reflected", ...results });
 
     const dateRows = await sql`
       SELECT DISTINCT to_char(entry_date, 'YYYY-MM-DD') AS entry_date
@@ -41,7 +60,7 @@ export async function GET(req: Request) {
       : "How was your day? Take a moment to reflect.";
 
     await sendPushToUser(USER_ID, "Evening reflection", body);
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, ...results });
   } catch (e) {
     return NextResponse.json({ ok: false, error: String(e) }, { status: 500 });
   }

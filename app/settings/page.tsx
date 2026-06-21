@@ -17,11 +17,16 @@ const TIMEZONES = [
 ];
 
 const GOAL_KINDS = [
-  { kind: "sleep_hours_gte",             label: "Sleep ≥ hours/night",       placeholder: "e.g. 7.5" },
-  { kind: "reflect_daily",               label: "Reflect daily",             placeholder: "" },
-  { kind: "caffeine_before_hour",        label: "Caffeine before hour",      placeholder: "e.g. 14" },
-  { kind: "alcohol_free_days_per_week",  label: "Alcohol-free days/week",    placeholder: "e.g. 5" },
-  { kind: "readiness_gte",               label: "Readiness ≥ score",         placeholder: "e.g. 70" },
+  { kind: "sleep_hours_gte",             label: "Sleep ≥ hours/night",        placeholder: "e.g. 7.5" },
+  { kind: "reflect_daily",               label: "Reflect daily",              placeholder: "" },
+  { kind: "caffeine_before_hour",        label: "No caffeine after hour",     placeholder: "e.g. 14" },
+  { kind: "alcohol_free_days_per_week",  label: "Alcohol-free days/week",     placeholder: "e.g. 5" },
+  { kind: "readiness_gte",              label: "Readiness ≥ score",           placeholder: "e.g. 70" },
+  { kind: "workout_days_per_week",       label: "Workout days/week",          placeholder: "e.g. 4" },
+  { kind: "no_phone_before_hour",        label: "No phone before hour",       placeholder: "e.g. 8" },
+  { kind: "meditation_minutes",          label: "Meditate ≥ minutes/day",     placeholder: "e.g. 10" },
+  { kind: "deep_work_hours",             label: "Deep work ≥ hours/day",      placeholder: "e.g. 3" },
+  { kind: "bed_by_hour",                 label: "In bed by hour",             placeholder: "e.g. 23" },
 ];
 
 type Goal = { id: number; kind: string; label: string; target_json: unknown; active: boolean };
@@ -77,7 +82,11 @@ export default function SettingsPage() {
   const [timezone, setTimezone] = useState("America/New_York");
   const [tzSaving, setTzSaving] = useState(false);
   const [tzMsg, setTzMsg] = useState("");
+  const [windDownTime, setWindDownTime] = useState("");
+  const [windDownSaving, setWindDownSaving] = useState(false);
+  const [windDownMsg, setWindDownMsg] = useState("");
 
+  const [ouraConnected, setOuraConnected] = useState<boolean | null>(null);
   const [notifStatus, setNotifStatus] = useState<"idle" | "granted" | "denied" | "unsupported">("idle");
   const [notifLoading, setNotifLoading] = useState(false);
   const [notifMsg, setNotifMsg] = useState("");
@@ -106,7 +115,11 @@ export default function SettingsPage() {
     }
 
     fetch("/api/calendar").then((r) => r.json()).then((d) => { if (d.url) setUrl(d.url); }).catch(() => {});
-    fetch("/api/settings").then((r) => r.json()).then((d) => { if (d.timezone) setTimezone(d.timezone); }).catch(() => {});
+    fetch("/api/settings").then((r) => r.json()).then((d) => {
+      if (d.timezone) setTimezone(d.timezone);
+      if (d.wind_down_time) setWindDownTime(d.wind_down_time);
+      setOuraConnected(d.ouraConnected ?? false);
+    }).catch(() => {});
     loadGoals();
 
     if (!("Notification" in window) || !("serviceWorker" in navigator)) {
@@ -123,6 +136,19 @@ export default function SettingsPage() {
     const d = await res.json();
     setTzMsg(d.ok ? "Timezone saved." : d.error || "Error");
     setTzSaving(false);
+  }
+
+  async function saveWindDown() {
+    setWindDownSaving(true);
+    setWindDownMsg("");
+    const res = await fetch("/api/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ wind_down_time: windDownTime || null }),
+    });
+    const d = await res.json();
+    setWindDownMsg(d.ok ? "Wind-down time saved." : d.error || "Error");
+    setWindDownSaving(false);
   }
 
   async function saveCal() {
@@ -204,6 +230,19 @@ export default function SettingsPage() {
               <p className="text-[14px] text-ink">Oura Ring</p>
               <p className="text-[12px] text-ink-3">Sleep, readiness &amp; HRV</p>
             </div>
+            {ouraConnected === true ? (
+              <div className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-accent" />
+                <span className="text-[13px] text-accent">Connected</span>
+              </div>
+            ) : ouraConnected === false ? (
+              <a
+                href="/api/oura/connect"
+                className="rounded-control bg-accent px-3.5 py-2 text-[13px] font-medium text-bg min-h-[36px] flex items-center transition-all active:scale-[0.98]"
+              >
+                Connect
+              </a>
+            ) : null}
           </Row>
           <Row noBorder>
             <div className="w-full space-y-3">
@@ -227,14 +266,6 @@ export default function SettingsPage() {
             </div>
           </Row>
         </SettingsCard>
-        <div className="mx-4 mt-2 px-1">
-          <a
-            href="/api/oura/connect"
-            className="flex w-full items-center justify-center rounded-control bg-accent px-4 py-3.5 text-center font-medium text-bg min-h-[44px] transition-all active:scale-[0.98]"
-          >
-            Connect Oura Ring
-          </a>
-        </div>
         {ouraMsg && (
           <InlineMsg
             msg={ouraMsg}
@@ -309,6 +340,32 @@ export default function SettingsPage() {
           </Row>
         </SettingsCard>
         {tzMsg && <InlineMsg msg={tzMsg} isError={tzMsg.toLowerCase().includes("error")} />}
+      </section>
+
+      {/* Notifications — Wind-down */}
+      <section className="space-y-0 animate-spring-in" style={{ animationDelay: "300ms" }}>
+        <SectionLabel>Wind-down Reminder</SectionLabel>
+        <SettingsCard>
+          <Row noBorder>
+            <div className="w-full space-y-3">
+              <p className="text-[13px] text-ink-2">Set a nightly wind-down time to receive a push nudge before bed.</p>
+              <input
+                type="time"
+                value={windDownTime}
+                onChange={(e) => setWindDownTime(e.target.value)}
+                className="w-full rounded-control border border-line bg-bg px-4 py-3 font-mono text-[14px] text-ink focus:border-accent focus:outline-none min-h-[44px]"
+              />
+              <button
+                onClick={saveWindDown}
+                disabled={windDownSaving}
+                className="w-full rounded-control bg-accent px-4 py-3.5 font-medium text-bg disabled:opacity-50 min-h-[44px] active:scale-[0.98]"
+              >
+                {windDownSaving ? "Saving…" : "Save Wind-down Time"}
+              </button>
+            </div>
+          </Row>
+        </SettingsCard>
+        {windDownMsg && <InlineMsg msg={windDownMsg} isError={windDownMsg.toLowerCase().includes("error")} />}
       </section>
 
       {/* Goals */}

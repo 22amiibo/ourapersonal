@@ -21,8 +21,11 @@ export async function GET(req: Request) {
   const today = localDateStr(tz);
 
   const reflections = await sql`
-    SELECT r.id, to_char(r.entry_date, 'YYYY-MM-DD') AS entry_date, r.raw_text, m.confidence_level
-    FROM reflections r LEFT JOIN reflection_metadata m ON m.reflection_id = r.id
+    SELECT r.id, to_char(r.entry_date, 'YYYY-MM-DD') AS entry_date, r.raw_text, m.confidence_level,
+           o.readiness_score, o.sleep_score
+    FROM reflections r
+    LEFT JOIN reflection_metadata m ON m.reflection_id = r.id
+    LEFT JOIN oura_daily o ON o.user_id = r.user_id AND o.day = r.entry_date
     WHERE r.user_id = ${USER_ID}
     ORDER BY r.entry_date DESC
     LIMIT ${limit}

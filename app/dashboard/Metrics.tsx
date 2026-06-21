@@ -42,7 +42,7 @@ export default function Metrics() {
     return (
       <div className="flex gap-2 px-4">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="h-[60px] flex-1 animate-pulse rounded-control bg-surface-2" />
+          <div key={i} className="skeleton h-[64px] flex-1 rounded-control" />
         ))}
       </div>
     );
@@ -57,7 +57,7 @@ export default function Metrics() {
         return (
           <div
             key={key}
-            className="flex flex-1 flex-col items-center rounded-control border border-line bg-surface-2 px-2 py-3"
+            className="glass-1 flex flex-1 flex-col items-center rounded-control px-2 py-3"
           >
             <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-ink-3">{label}</p>
             <p className="mt-1 font-mono text-[15px] font-medium tabular-nums text-ink">

@@ -121,8 +121,22 @@ export async function syncOura(userId: number, range: { start: string; end: stri
   const ensure = (d: string) => (byDay[d] ??= { day: d });
 
   for (const r of dailySleep) if (r.day) ensure(r.day).sleep_score = r.score ?? null;
-  for (const r of dailyReadiness) if (r.day) ensure(r.day).readiness_score = r.score ?? null;
-  for (const r of dailyActivity) if (r.day) ensure(r.day).activity_score = r.score ?? null;
+  for (const r of dailyReadiness) {
+    if (!r.day) continue;
+    ensure(r.day).readiness_score = r.score ?? null;
+    if (r.contributors && typeof r.contributors === "object") {
+      ensure(r.day).readiness_contributors = r.contributors;
+    }
+    if (typeof r.temperature_deviation === "number") {
+      ensure(r.day).temperature_deviation = r.temperature_deviation;
+    }
+  }
+  for (const r of dailyActivity) {
+    if (!r.day) continue;
+    ensure(r.day).activity_score = r.score ?? null;
+    if (typeof r.steps === "number") ensure(r.day).steps = r.steps;
+    if (typeof r.active_calories === "number") ensure(r.day).active_calories = r.active_calories;
+  }
 
   // The detailed `sleep` endpoint can return naps too — keep the longest period per day.
   for (const r of sleepDetail) {
@@ -134,6 +148,13 @@ export async function syncOura(userId: number, range: { start: string; end: stri
       e.hrv_avg = r.average_hrv ?? null;
       e.resting_hr = r.lowest_heart_rate ?? null;
       e.total_sleep_seconds = r.total_sleep_duration ?? null;
+      e.rem_sleep_seconds = r.rem_sleep_duration ?? null;
+      e.deep_sleep_seconds = r.deep_sleep_duration ?? null;
+      e.light_sleep_seconds = r.light_sleep_duration ?? null;
+      e.awake_seconds = r.awake_time ?? null;
+      if (typeof r.temperature_deviation === "number" && e.temperature_deviation == null) {
+        e.temperature_deviation = r.temperature_deviation;
+      }
     }
   }
 
