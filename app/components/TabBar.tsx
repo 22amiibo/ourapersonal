@@ -155,12 +155,16 @@ export default function TabBar() {
                 aria-selected={active}
                 aria-current={active ? "page" : undefined}
                 aria-label={t.label}
-                className={`glass-control relative flex flex-col items-center justify-center gap-1 rounded-2xl px-3 py-1.5 transition-all duration-200 active:scale-90 ${
+                className={`relative flex flex-col items-center justify-center gap-1 rounded-2xl px-3 py-1.5 transition-all duration-200 active:scale-90 ${
                   active ? "text-accent" : ""
                 }`}
                 style={{
                   minWidth: 52, minHeight: 48,
-                  color: active ? undefined : "rgba(255,255,255,0.45)",
+                  background: "rgba(255,255,255,0.08)",
+                  border: "1px solid rgba(255,255,255,0.14)",
+                  backdropFilter: "blur(12px)",
+                  WebkitBackdropFilter: "blur(12px)",
+                  color: active ? undefined : "rgba(255,255,255,0.5)",
                 }}
               >
                 <span className="relative">{t.icon(active)}{active && <ActiveDot />}</span>
@@ -181,12 +185,16 @@ export default function TabBar() {
             aria-haspopup="dialog"
             aria-expanded={moreOpen}
             aria-label="More"
-            className={`glass-control relative flex flex-col items-center justify-center gap-1 rounded-2xl px-3 py-1.5 transition-all duration-200 active:scale-90 ${
+            className={`relative flex flex-col items-center justify-center gap-1 rounded-2xl px-3 py-1.5 transition-all duration-200 active:scale-90 ${
               moreActive || moreOpen ? "text-accent" : ""
             }`}
             style={{
               minWidth: 52, minHeight: 48,
-              color: moreActive || moreOpen ? undefined : "rgba(255,255,255,0.45)",
+              background: "rgba(255,255,255,0.08)",
+              border: "1px solid rgba(255,255,255,0.14)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+              color: moreActive || moreOpen ? undefined : "rgba(255,255,255,0.5)",
             }}
           >
             <span className="relative">{MoreIcon(moreActive || moreOpen)}{moreActive && <ActiveDot />}</span>
