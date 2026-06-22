@@ -252,7 +252,7 @@ export default function HealthTab({
           <div className="flex items-end gap-6">
             <div>
               <p className="text-[11px] text-ink-3">7-day avg</p>
-              <p className="mt-1 font-mono text-[30px] font-semibold tabular-nums text-ink leading-none">
+              <p className="mt-1 font-mono text-[30px] font-semibold tabular-nums tracking-[-0.02em] text-ink leading-none">
                 {Math.round(hrvBaseline.current_7d)}
                 <span className="ml-1 text-[13px] font-normal text-ink-3">ms</span>
               </p>

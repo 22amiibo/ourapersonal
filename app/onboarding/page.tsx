@@ -112,7 +112,7 @@ export default function OnboardingPage() {
                     "Discover what affects your performance",
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-3 text-[15px] text-ink-2">
-                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-ink-3" />
                       {item}
                     </li>
                   ))}
@@ -120,7 +120,7 @@ export default function OnboardingPage() {
               </div>
               <button
                 onClick={() => setStep("oura")}
-                className="w-full rounded-control bg-accent px-4 py-3.5 font-medium text-bg min-h-[44px] transition-all duration-200 active:scale-[0.98]"
+                className="w-full rounded-pill bg-accent px-5 py-3.5 font-semibold tracking-[-0.01em] text-bg min-h-[44px] transition-transform duration-200 active:scale-95"
               >
                 Get started
               </button>
@@ -135,7 +135,7 @@ export default function OnboardingPage() {
               </div>
               <a
                 href="/api/oura/connect"
-                className="flex w-full items-center justify-center rounded-control bg-accent px-4 py-3.5 text-center font-medium text-bg min-h-[44px] transition-all duration-200 active:scale-[0.98]"
+                className="flex w-full items-center justify-center rounded-pill bg-accent px-5 py-3.5 text-center font-semibold tracking-[-0.01em] text-bg min-h-[44px] transition-transform duration-200 active:scale-95"
               >
                 Connect Oura Ring
               </a>
@@ -163,7 +163,7 @@ export default function OnboardingPage() {
               </select>
               <button
                 onClick={saveTimezone}
-                className="w-full rounded-control bg-accent px-4 py-3.5 font-medium text-bg min-h-[44px] transition-all duration-200 active:scale-[0.98]"
+                className="w-full rounded-pill bg-accent px-5 py-3.5 font-semibold tracking-[-0.01em] text-bg min-h-[44px] transition-transform duration-200 active:scale-95"
               >
                 {tzSaved ? "Saved" : "Save timezone"}
               </button>
@@ -177,7 +177,7 @@ export default function OnboardingPage() {
                 <p className="mt-1.5 text-[14px] leading-relaxed text-ink-2">Get a push when your morning briefing is ready and a nudge to reflect each evening. Requires this app installed to your home screen.</p>
               </div>
               {notifStatus === "granted" ? (
-                <div className="rounded-control border border-accent/30 bg-accent/5 p-4 text-[14px] text-accent">
+                <div className="rounded-control border border-line bg-surface-2 p-4 text-[14px] text-ink-2">
                   Notifications enabled.
                 </div>
               ) : notifStatus === "denied" ? (
@@ -188,7 +188,7 @@ export default function OnboardingPage() {
                 <button
                   onClick={enableNotifications}
                   disabled={notifLoading}
-                  className="w-full rounded-control bg-accent px-4 py-3.5 font-medium text-bg min-h-[44px] disabled:opacity-50 transition-all duration-200 active:scale-[0.98]"
+                  className="w-full rounded-pill bg-accent px-5 py-3.5 font-semibold tracking-[-0.01em] text-bg min-h-[44px] disabled:opacity-50 transition-transform duration-200 active:scale-95"
                 >
                   {notifLoading ? "Enabling…" : "Enable notifications"}
                 </button>
@@ -211,7 +211,7 @@ export default function OnboardingPage() {
               </div>
               <button
                 onClick={() => router.push("/dashboard")}
-                className="w-full rounded-control bg-accent px-4 py-3.5 font-medium text-bg min-h-[44px] transition-all duration-200 active:scale-[0.98]"
+                className="w-full rounded-pill bg-accent px-5 py-3.5 font-semibold tracking-[-0.01em] text-bg min-h-[44px] transition-transform duration-200 active:scale-95"
               >
                 Go to dashboard
               </button>

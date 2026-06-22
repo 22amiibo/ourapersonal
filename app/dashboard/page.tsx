@@ -360,7 +360,7 @@ export default async function DashboardPage() {
             <div className="flex-1 rounded-card glass-1 p-4">
               <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Wellness</p>
               <div className="mt-1.5 flex items-baseline gap-2">
-                <p className="font-mono text-[28px] font-semibold tabular-nums text-ink leading-none">
+                <p className="font-mono text-[28px] font-semibold tabular-nums tracking-[-0.02em] text-ink leading-none">
                   {wellnessScore}
                 </p>
                 <span
@@ -390,7 +390,7 @@ export default async function DashboardPage() {
             <div className="flex-1 rounded-card glass-1 p-4">
               <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Sleep Debt</p>
               <p
-                className="mt-1.5 font-mono text-[24px] font-semibold tabular-nums leading-none"
+                className="mt-1.5 font-mono text-[24px] font-semibold tabular-nums tracking-[-0.02em] leading-none"
                 style={{ color: sleepDebtSeconds > 0 ? "var(--color-rose)" : "var(--color-accent)" }}
               >
                 {sleepDebtSeconds > 0 ? "−" : "+"}{fmtDuration(sleepDebtSeconds)}

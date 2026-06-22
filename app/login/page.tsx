@@ -117,7 +117,7 @@ export default function LoginPage() {
             <button
               onClick={handlePasskeyLogin}
               disabled={passkeyLoading}
-              className="w-full rounded-control border border-line-strong bg-surface-2 px-4 py-4 font-medium text-ink transition-all duration-200 active:scale-[0.98] disabled:opacity-50 min-h-[52px] flex items-center justify-center gap-2.5 text-[15px]"
+              className="w-full rounded-pill border border-line-strong bg-surface-2 px-5 py-4 font-medium text-ink transition-transform duration-200 active:scale-95 disabled:opacity-50 min-h-[52px] flex items-center justify-center gap-2.5 text-[15px]"
             >
               {passkeyLoading ? (
                 <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-ink border-t-transparent" />
@@ -148,7 +148,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-control bg-accent px-4 py-3.5 font-medium text-bg disabled:opacity-50 min-h-[44px] transition-all duration-200 active:scale-[0.98] text-[15px]"
+            className="w-full rounded-pill bg-accent px-5 py-3.5 font-semibold tracking-[-0.01em] text-bg disabled:opacity-50 min-h-[44px] transition-transform duration-200 active:scale-95 text-[15px]"
           >
             {loading ? "Checking…" : "Log in"}
           </button>
@@ -169,7 +169,7 @@ export default function LoginPage() {
                 <button
                   onClick={handleRegisterPasskey}
                   disabled={registerLoading}
-                  className="w-full rounded-control border border-accent/40 bg-accent/5 px-4 py-3.5 text-[14px] font-medium text-accent disabled:opacity-50 min-h-[44px] transition-all duration-200 active:scale-[0.98]"
+                  className="w-full rounded-pill border border-line-strong bg-surface-2 px-5 py-3.5 text-[14px] font-medium text-ink disabled:opacity-50 min-h-[44px] transition-transform duration-200 active:scale-95"
                 >
                   {registerLoading ? "Registering…" : "Register Passkey"}
                 </button>
