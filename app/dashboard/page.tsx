@@ -300,7 +300,7 @@ export default async function DashboardPage() {
         style={{ animationDelay: "120ms" }}
       >
         <div className="mb-3 flex items-center gap-2">
-          <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-accent" />
+          <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-ink-3" />
           <p className="text-[11px] font-medium uppercase tracking-[0.1em] text-ink-3">Daily Briefing</p>
         </div>
         {briefing ? (

@@ -32,7 +32,7 @@ export default function WeeklyShareButton({ weekRange, sleep, readiness, hrv, no
   return (
     <button
       onClick={share}
-      className="flex items-center gap-1.5 rounded-control border border-line px-3 py-1.5 text-[12px] font-medium text-ink-2 transition-colors hover:text-ink active:scale-95 min-h-[36px]"
+      className="flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-3.5 py-1.5 text-[12px] font-medium text-ink-2 transition-transform hover:text-ink active:scale-95 min-h-[36px]"
     >
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
         <circle cx="18" cy="5" r="3" />
