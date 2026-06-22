@@ -86,6 +86,41 @@ function ActiveDot() {
   );
 }
 
+// One source of truth for every tab chip — guarantees all five are identical.
+// Inactive: subtle frosted glass with a top edge-highlight. Active: accent-tinted
+// glass with a soft glow. Applied byte-for-byte to the four links AND the More button.
+const CHIP_CLASS =
+  "relative flex flex-col items-center justify-center gap-1 px-3 py-1.5 transition-all duration-200 active:scale-90";
+
+function chipStyle(active: boolean): React.CSSProperties {
+  const base: React.CSSProperties = {
+    minWidth: 56,
+    minHeight: 50,
+    borderRadius: 16,
+    backdropFilter: "blur(12px) saturate(150%)",
+    WebkitBackdropFilter: "blur(12px) saturate(150%)",
+    transition: "all 200ms ease-out",
+  };
+  if (active) {
+    return {
+      ...base,
+      background:
+        "linear-gradient(180deg, color-mix(in oklch, var(--color-accent) 32%, transparent), color-mix(in oklch, var(--color-accent) 12%, transparent))",
+      border: "0.5px solid color-mix(in oklch, var(--color-accent) 45%, transparent)",
+      boxShadow:
+        "inset 0 0.5px 0 rgba(255,255,255,0.35), 0 2px 12px color-mix(in oklch, var(--color-accent) 38%, transparent)",
+    };
+  }
+  return {
+    ...base,
+    background:
+      "linear-gradient(180deg, rgba(255,255,255,0.11), rgba(255,255,255,0.035))",
+    border: "0.5px solid rgba(255,255,255,0.15)",
+    boxShadow: "inset 0 0.5px 0 rgba(255,255,255,0.22), 0 1px 2px rgba(0,0,0,0.22)",
+    color: "rgba(255,255,255,0.55)",
+  };
+}
+
 export default function TabBar() {
   const path = usePathname();
   const [hidden, setHidden] = useState(false);
@@ -133,13 +168,15 @@ export default function TabBar() {
         }`}
       >
         <div
-          className="flex items-center gap-1 rounded-full border px-2 py-1.5"
+          className="flex items-center gap-1.5 rounded-[26px] border px-2 py-1.5"
           style={{
-            background: "rgba(0,0,0,0.55)",
-            borderColor: "rgba(255,255,255,0.10)",
-            backdropFilter: "blur(20px)",
-            WebkitBackdropFilter: "blur(20px)",
-            boxShadow: "0 8px 32px rgba(0,0,0,.5), inset 0 0.5px 0 rgba(255,255,255,.08)",
+            background:
+              "linear-gradient(180deg, rgba(42,42,48,0.55), rgba(18,18,22,0.66))",
+            borderColor: "rgba(255,255,255,0.16)",
+            backdropFilter: "blur(28px) saturate(180%)",
+            WebkitBackdropFilter: "blur(28px) saturate(180%)",
+            boxShadow:
+              "0 12px 40px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.14), inset 0 -1px 0 rgba(0,0,0,0.32)",
           }}
         >
           {TABS.map((t) => {
@@ -155,17 +192,8 @@ export default function TabBar() {
                 aria-selected={active}
                 aria-current={active ? "page" : undefined}
                 aria-label={t.label}
-                className={`relative flex flex-col items-center justify-center gap-1 rounded-2xl px-3 py-1.5 transition-all duration-200 active:scale-90 ${
-                  active ? "text-accent" : ""
-                }`}
-                style={{
-                  minWidth: 52, minHeight: 48,
-                  background: "rgba(255,255,255,0.08)",
-                  border: "1px solid rgba(255,255,255,0.14)",
-                  backdropFilter: "blur(12px)",
-                  WebkitBackdropFilter: "blur(12px)",
-                  color: active ? undefined : "rgba(255,255,255,0.5)",
-                }}
+                className={`${CHIP_CLASS} ${active ? "text-accent" : ""}`}
+                style={chipStyle(active)}
               >
                 <span className="relative">{t.icon(active)}{active && <ActiveDot />}</span>
                 <span
@@ -185,17 +213,8 @@ export default function TabBar() {
             aria-haspopup="dialog"
             aria-expanded={moreOpen}
             aria-label="More"
-            className={`relative flex flex-col items-center justify-center gap-1 rounded-2xl px-3 py-1.5 transition-all duration-200 active:scale-90 ${
-              moreActive || moreOpen ? "text-accent" : ""
-            }`}
-            style={{
-              minWidth: 52, minHeight: 48,
-              background: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.14)",
-              backdropFilter: "blur(12px)",
-              WebkitBackdropFilter: "blur(12px)",
-              color: moreActive || moreOpen ? undefined : "rgba(255,255,255,0.5)",
-            }}
+            className={`${CHIP_CLASS} ${moreActive || moreOpen ? "text-accent" : ""}`}
+            style={chipStyle(moreActive || moreOpen)}
           >
             <span className="relative">{MoreIcon(moreActive || moreOpen)}{moreActive && <ActiveDot />}</span>
             <span className="text-[9.5px] font-medium tracking-[0.06em]" style={{ lineHeight: 1 }}>
