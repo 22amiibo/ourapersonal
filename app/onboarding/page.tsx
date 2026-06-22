@@ -141,7 +141,7 @@ export default function OnboardingPage() {
               </a>
               <button
                 onClick={() => setStep("timezone")}
-                className="w-full text-center text-[14px] text-ink-3 underline-offset-2 hover:text-ink active:scale-95 min-h-[44px]"
+                className="w-full text-center text-[14px] text-ink-3 hover:text-ink active:scale-95 min-h-[44px]"
               >
                 Skip for now
               </button>
@@ -195,7 +195,7 @@ export default function OnboardingPage() {
               )}
               <button
                 onClick={() => setStep("done")}
-                className="w-full text-center text-[14px] text-ink-3 underline-offset-2 hover:text-ink active:scale-95 min-h-[44px]"
+                className="w-full text-center text-[14px] text-ink-3 hover:text-ink active:scale-95 min-h-[44px]"
               >
                 Skip for now
               </button>

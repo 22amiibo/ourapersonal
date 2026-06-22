@@ -142,7 +142,7 @@ export default function ReflectPage() {
               onChange={(e) => setSearchQ(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && doSearch()}
               placeholder="Search by topic, keyword…"
-              className="flex-1 rounded-control border border-line bg-bg px-4 py-3 text-[14px] text-ink placeholder-ink-3 focus:border-accent focus:outline-none min-h-[44px]"
+              className="flex-1 rounded-control border border-line bg-bg-soft px-4 py-3 text-[14px] text-ink placeholder-ink-3 focus:border-accent focus:outline-none min-h-[44px]"
             />
             <Button variant="secondary" onClick={doSearch} disabled={searching}>
               {searching ? "…" : "Go"}
@@ -177,17 +177,17 @@ export default function ReflectPage() {
           onChange={(e) => setText(e.target.value)}
           rows={6}
           placeholder="Write freely — or respond to the prompt above…"
-          className="w-full rounded-control border border-line bg-bg px-4 py-3.5 text-[15px] leading-relaxed text-ink placeholder-ink-3 transition-all duration-200 focus:border-accent focus:outline-none"
+          className="w-full rounded-control border border-line bg-bg-soft px-4 py-3.5 text-[15px] leading-relaxed text-ink placeholder-ink-3 transition-all duration-200 focus:border-accent focus:outline-none"
         />
         <Button
-          variant="primary"
+          variant="glass"
           onClick={save}
           disabled={status === "saving" || !text.trim()}
           className="w-full disabled:active:scale-100"
         >
           {status === "saving" ? (
             <span className="flex items-center justify-center gap-2">
-              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-bg border-t-transparent" />
+              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-ink border-t-transparent" />
               Saving…
             </span>
           ) : "Save reflection"}

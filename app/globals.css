@@ -16,7 +16,7 @@
   --color-attention: #f59e0b;
   --color-low: #f43f5e;
 
-  --font-sans: "Inter", sans-serif;
+  --font-sans: "SF Pro Rounded", ui-rounded, system-ui, -apple-system, sans-serif;
   --font-mono: "Geist Mono", monospace;
 
   --radius-pill: 9999px;
@@ -64,7 +64,7 @@
   --card-radius: 28px;
   --transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 
-  --font-sans: var(--font-inter, "Inter", sans-serif);
+  --font-sans: "SF Pro Rounded", ui-rounded, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: var(--font-geist-mono, "Geist Mono", monospace);
 
   --radius-pill: 9999px;
@@ -195,6 +195,9 @@ button, nav, [role="tablist"], select {
   user-select: none;
 }
 
+/* No text underlines anywhere — links read by color/weight, not decoration. */
+a { text-decoration: none; }
+
 input, textarea {
   -webkit-user-select: text;
   user-select: text;
@@ -313,6 +316,16 @@ input, textarea {
   .border-rose        { border-color: var(--color-rose); }
 
   .rounded-pill    { border-radius: var(--radius-pill); }
+
+  /* Frosted control — shared glassmorphic surface for interactive chrome
+     (bottom-tab chips, glass buttons). Token-driven so it adapts light/dark.
+     Like glass-1 but without the drop shadow, so controls stay whisper-flat. */
+  .glass-control {
+    background: var(--glass-1-bg);
+    backdrop-filter: var(--glass-1-blur);
+    -webkit-backdrop-filter: var(--glass-1-blur);
+    border: 0.5px solid var(--glass-1-border);
+  }
   .rounded-control { border-radius: var(--radius-control); }
   .rounded-card    { border-radius: var(--radius-card); }
   .rounded-sheet   { border-radius: var(--radius-sheet); }

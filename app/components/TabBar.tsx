@@ -155,7 +155,7 @@ export default function TabBar() {
                 aria-selected={active}
                 aria-current={active ? "page" : undefined}
                 aria-label={t.label}
-                className={`relative flex flex-col items-center justify-center gap-1 rounded-2xl px-3 py-1.5 transition-all duration-200 active:scale-90 ${
+                className={`glass-control relative flex flex-col items-center justify-center gap-1 rounded-2xl px-3 py-1.5 transition-all duration-200 active:scale-90 ${
                   active ? "text-accent" : ""
                 }`}
                 style={{
@@ -181,7 +181,7 @@ export default function TabBar() {
             aria-haspopup="dialog"
             aria-expanded={moreOpen}
             aria-label="More"
-            className={`relative flex flex-col items-center justify-center gap-1 rounded-2xl px-3 py-1.5 transition-all duration-200 active:scale-90 ${
+            className={`glass-control relative flex flex-col items-center justify-center gap-1 rounded-2xl px-3 py-1.5 transition-all duration-200 active:scale-90 ${
               moreActive || moreOpen ? "text-accent" : ""
             }`}
             style={{

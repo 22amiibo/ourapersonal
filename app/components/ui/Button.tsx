@@ -1,6 +1,6 @@
 import { ButtonHTMLAttributes, forwardRef } from "react";
 
-type Variant = "primary" | "accent" | "secondary";
+type Variant = "primary" | "accent" | "secondary" | "glass";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
@@ -11,6 +11,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
  * - primary:   max-emphasis ink pill (light-on-dark). One per screen.
  * - accent:    the single sanctioned pop of blue. Never alongside a primary.
  * - secondary: bordered pill (Cancel / low-emphasis).
+ * - glass:     frosted glassmorphic pill — matches the bottom-tab chips.
  *
  * All variants: pill radius, min-h-[44px], active:scale-95, no rest shadow.
  */
@@ -21,6 +22,8 @@ const VARIANTS: Record<Variant, string> = {
     "bg-accent text-bg font-semibold tracking-[-0.01em] disabled:opacity-50",
   secondary:
     "border border-line-strong bg-surface-2 text-ink font-medium disabled:opacity-50",
+  glass:
+    "glass-control text-ink font-semibold tracking-[-0.01em] disabled:opacity-50",
 };
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(

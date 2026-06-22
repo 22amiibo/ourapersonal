@@ -159,7 +159,7 @@ export default function LoginPage() {
             {!showRegister ? (
               <button
                 onClick={() => setShowRegister(true)}
-                className="w-full text-center text-[13px] text-ink-3 underline-offset-2 hover:text-ink active:scale-95 min-h-[44px]"
+                className="w-full text-center text-[13px] text-ink-3 hover:text-ink active:scale-95 min-h-[44px]"
               >
                 Set up Face ID / Passkey
               </button>

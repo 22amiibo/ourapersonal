@@ -347,7 +347,7 @@ export default function HealthTab({
           <div className="rounded-control border border-line bg-surface-2 p-3.5">
             <p className="text-[14px] leading-relaxed text-ink-3">
               Connect Oura in{" "}
-              <a href="/settings" className="text-accent underline-offset-2 hover:underline">Settings</a>{" "}
+              <a href="/settings" className="text-accent">Settings</a>{" "}
               to see last night&apos;s data.
             </p>
           </div>
