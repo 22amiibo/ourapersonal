@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Button from "@/app/components/ui/Button";
 
 const OURA_STATUS: Record<string, string> = {
   connected: "Oura connected.",
@@ -49,7 +50,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 function SettingsCard({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mx-4 overflow-hidden rounded-card border border-line bg-surface shadow-card">
+    <div className="mx-4 overflow-hidden rounded-card glass-1">
       {children}
     </div>
   );
@@ -69,7 +70,7 @@ function Row({ children, noBorder = false }: { children: React.ReactNode; noBord
 function InlineMsg({ msg, isError }: { msg: string; isError?: boolean }) {
   if (!msg) return null;
   return (
-    <p className={`px-4 mt-1.5 text-[13px] ${isError ? "text-rose" : "text-accent"}`}>{msg}</p>
+    <p className={`px-4 mt-1.5 text-[13px] ${isError ? "text-rose" : "text-ink-2"}`}>{msg}</p>
   );
 }
 
@@ -216,7 +217,7 @@ export default function SettingsPage() {
   const selectedKind = GOAL_KINDS.find((g) => g.kind === newGoalKind);
 
   return (
-    <main className="mx-auto max-w-md space-y-6 pb-28 pt-[calc(env(safe-area-inset-top)+1.25rem)]">
+    <main className="mx-auto max-w-md space-y-6 pb-28 pt-5">
       <header className="px-4 animate-spring-in">
         <h1 className="text-[22px] font-semibold tracking-tight text-ink">Settings</h1>
       </header>
@@ -238,7 +239,7 @@ export default function SettingsPage() {
             ) : ouraConnected === false ? (
               <a
                 href="/api/oura/connect"
-                className="rounded-control bg-accent px-3.5 py-2 text-[13px] font-medium text-bg min-h-[36px] flex items-center transition-all active:scale-[0.98]"
+                className="rounded-pill bg-accent px-5 py-2 text-[13px] font-semibold tracking-[-0.01em] text-bg min-h-[44px] flex items-center transition-transform active:scale-95"
               >
                 Connect
               </a>
@@ -256,12 +257,12 @@ export default function SettingsPage() {
                 className="w-full rounded-control border border-line bg-bg px-4 py-3 text-[14px] text-ink placeholder-ink-3 focus:border-accent focus:outline-none min-h-[44px]"
               />
               <div className="flex gap-2">
-                <button onClick={saveCal} className="flex-1 rounded-control bg-accent px-4 py-3 text-[14px] font-medium text-bg min-h-[44px] active:scale-[0.98]">
+                <Button variant="primary" onClick={saveCal} className="flex-1">
                   Save
-                </button>
-                <button onClick={syncCal} disabled={syncLoading} className="flex-1 rounded-control border border-line-strong bg-surface-2 px-4 py-3 text-[14px] font-medium text-ink disabled:opacity-50 min-h-[44px] active:scale-[0.98]">
+                </Button>
+                <Button variant="secondary" onClick={syncCal} disabled={syncLoading} className="flex-1">
                   {syncLoading ? "Syncing…" : "Sync"}
-                </button>
+                </Button>
               </div>
             </div>
           </Row>
@@ -287,8 +288,8 @@ export default function SettingsPage() {
             <Row noBorder>
               <p className="text-[14px] text-ink">Enabled</p>
               <div className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-accent" />
-                <span className="text-[13px] text-accent">Active</span>
+                <span className="h-2 w-2 rounded-full bg-ink-3" />
+                <span className="text-[13px] text-ink-2">Active</span>
               </div>
             </Row>
           ) : notifStatus === "denied" ? (
@@ -299,13 +300,9 @@ export default function SettingsPage() {
             <Row noBorder>
               <div className="w-full space-y-3">
                 <p className="text-[14px] text-ink-2">Morning briefings and evening reflection nudges.</p>
-                <button
-                  onClick={enableNotifications}
-                  disabled={notifLoading}
-                  className="w-full rounded-control bg-accent px-4 py-3.5 font-medium text-bg disabled:opacity-50 min-h-[44px] active:scale-[0.98]"
-                >
+                <Button variant="primary" onClick={enableNotifications} disabled={notifLoading} className="w-full">
                   {notifLoading ? "Enabling…" : "Enable Notifications"}
-                </button>
+                </Button>
               </div>
             </Row>
           )}
@@ -329,13 +326,9 @@ export default function SettingsPage() {
               >
                 {TIMEZONES.map((tz) => <option key={tz} value={tz}>{tz.replace(/_/g, " ")}</option>)}
               </select>
-              <button
-                onClick={saveTimezone}
-                disabled={tzSaving}
-                className="w-full rounded-control bg-accent px-4 py-3.5 font-medium text-bg disabled:opacity-50 min-h-[44px] active:scale-[0.98]"
-              >
+              <Button variant="primary" onClick={saveTimezone} disabled={tzSaving} className="w-full">
                 {tzSaving ? "Saving…" : "Save Timezone"}
-              </button>
+              </Button>
             </div>
           </Row>
         </SettingsCard>
@@ -355,13 +348,9 @@ export default function SettingsPage() {
                 onChange={(e) => setWindDownTime(e.target.value)}
                 className="w-full rounded-control border border-line bg-bg px-4 py-3 font-mono text-[14px] text-ink focus:border-accent focus:outline-none min-h-[44px]"
               />
-              <button
-                onClick={saveWindDown}
-                disabled={windDownSaving}
-                className="w-full rounded-control bg-accent px-4 py-3.5 font-medium text-bg disabled:opacity-50 min-h-[44px] active:scale-[0.98]"
-              >
+              <Button variant="primary" onClick={saveWindDown} disabled={windDownSaving} className="w-full">
                 {windDownSaving ? "Saving…" : "Save Wind-down Time"}
-              </button>
+              </Button>
             </div>
           </Row>
         </SettingsCard>
@@ -402,12 +391,9 @@ export default function SettingsPage() {
                   className="w-full rounded-control border border-line bg-bg px-4 py-3 text-[14px] text-ink focus:border-accent focus:outline-none min-h-[44px]"
                 />
               )}
-              <button
-                onClick={addGoal}
-                className="w-full rounded-control border border-line-strong bg-surface-2 px-4 py-3 text-[14px] font-medium text-ink active:scale-[0.98] min-h-[44px]"
-              >
+              <Button variant="secondary" onClick={addGoal} className="w-full">
                 Add Goal
-              </button>
+              </Button>
             </div>
           </Row>
         </SettingsCard>

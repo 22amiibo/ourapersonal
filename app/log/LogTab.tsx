@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Button from "@/app/components/ui/Button";
 
 export type IntakeEntry = {
   id: number;
@@ -53,10 +54,12 @@ const TrashIcon = () => <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none"
 const SVG = ({ c, children }: { c: string; children: React.ReactNode }) => (
   <svg className={c} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>{children}</svg>
 );
-const CoffeeIcon = ({ s = "h-7 w-7" }) => <SVG c={`${s} text-amber`}><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></SVG>;
-const DrinkIcon = ({ s = "h-7 w-7" }) => <SVG c={`${s} text-rose`}><path d="M8 22h8M12 11v11M3 2l2.5 14.5a2 2 0 0 0 2 1.5h9a2 2 0 0 0 2-1.5L21 2H3z"/></SVG>;
-const NoteIcon  = ({ s = "h-7 w-7" }) => <SVG c={`${s} text-ink-2`}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></SVG>;
-const WorkoutIcon = ({ s = "h-7 w-7" }) => <SVG c={`${s} text-accent`}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></SVG>;
+// Monochrome by default — icons inherit currentColor (Expo: no decorative color
+// in chrome; semantic color lives in the data, e.g. the caffeine day-total).
+const CoffeeIcon = ({ s = "h-7 w-7" }) => <SVG c={s}><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></SVG>;
+const DrinkIcon = ({ s = "h-7 w-7" }) => <SVG c={s}><path d="M8 22h8M12 11v11M3 2l2.5 14.5a2 2 0 0 0 2 1.5h9a2 2 0 0 0 2-1.5L21 2H3z"/></SVG>;
+const NoteIcon  = ({ s = "h-7 w-7" }) => <SVG c={s}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></SVG>;
+const WorkoutIcon = ({ s = "h-7 w-7" }) => <SVG c={s}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></SVG>;
 
 function EntryIcon({ type }: { type: IntakeEntry["type"] }) {
   if (type === "caffeine") return <CoffeeIcon s="h-5 w-5" />;
@@ -248,7 +251,7 @@ export default function LogTab({
 
   return (
     <>
-      <main className="mx-auto max-w-md space-y-4 pb-28 pt-[calc(env(safe-area-inset-top)+1.25rem)]">
+      <main className="mx-auto max-w-md space-y-5 pb-28 pt-5">
         <header className="px-4 animate-spring-in">
           <h1 className="text-[22px] font-semibold tracking-tight text-ink">Daily Log</h1>
           <p className="mt-0.5 text-[14px] text-ink-2">Caffeine, alcohol, workouts &amp; notes</p>
@@ -314,10 +317,10 @@ export default function LogTab({
                 <button
                   key={item.label}
                   onClick={() => quickAdd(item)}
-                  className="shrink-0 rounded-full border border-line bg-surface-2 px-3.5 py-1.5 text-[12px] font-medium text-ink transition-all active:scale-95 min-h-[36px]"
+                  className="shrink-0 rounded-full border border-line bg-surface-2 px-3.5 py-2 text-[13px] font-semibold text-ink transition-transform active:scale-95 min-h-[44px]"
                 >
                   {item.label}
-                  <span className="ml-1 font-mono text-[10px] text-ink-3">
+                  <span className="ml-1 font-mono text-[11px] font-normal text-ink-3">
                     {item.type === "caffeine" ? `${item.quantity}mg` : item.type === "workout" ? `${item.quantity}m` : "×1"}
                   </span>
                 </button>
@@ -328,13 +331,19 @@ export default function LogTab({
 
         {/* Intake buttons */}
         <div className="grid grid-cols-4 gap-2 px-4 animate-spring-in" style={{ animationDelay: "160ms" }}>
-          {(["caffeine", "alcohol", "workout", "note"] as const).map((type) => (
+          {([
+            { type: "caffeine" as const, icon: <CoffeeIcon s="h-5 w-5" />, label: "Caffeine" },
+            { type: "alcohol"  as const, icon: <DrinkIcon  s="h-5 w-5" />, label: "Alcohol" },
+            { type: "workout"  as const, icon: <WorkoutIcon s="h-5 w-5" />, label: "Workout" },
+            { type: "note"     as const, icon: <NoteIcon   s="h-5 w-5" />, label: "Note" },
+          ]).map(({ type, icon, label }) => (
             <button
               key={type}
               onClick={() => openModal(type)}
-              className="rounded-control glass-1 px-2 py-3 text-[11px] font-medium text-ink transition-transform active:scale-[0.97] min-h-[44px] capitalize"
+              className="flex flex-col items-center gap-1.5 rounded-[18px] glass-1 px-1 py-3 text-ink-2 transition-transform active:scale-[0.97] min-h-[64px]"
             >
-              {type}
+              {icon}
+              <span className="text-[11px] font-medium">{label}</span>
             </button>
           ))}
         </div>
@@ -422,7 +431,7 @@ export default function LogTab({
       {/* Bottom sheet modal */}
       {modal && (
         <div
-          className="fixed inset-0 z-30 flex items-end"
+          className="fixed inset-0 z-50 flex items-end"
           style={{ background: "rgba(11,12,14,0.7)", backdropFilter: "blur(4px)" }}
           onClick={closeModal}
         >
@@ -531,19 +540,12 @@ export default function LogTab({
               {error && <p className="text-[13px] text-rose">{error}</p>}
 
               <div className="flex gap-3 pt-1">
-                <button
-                  onClick={closeModal}
-                  className="flex-1 rounded-control border border-line-strong bg-surface-2 py-3.5 text-[14px] font-medium text-ink min-h-[44px]"
-                >
+                <Button variant="secondary" onClick={closeModal} className="flex-1">
                   Cancel
-                </button>
-                <button
-                  onClick={submit}
-                  disabled={isPending}
-                  className="flex-1 rounded-control bg-accent py-3.5 text-[14px] font-medium text-bg disabled:opacity-50 min-h-[44px]"
-                >
+                </Button>
+                <Button variant="primary" onClick={submit} disabled={isPending} className="flex-1">
                   {isPending ? "Saving…" : "Save"}
-                </button>
+                </Button>
               </div>
             </div>
           </div>

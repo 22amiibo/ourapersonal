@@ -203,7 +203,7 @@ export default async function DashboardPage() {
     : null;
 
   return (
-    <main className="mx-auto max-w-md pb-28 pt-[calc(env(safe-area-inset-top)+1.25rem)]">
+    <main className="mx-auto max-w-md pb-28 pt-5">
 
       {/* ── Circadian header ───────────────────────────────── */}
       <header className="px-5 pb-3 animate-fade-in">
@@ -239,14 +239,14 @@ export default async function DashboardPage() {
         style={{ animationDelay: "80ms" }}
       >
         <div className="flex flex-col items-center gap-2">
-          <Ring score={oura?.readiness_score} size={108} />
+          <Ring score={oura?.readiness_score} size={96} />
           <div className="text-center">
             <p className="text-[13px] font-medium text-ink">Readiness</p>
             <p className="text-[11px] text-ink-3">Recovery</p>
           </div>
           {readinessTrend.some((v) => v > 0) && (
-            <div className="flex flex-col items-center gap-1 w-[88px]">
-              <Sparkline values={readinessTrend} width={88} height={28} />
+            <div className="flex flex-col items-center gap-1 w-[80px]">
+              <Sparkline values={readinessTrend} width={80} height={26} />
               {readinessDelta !== null && (
                 <p className="font-mono text-[10px] font-medium tabular-nums"
                   style={{ color: readinessDelta > 0 ? "var(--color-accent)" : readinessDelta < 0 ? "var(--color-rose)" : "var(--color-ink-3)" }}>
@@ -257,14 +257,14 @@ export default async function DashboardPage() {
           )}
         </div>
         <div className="flex flex-col items-center gap-2">
-          <Ring score={oura?.sleep_score} size={108} color="var(--color-accent-blue)" />
+          <Ring score={oura?.sleep_score} size={96} color="var(--color-accent-blue)" />
           <div className="text-center">
             <p className="text-[13px] font-medium text-ink">Sleep</p>
             <p className="text-[11px] text-ink-3">{sleepH ?? "—"}</p>
           </div>
           {sleepTrend.some((v) => v > 0) && (
-            <div className="flex flex-col items-center gap-1 w-[88px]">
-              <Sparkline values={sleepTrend} width={88} height={28} color="var(--color-accent-blue)" />
+            <div className="flex flex-col items-center gap-1 w-[80px]">
+              <Sparkline values={sleepTrend} width={80} height={26} color="var(--color-accent-blue)" />
               {sleepDelta !== null && (
                 <p className="font-mono text-[10px] font-medium tabular-nums"
                   style={{ color: sleepDelta > 0 ? "var(--color-accent-blue)" : sleepDelta < 0 ? "var(--color-rose)" : "var(--color-ink-3)" }}>
@@ -275,14 +275,14 @@ export default async function DashboardPage() {
           )}
         </div>
         <div className="flex flex-col items-center gap-2">
-          <Ring score={oura?.activity_score} size={108} color="var(--color-amber)" />
+          <Ring score={oura?.activity_score} size={96} color="var(--color-amber)" />
           <div className="text-center">
             <p className="text-[13px] font-medium text-ink">Activity</p>
             <p className="text-[11px] text-ink-3">Movement</p>
           </div>
           {activityTrend.some((v) => v > 0) && (
-            <div className="flex flex-col items-center gap-1 w-[88px]">
-              <Sparkline values={activityTrend} width={88} height={28} color="var(--color-amber)" />
+            <div className="flex flex-col items-center gap-1 w-[80px]">
+              <Sparkline values={activityTrend} width={80} height={26} color="var(--color-amber)" />
               {activityDelta !== null && (
                 <p className="font-mono text-[10px] font-medium tabular-nums"
                   style={{ color: activityDelta > 0 ? "var(--color-amber)" : activityDelta < 0 ? "var(--color-rose)" : "var(--color-ink-3)" }}>
@@ -300,7 +300,7 @@ export default async function DashboardPage() {
         style={{ animationDelay: "120ms" }}
       >
         <div className="mb-3 flex items-center gap-2">
-          <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-accent" style={{ boxShadow: "var(--shadow-glow)" }} />
+          <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-accent" />
           <p className="text-[11px] font-medium uppercase tracking-[0.1em] text-ink-3">Daily Briefing</p>
         </div>
         {briefing ? (
@@ -315,7 +315,7 @@ export default async function DashboardPage() {
               <ul className="mt-4 space-y-2.5 border-t border-line pt-4">
                 {briefing.recommendations.map((r, i) => (
                   <li key={i} className="flex gap-3 text-[14px] text-ink">
-                    <span aria-hidden className="mt-[6px] h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                    <span aria-hidden className="mt-[6px] h-1.5 w-1.5 shrink-0 rounded-full bg-ink-3" />
                     <span>{r}</span>
                   </li>
                 ))}
@@ -334,7 +334,7 @@ export default async function DashboardPage() {
                 </p>
                 <a
                   href="/settings"
-                  className="flex w-full items-center justify-center rounded-control bg-accent px-4 py-3.5 font-medium text-bg min-h-[44px] transition-all active:scale-[0.98]"
+                  className="flex w-full items-center justify-center rounded-pill bg-accent px-5 py-3.5 text-[14px] font-semibold tracking-[-0.01em] text-bg min-h-[44px] transition-transform active:scale-95"
                 >
                   Connect Oura Ring
                 </a>
@@ -431,8 +431,8 @@ export default async function DashboardPage() {
                   <span
                     className="rounded-full px-2 py-0.5 text-[10px] font-medium tabular-nums"
                     style={{
-                      background: "color-mix(in oklch, var(--color-accent) 12%, transparent)",
-                      color: "var(--color-accent)",
+                      background: "var(--color-surface-2)",
+                      color: "var(--color-ink-2)",
                     }}
                   >
                     {Math.round(Number(p.confidence) * 100)}%

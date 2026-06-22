@@ -177,7 +177,7 @@ export default function HealthTab({
   const alerts = detectAlerts(allDays, hrvBaseline, streak);
 
   return (
-    <main className="mx-auto max-w-md space-y-4 pb-28 pt-[calc(env(safe-area-inset-top)+1.25rem)]">
+    <main className="mx-auto max-w-md space-y-4 pb-28 pt-5">
       <header className="flex items-center justify-between px-4 animate-spring-in">
         <div className="flex items-baseline gap-3">
           <h1 className="text-[22px] font-semibold tracking-tight text-ink">Health</h1>
@@ -188,13 +188,13 @@ export default function HealthTab({
             </span>
           )}
         </div>
-        <div className="flex min-h-[44px] items-center gap-1 rounded-control border border-line bg-bg p-1">
+        <div className="flex min-h-[44px] items-center gap-1 rounded-full border border-line bg-bg p-1">
           {RANGES.map((r) => (
             <button
               key={r}
               onClick={() => setRange(r)}
-              className={`rounded-[8px] px-4 py-2 text-[13px] font-medium transition-all duration-150 ${
-                range === r ? "bg-accent text-bg" : "text-ink-3 active:scale-95"
+              className={`rounded-full px-4 py-2 text-[13px] font-semibold transition-transform duration-150 active:scale-95 ${
+                range === r ? "border border-accent bg-accent/15 text-accent" : "border border-transparent text-ink-3"
               }`}
             >
               {r}d
@@ -362,21 +362,21 @@ export default function HealthTab({
             {personalRecords.bestSleep && (
               <div className="rounded-control border border-line bg-surface-2 p-3">
                 <p className="text-[10px] font-medium uppercase tracking-[0.06em] text-ink-3">Sleep</p>
-                <p className="mt-1 font-mono text-[20px] font-semibold tabular-nums text-accent">{personalRecords.bestSleep.score}</p>
+                <p className="mt-1 font-mono text-[20px] font-semibold tabular-nums text-ink">{personalRecords.bestSleep.score}</p>
                 <p className="mt-0.5 text-[10px] text-ink-3">{personalRecords.bestSleep.day.slice(5)}</p>
               </div>
             )}
             {personalRecords.bestReadiness && (
               <div className="rounded-control border border-line bg-surface-2 p-3">
                 <p className="text-[10px] font-medium uppercase tracking-[0.06em] text-ink-3">Readiness</p>
-                <p className="mt-1 font-mono text-[20px] font-semibold tabular-nums text-accent">{personalRecords.bestReadiness.score}</p>
+                <p className="mt-1 font-mono text-[20px] font-semibold tabular-nums text-ink">{personalRecords.bestReadiness.score}</p>
                 <p className="mt-0.5 text-[10px] text-ink-3">{personalRecords.bestReadiness.day.slice(5)}</p>
               </div>
             )}
             {personalRecords.bestHrv && (
               <div className="rounded-control border border-line bg-surface-2 p-3">
                 <p className="text-[10px] font-medium uppercase tracking-[0.06em] text-ink-3">HRV</p>
-                <p className="mt-1 font-mono text-[20px] font-semibold tabular-nums text-accent">{Math.round(personalRecords.bestHrv.hrv)}</p>
+                <p className="mt-1 font-mono text-[20px] font-semibold tabular-nums text-ink">{Math.round(personalRecords.bestHrv.hrv)}</p>
                 <p className="mt-0.5 text-[10px] text-ink-3">{personalRecords.bestHrv.day.slice(5)}</p>
               </div>
             )}
@@ -386,8 +386,8 @@ export default function HealthTab({
 
       {/* ── Insights (Correlation Bar Charts) ───────────────── */}
       {significantCorrelations.length > 0 && (
-        <section className="mx-4 rounded-card border border-accent/30 bg-accent/5 p-5 shadow-card space-y-5 animate-spring-in" style={{ animationDelay: "320ms" }}>
-          <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-accent">Insights</p>
+        <section className="mx-4 rounded-card glass-1 p-5 space-y-5 animate-spring-in" style={{ animationDelay: "320ms" }}>
+          <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Insights</p>
           {significantCorrelations.map((r, i) => (
             <div key={r.id}>
               {i > 0 && <div className="h-px bg-line mb-5" />}

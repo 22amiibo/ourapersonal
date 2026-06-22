@@ -135,10 +135,10 @@ export default function TabBar() {
         <div
           className="flex items-center gap-1 rounded-full border px-2 py-1.5"
           style={{
-            background: "rgba(10,10,15,0.72)",
-            borderColor: "var(--glass-1-border)",
-            backdropFilter: "blur(28px) saturate(170%)",
-            WebkitBackdropFilter: "blur(28px) saturate(170%)",
+            background: "rgba(0,0,0,0.55)",
+            borderColor: "rgba(255,255,255,0.10)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
             boxShadow: "0 8px 32px rgba(0,0,0,.5), inset 0 0.5px 0 rgba(255,255,255,.08)",
           }}
         >
@@ -156,13 +156,16 @@ export default function TabBar() {
                 aria-current={active ? "page" : undefined}
                 aria-label={t.label}
                 className={`relative flex flex-col items-center justify-center gap-1 rounded-2xl px-3 py-1.5 transition-all duration-200 active:scale-90 ${
-                  active ? "text-accent" : "text-ink-3 hover:text-ink-2"
+                  active ? "text-accent" : ""
                 }`}
-                style={{ minWidth: 52, minHeight: 48 }}
+                style={{
+                  minWidth: 52, minHeight: 48,
+                  color: active ? undefined : "rgba(255,255,255,0.45)",
+                }}
               >
                 <span className="relative">{t.icon(active)}{active && <ActiveDot />}</span>
                 <span
-                  className="text-[9.5px] font-medium tracking-wide"
+                  className="text-[9.5px] font-medium tracking-[0.06em]"
                   style={{ lineHeight: 1 }}
                 >
                   {t.label}
@@ -179,12 +182,15 @@ export default function TabBar() {
             aria-expanded={moreOpen}
             aria-label="More"
             className={`relative flex flex-col items-center justify-center gap-1 rounded-2xl px-3 py-1.5 transition-all duration-200 active:scale-90 ${
-              moreActive || moreOpen ? "text-accent" : "text-ink-3 hover:text-ink-2"
+              moreActive || moreOpen ? "text-accent" : ""
             }`}
-            style={{ minWidth: 52, minHeight: 48 }}
+            style={{
+              minWidth: 52, minHeight: 48,
+              color: moreActive || moreOpen ? undefined : "rgba(255,255,255,0.45)",
+            }}
           >
             <span className="relative">{MoreIcon(moreActive || moreOpen)}{moreActive && <ActiveDot />}</span>
-            <span className="text-[9.5px] font-medium tracking-wide" style={{ lineHeight: 1 }}>
+            <span className="text-[9.5px] font-medium tracking-[0.06em]" style={{ lineHeight: 1 }}>
               More
             </span>
           </button>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Button from "@/app/components/ui/Button";
 
 type PastReflection = {
   id: number;
@@ -110,7 +111,7 @@ export default function ReflectPage() {
   };
 
   return (
-    <main className="mx-auto max-w-md space-y-4 pb-28 pt-[calc(env(safe-area-inset-top)+1.25rem)]">
+    <main className="mx-auto max-w-md space-y-4 pb-28 pt-5">
       <header className="flex items-start justify-between px-4 animate-spring-in">
         <div>
           <h1 className="text-[22px] font-semibold tracking-tight text-ink">Reflect</h1>
@@ -126,7 +127,7 @@ export default function ReflectPage() {
         <button
           onClick={() => { setShowSearch(!showSearch); setSearchResults(null); setSearchQ(""); }}
           aria-label="Search reflections"
-          className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-control border border-line text-ink-2 transition-colors active:scale-95"
+          className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full border border-line text-ink-2 transition-transform active:scale-95"
         >
           <SearchIcon />
         </button>
@@ -143,13 +144,9 @@ export default function ReflectPage() {
               placeholder="Search by topic, keyword…"
               className="flex-1 rounded-control border border-line bg-bg px-4 py-3 text-[14px] text-ink placeholder-ink-3 focus:border-accent focus:outline-none min-h-[44px]"
             />
-            <button
-              onClick={doSearch}
-              disabled={searching}
-              className="rounded-control bg-accent px-4 py-3 text-[14px] font-medium text-bg disabled:opacity-50 active:scale-[0.98] min-h-[44px]"
-            >
+            <Button variant="secondary" onClick={doSearch} disabled={searching}>
               {searching ? "…" : "Go"}
-            </button>
+            </Button>
           </div>
           {searchResults != null && (
             searchResults.length === 0 ? (
@@ -159,7 +156,7 @@ export default function ReflectPage() {
                 {searchResults.map((r) => (
                   <li key={r.id} className="rounded-control border border-line bg-surface-2 p-3.5">
                     <p className="mb-1.5 font-mono text-[11px] tabular-nums text-ink-3">{r.entry_date}</p>
-                    <p className="text-[14px] leading-relaxed text-ink-2">{r.raw_text}</p>
+                    <p className="text-[14px] leading-relaxed text-ink-2 line-clamp-3">{r.raw_text}</p>
                   </li>
                 ))}
               </ul>
@@ -182,10 +179,11 @@ export default function ReflectPage() {
           placeholder="Write freely — or respond to the prompt above…"
           className="w-full rounded-control border border-line bg-bg px-4 py-3.5 text-[15px] leading-relaxed text-ink placeholder-ink-3 transition-all duration-200 focus:border-accent focus:outline-none"
         />
-        <button
+        <Button
+          variant="primary"
           onClick={save}
           disabled={status === "saving" || !text.trim()}
-          className="w-full rounded-control bg-accent px-4 py-3.5 font-medium text-bg transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 min-h-[44px]"
+          className="w-full disabled:active:scale-100"
         >
           {status === "saving" ? (
             <span className="flex items-center justify-center gap-2">
@@ -193,10 +191,10 @@ export default function ReflectPage() {
               Saving…
             </span>
           ) : "Save reflection"}
-        </button>
+        </Button>
 
         {msg && (
-          <div className={`rounded-control border p-3.5 text-[14px] ${status === "error" ? "border-rose/30 bg-rose/5 text-rose" : "border-accent/30 bg-accent/5 text-accent"}`}>
+          <div className={`rounded-control border p-3.5 text-[14px] ${status === "error" ? "border-rose/30 bg-rose/5 text-rose" : "border-line bg-surface-2 text-ink-2"}`}>
             {msg}
           </div>
         )}
@@ -213,14 +211,14 @@ export default function ReflectPage() {
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="font-mono text-[11px] tabular-nums text-ink-3 shrink-0">{r.entry_date}</span>
                     {r.readiness_score != null && (
-                      <span className="rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold tabular-nums"
-                        style={{ color: "var(--color-accent)", background: "color-mix(in oklch, var(--color-accent) 10%, transparent)" }}>
+                      <span className="rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold tabular-nums text-ink-2"
+                        style={{ background: "var(--color-surface-3)" }}>
                         R{r.readiness_score}
                       </span>
                     )}
                     {r.sleep_score != null && (
-                      <span className="rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold tabular-nums"
-                        style={{ color: "var(--color-accent-blue)", background: "color-mix(in oklch, var(--color-accent-blue) 10%, transparent)" }}>
+                      <span className="rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold tabular-nums text-ink-2"
+                        style={{ background: "var(--color-surface-3)" }}>
                         S{r.sleep_score}
                       </span>
                     )}
@@ -241,7 +239,7 @@ export default function ReflectPage() {
                     </button>
                   )}
                 </div>
-                <p className="text-[14px] leading-relaxed text-ink-2">{r.raw_text}</p>
+                <p className="text-[14px] leading-relaxed text-ink-2 line-clamp-4">{r.raw_text}</p>
               </li>
             ))}
           </ul>

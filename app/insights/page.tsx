@@ -50,7 +50,7 @@ export default async function InsightsPage() {
   const insights = await getInsights();
 
   return (
-    <main className="mx-auto max-w-md pb-28 pt-[calc(env(safe-area-inset-top)+1.25rem)]">
+    <main className="mx-auto max-w-md pb-28 pt-5">
 
       {/* ── Header ──────────────────────────────────────────── */}
       <header className="px-5 pb-4 animate-fade-in">
@@ -69,8 +69,7 @@ export default async function InsightsPage() {
       {insights.length === 0 ? (
         <div className="mx-4 rounded-card glass-1 p-6 text-center animate-spring-in">
           <div
-            className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full"
-            style={{ background: "color-mix(in oklch, var(--color-accent) 12%, transparent)", color: "var(--color-accent)" }}
+            className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-surface-2 text-ink-2"
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <path d="M9 18h6M10 22h4M12 2a7 7 0 0 1 7 7c0 2.6-1.4 4.9-3.5 6.2V17a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-1.8A7 7 0 0 1 12 2z" />
@@ -81,10 +80,10 @@ export default async function InsightsPage() {
             The engine needs about a week of data to find what moves your sleep and recovery. Keep logging and reflecting daily.
           </p>
           <div className="mt-5 flex justify-center gap-2.5">
-            <a href="/log" className="rounded-control bg-accent px-4 py-2.5 text-[13px] font-medium text-bg transition-all active:scale-[0.97] min-h-[44px] flex items-center">
+            <a href="/log" className="rounded-pill bg-accent px-5 py-2.5 text-[13px] font-semibold text-bg transition-transform active:scale-95 min-h-[44px] flex items-center">
               Log today
             </a>
-            <a href="/reflect" className="rounded-control border border-line-strong px-4 py-2.5 text-[13px] font-medium text-ink transition-all active:scale-[0.97] min-h-[44px] flex items-center">
+            <a href="/reflect" className="rounded-pill border border-line-strong bg-surface-2 px-5 py-2.5 text-[13px] font-medium text-ink transition-transform active:scale-95 min-h-[44px] flex items-center">
               Write a reflection
             </a>
           </div>
@@ -141,8 +140,8 @@ export default async function InsightsPage() {
                   <span
                     className="rounded-full px-2.5 py-0.5 text-[11px] font-medium tabular-nums"
                     style={{
-                      background: `color-mix(in oklch, var(--color-accent) 12%, transparent)`,
-                      color: "var(--color-accent)",
+                      background: "var(--color-surface-2)",
+                      color: "var(--color-ink-2)",
                     }}
                   >
                     {fmtPct(ins.confidence)} conf
