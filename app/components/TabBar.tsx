@@ -90,12 +90,16 @@ function ActiveDot() {
 // Inactive: subtle frosted glass with a top edge-highlight. Active: accent-tinted
 // glass with a soft glow. Applied byte-for-byte to the four links AND the More button.
 const CHIP_CLASS =
-  "relative flex flex-col items-center justify-center gap-1 px-3 py-1.5 transition-all duration-200 active:scale-90";
+  "relative flex flex-col items-center justify-center gap-1 transition-all duration-200 active:scale-90";
 
 function chipStyle(active: boolean): React.CSSProperties {
   const base: React.CSSProperties = {
-    minWidth: 56,
-    minHeight: 50,
+    // Fixed (not min) dimensions → every tab is a pixel-identical container
+    // regardless of label length, and no layout shift when switching tabs.
+    width: 62,
+    height: 52,
+    flex: "none",
+    boxSizing: "border-box",
     borderRadius: 16,
     backdropFilter: "blur(12px) saturate(150%)",
     WebkitBackdropFilter: "blur(12px) saturate(150%)",
@@ -198,7 +202,7 @@ export default function TabBar() {
                 <span className="relative">{t.icon(active)}{active && <ActiveDot />}</span>
                 <span
                   className="text-[9.5px] font-medium tracking-[0.06em]"
-                  style={{ lineHeight: 1 }}
+                  style={{ lineHeight: 1, whiteSpace: "nowrap" }}
                 >
                   {t.label}
                 </span>
@@ -217,7 +221,7 @@ export default function TabBar() {
             style={chipStyle(moreActive || moreOpen)}
           >
             <span className="relative">{MoreIcon(moreActive || moreOpen)}{moreActive && <ActiveDot />}</span>
-            <span className="text-[9.5px] font-medium tracking-[0.06em]" style={{ lineHeight: 1 }}>
+            <span className="text-[9.5px] font-medium tracking-[0.06em]" style={{ lineHeight: 1, whiteSpace: "nowrap" }}>
               More
             </span>
           </button>
