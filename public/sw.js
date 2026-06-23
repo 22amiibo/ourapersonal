@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v3";
+const CACHE_VERSION = "v4";
 const OFFLINE_QUEUE_KEY = "offline_queue";
 
 self.addEventListener("install", () => { self.skipWaiting(); });
