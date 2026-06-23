@@ -6,8 +6,8 @@
   --color-ink: #f5f5fa;
   --color-ink-2: #9090a3;
   --color-ink-3: #56566a;
-  --color-accent: #3b82f6;
-  --color-accent-dim: #2563eb;
+  --color-accent: #14b8a6;
+  --color-accent-dim: #0f9b8e;
   --color-accent-blue: #5e96f7;
   --color-line: #1e1e26;
   --color-line-strong: #2a2a36;
@@ -26,7 +26,7 @@
 
   --shadow-card: 0 1px 4px rgba(0,0,0,.5), 0 0 0 .5px rgba(255,255,255,.05);
   --shadow-elevated: 0 8px 40px rgba(0,0,0,.7), 0 0 0 .5px rgba(255,255,255,.06);
-  --shadow-glow: 0 0 28px 8px rgba(59,130,246,.20);
+  --shadow-glow: 0 0 28px 8px rgba(20,184,166,.20);
   --shadow-glow-blue: 0 0 28px 8px rgba(94,150,247,.20);
   --shadow-glow-amber: 0 0 28px 8px rgba(245,158,11,.18);
 }
@@ -39,8 +39,8 @@
   --color-ink: #f5f5fa;
   --color-ink-2: #9090a3;
   --color-ink-3: #56566a;
-  --color-accent: #3b82f6;
-  --color-accent-dim: #2563eb;
+  --color-accent: #14b8a6;
+  --color-accent-dim: #0f9b8e;
   --color-accent-blue: #5e96f7;
   --color-line: #1e1e26;
   --color-line-strong: #2a2a36;
@@ -58,7 +58,7 @@
   --glass-blur: 16px;
   --text-main: #ffffff;
   --text-muted: #8a8a8e;
-  --accent: #3b82f6;
+  --accent: #14b8a6;
   --accent-red: #ff4545;
   --accent-orange: #e05e36;
   --card-radius: 28px;
@@ -74,7 +74,7 @@
 
   --shadow-card: 0 1px 4px rgba(0,0,0,.5), 0 0 0 .5px rgba(255,255,255,.05);
   --shadow-elevated: 0 8px 40px rgba(0,0,0,.7), 0 0 0 .5px rgba(255,255,255,.06);
-  --shadow-glow: 0 0 28px 8px rgba(59,130,246,.20);
+  --shadow-glow: 0 0 28px 8px rgba(20,184,166,.20);
   --shadow-glow-blue: 0 0 28px 8px rgba(94,150,247,.20);
   --shadow-glow-amber: 0 0 28px 8px rgba(245,158,11,.18);
 
@@ -122,8 +122,8 @@
     --color-ink: #08080f;
     --color-ink-2: #6c6c7a;
     --color-ink-3: #ababbc;
-    --color-accent: #3b82f6;
-    --color-accent-dim: #2563eb;
+    --color-accent: #14b8a6;
+    --color-accent-dim: #0f9b8e;
     --color-accent-blue: #2872e3;
     --color-line: #dddde8;
     --color-line-strong: #c5c5d3;
@@ -132,7 +132,7 @@
     --color-bg-soft: rgba(8,8,15,.04);
     --shadow-card: 0 1px 4px rgba(0,0,0,.06), 0 0 0 .5px rgba(0,0,0,.06);
     --shadow-elevated: 0 8px 40px rgba(0,0,0,.12), 0 0 0 .5px rgba(0,0,0,.06);
-    --shadow-glow: 0 0 28px 8px rgba(59,130,246,.16);
+    --shadow-glow: 0 0 28px 8px rgba(20,184,166,.16);
     --shadow-glow-blue: 0 0 28px 8px rgba(40,114,227,.16);
 
     --glass-1-bg:     linear-gradient(157deg, rgba(255,255,255,0.78) 0%, rgba(255,255,255,0.58) 100%);

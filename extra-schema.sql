@@ -622,3 +622,43 @@ CREATE TABLE IF NOT EXISTS yearly_metrics (
 -- -------------------------------------------------------------
 
 ALTER TABLE briefings ADD COLUMN IF NOT EXISTS data_hash TEXT;
+-- ===== Briefing tabs =====
+
+CREATE TABLE IF NOT EXISTS observations (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  range_start DATE NOT NULL,
+  range_end DATE NOT NULL,
+  body TEXT NOT NULL,
+  model TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS observations_user_created
+ON observations(user_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS sources (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  kind TEXT NOT NULL CHECK (kind IN ('rss','email')),
+  identifier TEXT NOT NULL,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS articles (
+  id SERIAL PRIMARY KEY,
+  source_id INTEGER REFERENCES sources(id) ON DELETE CASCADE,
+  guid TEXT UNIQUE NOT NULL,
+  title TEXT NOT NULL,
+  image_url TEXT,
+  description TEXT,
+  body_html TEXT,
+  published_at TIMESTAMPTZ,
+  original_url TEXT,
+  fetched_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS articles_source_published
+ON articles(source_id, published_at DESC);
