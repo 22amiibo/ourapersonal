@@ -257,6 +257,25 @@ export const insightGenerationTool: Anthropic.Tool = {
   },
 };
 
+export const observationTool: Anthropic.Tool = {
+  name: "write_observation",
+  description:
+    "Write one short observation interpreting the person's recent health data and reflections: what is happening, what to change, why, and for what outcome. Reference the actual numbers given. 2–4 sentences. No medical claims; frame as observation and suggestion.",
+  input_schema: {
+    type: "object",
+    properties: {
+      body: {
+        type: "string",
+        description:
+          "The observation, 2–4 sentences. Concrete and specific to the data provided. Plain text, no markdown headers.",
+      },
+    },
+    required: ["body"],
+  },
+};
+
+export const OBSERVATION_SYSTEM = `You are a personal performance coach. From a compact summary of pre-computed trends and the person's own reflections, write ONE concise observation: what's happening, what to change, why, and for what outcome. Reference the actual numbers. Be specific and practical. Never invent data not present in the summary. No medical diagnoses.`;
+
 export const DAILY_SUMMARY_SYSTEM = `You are a terse health data analyst. Write compact, factual daily summaries from structured data. Do not speculate. Report what happened.`;
 
 export const WEEKLY_INTELLIGENCE_SYSTEM = `You are a personal performance coach reviewing one week of health and productivity data. Identify patterns. Be specific. Reference actual numbers. Frame patterns as observations, not medical claims.`;
