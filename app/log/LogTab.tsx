@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react";
 import Button from "@/app/components/ui/Button";
+import CaffeineSlider from "@/app/components/inputs/CaffeineSlider";
+import AlcoholCounter from "@/app/components/inputs/AlcoholCounter";
 
 export type IntakeEntry = {
   id: number;
@@ -100,8 +102,36 @@ export default function LogTab({
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const [loading, setLoading] = useState(false);
   const [workoutType, setWorkoutType] = useState(WORKOUT_TYPES[0]);
+  const [quickBusy, setQuickBusy] = useState<"caffeine" | "alcohol" | null>(null);
 
   const isToday = selectedDate === initialDate;
+
+  // Direct (no-modal) log used by the Inputs slider/counter. Posts to the same
+  // /api/log/intake endpoint and prepends the new entry to the timeline.
+  async function logAmount(type: "caffeine" | "alcohol", quantity: number) {
+    setQuickBusy(type);
+    try {
+      const res = await fetch("/api/log/intake", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type,
+          quantity,
+          unit: type === "caffeine" ? "mg" : "drinks",
+          timestamp: new Date().toISOString(),
+        }),
+      });
+      if (res.ok) {
+        const { entry } = (await res.json()) as { entry: IntakeEntry };
+        setEntries((prev) => [entry, ...prev]);
+        if (type === "caffeine" && new Date(entry.timestamp).getHours() >= 14) {
+          setCaffeineWarning(true);
+        }
+      }
+    } finally {
+      setQuickBusy(null);
+    }
+  }
 
   async function loadDate(date: string) {
     setLoading(true);
@@ -253,7 +283,7 @@ export default function LogTab({
     <>
       <main className="mx-auto max-w-md space-y-5 pb-28 pt-5">
         <header className="px-4 animate-spring-in">
-          <h1 className="text-[22px] font-semibold tracking-tight text-ink">Daily Log</h1>
+          <h1 className="text-[22px] font-semibold tracking-tight text-ink">Inputs</h1>
           <p className="mt-0.5 text-[14px] text-ink-2">Caffeine, alcohol, workouts &amp; notes</p>
         </header>
 
@@ -307,6 +337,14 @@ export default function LogTab({
             )}
           </div>
         </div>
+
+        {/* Primary Inputs — caffeine slider (25 mg steps) + alcohol counter */}
+        {isToday && (
+          <div className="grid grid-cols-1 gap-2.5 px-4 animate-spring-in" style={{ animationDelay: "100ms" }}>
+            <CaffeineSlider busy={quickBusy === "caffeine"} onConfirm={(mg) => logAmount("caffeine", mg)} />
+            <AlcoholCounter busy={quickBusy === "alcohol"} onConfirm={(n) => logAmount("alcohol", n)} />
+          </div>
+        )}
 
         {/* Quick-add chips — one-tap common items */}
         {isToday && (
