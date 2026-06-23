@@ -5,6 +5,7 @@ import { gradeFromScore } from "@/lib/scores";
 import Ring from "@/app/components/ui/Ring";
 import Sparkline from "@/app/components/ui/Sparkline";
 import RunButton from "./RunButton";
+import MoreButton from "@/app/components/MoreButton";
 import Metrics from "./Metrics";
 import OuraDetails from "./OuraDetails";
 import HabitCheckins from "./HabitCheckins";
@@ -207,9 +208,12 @@ export default async function DashboardPage() {
 
       {/* ── Circadian header ───────────────────────────────── */}
       <header className="px-5 pb-3 animate-fade-in">
-        <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.12em] text-ink-3">
-          {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
-        </p>
+        <div className="mb-2 flex items-start justify-between gap-3">
+          <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-ink-3">
+            {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
+          </p>
+          <MoreButton />
+        </div>
         <h1 className="text-display font-semibold text-ink text-balance">
           {dayState}
         </h1>
