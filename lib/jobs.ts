@@ -4,6 +4,7 @@ import { extractWithTool, MODEL } from "@/lib/anthropic";
 import { briefingTool, BRIEFING_SYSTEM, weeklyNoteTool, monthlyNarrativeTool } from "@/lib/prompts";
 import { syncOura } from "@/lib/oura";
 import { syncCalendar } from "@/lib/calendar";
+import { ingestEmail } from "@/lib/articles/ingest";
 import { localDateStr, daysAgoStr, daysAheadStr, weekOfStr, isMonday } from "@/lib/dates";
 import { sendPushToUser } from "@/lib/push";
 import { advanceFacts } from "@/lib/pipeline/facts";
@@ -259,6 +260,14 @@ export async function runDailyJob() {
     results.calendar = await syncCalendar(USER_ID);
   } catch (e) {
     results.calendar = { error: String(e) };
+  }
+
+  // Poll the newsletter mailbox for new articles (zero AI tokens). No-ops
+  // gracefully when IMAP credentials are not configured.
+  try {
+    results.articles = await ingestEmail(USER_ID);
+  } catch (e) {
+    results.articles = { error: String(e) };
   }
 
   // Cursor-based processing pipeline (statistics → rules → LLM).

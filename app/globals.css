@@ -406,6 +406,36 @@ input, textarea {
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 }
 
+/* ── Article reader body — styles sanitized newsletter HTML ─── */
+.article-body { word-break: break-word; }
+.article-body p { margin: 0 0 1em; }
+.article-body h1, .article-body h2, .article-body h3, .article-body h4 {
+  color: var(--color-ink);
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 1.4em 0 0.5em;
+}
+.article-body h1 { font-size: 24px; }
+.article-body h2 { font-size: 21px; }
+.article-body h3 { font-size: 18px; }
+.article-body a { color: var(--color-accent); }
+.article-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+  margin: 1em 0;
+}
+.article-body ul, .article-body ol { margin: 0 0 1em; padding-left: 1.4em; }
+.article-body li { margin: 0.3em 0; }
+.article-body blockquote {
+  margin: 1em 0;
+  padding-left: 1em;
+  border-left: 3px solid var(--color-line-strong);
+  color: var(--color-ink-3);
+}
+.article-body table { width: 100%; max-width: 100%; }
+.article-body hr { border: none; border-top: 1px solid var(--color-line); margin: 1.5em 0; }
+
 /* ── Native select: remove iOS chrome, add custom arrow ─── */
 select {
   -webkit-appearance: none;
