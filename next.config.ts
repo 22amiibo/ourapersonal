@@ -3,7 +3,7 @@ import type { NextConfig } from 'next'
 const withPWA = require('next-pwa')
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ['node-ical'],
+  serverExternalPackages: ['node-ical', 'imapflow', 'mailparser'],
   turbopack: {},
   // Allow loading the dev server from your phone over the LAN (same Wi-Fi).
   allowedDevOrigins: ['192.168.1.224'],
