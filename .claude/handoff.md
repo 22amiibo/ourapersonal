@@ -23,7 +23,7 @@ This file is the single source of truth for project state. If you are a fresh ch
 ---
 
 ## The build (current major effort) — Apple-Health 5-tab rebuild
-**Spec:** `.claude/briefing-build-spec.md` · **Plan:** `C:\Users\Administrator\.claude\plans\nifty-plotting-dusk.md`
+**Spec:** `.claude/briefing-build-spec.md` · **Full plan (in repo):** `.claude/implementation-plan.md` (phase-by-phase detail)
 **Reference screenshots:** `.claude/IMG_0866`–`0875` (Apple Health, layout reference only — NOT its palette/font).
 
 **Locked design decisions:** accent **teal `#14b8a6`** (`--color-accent`); keep **SF Pro Rounded** (NOT Geist). Articles ingestion = **IMAP + Gmail app password**, mailbox filled by **auto-forwarding**.
