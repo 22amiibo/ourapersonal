@@ -1,5 +1,6 @@
 import webpush from "web-push";
 import { sql } from "@/lib/db";
+import { inQuietHours } from "@/lib/notify-timing";
 
 let configured = false;
 
@@ -14,8 +15,17 @@ function ensureConfigured(): boolean {
   return true;
 }
 
-export async function sendPushToUser(userId: number, title: string, body: string) {
+// `opts.respectQuietHours` (with `opts.tz`) holds the push when it's the middle
+// of the user's night — smart timing on top of a fixed cron. Omitting opts keeps
+// the original always-send behavior, so existing callers are unaffected.
+export async function sendPushToUser(
+  userId: number,
+  title: string,
+  body: string,
+  opts?: { respectQuietHours?: boolean; tz?: string },
+) {
   if (!ensureConfigured()) return;
+  if (opts?.respectQuietHours && opts.tz && inQuietHours(opts.tz)) return;
   const subs = await sql`
     SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE user_id = ${userId}
   `;

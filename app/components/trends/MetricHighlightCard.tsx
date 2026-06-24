@@ -9,9 +9,13 @@ import MetricBarChart from "./MetricBarChart";
 export default function MetricHighlightCard({
   result,
   onOpen,
+  active = false,
 }: {
   result: TrendResult;
   onOpen: () => void;
+  // While this card's detail is open, it yields its shared-element name to the
+  // detail sheet so exactly one element owns the name during the transition.
+  active?: boolean;
 }) {
   const meta = metaFor(result.metric);
   const values = result.points.map((p) => p.value);
@@ -46,7 +50,10 @@ export default function MetricHighlightCard({
             {formatValue(result.metric, result.average, result.unit)}
           </span>
         </div>
-        <div className="mt-2">
+        <div
+          className="mt-2"
+          style={{ viewTransitionName: active ? undefined : `vt-chart-${result.metric}` } as React.CSSProperties}
+        >
           <MetricBarChart values={values} labels={labels} average={result.average} height={92} />
         </div>
       </div>

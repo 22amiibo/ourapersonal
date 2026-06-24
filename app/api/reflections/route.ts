@@ -47,7 +47,16 @@ export async function GET(req: Request) {
     cursor = prevDate(cursor);
   }
 
-  return NextResponse.json({ reflections, streak });
+  // Last 14 days as a chronological dot row (oldest → today) so the UI can
+  // show which recent days were written without re-deriving dates client-side.
+  const days: { date: string; has: boolean }[] = [];
+  let d = today;
+  for (let i = 0; i < 14; i++) {
+    days.unshift({ date: d, has: dates.has(d) });
+    d = prevDate(d);
+  }
+
+  return NextResponse.json({ reflections, streak, days });
 }
 
 export async function POST(req: Request) {

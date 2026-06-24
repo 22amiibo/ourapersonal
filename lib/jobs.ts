@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { sql } from "@/lib/db";
 import { extractWithTool, MODEL } from "@/lib/anthropic";
-import { briefingTool, BRIEFING_SYSTEM, weeklyNoteTool, monthlyNarrativeTool } from "@/lib/prompts";
+import { briefingTool, BRIEFING_SYSTEM, BRIEFING_TONE, recoveryToneFor, weeklyNoteTool, monthlyNarrativeTool } from "@/lib/prompts";
 import { syncOura } from "@/lib/oura";
 import { syncCalendar } from "@/lib/calendar";
 import { ingestEmail } from "@/lib/articles/ingest";
@@ -71,7 +71,7 @@ export async function generateBriefing(tz: string): Promise<BriefingOutput> {
   if (memRecords.length > 0) logRetrieval(USER_ID, memRecords, "morning_briefing", dataHash).catch(() => {});
 
   // Calendar events + predictions — chronological, not semantic
-  const [calendarEvents, predictions, featureRows] = await Promise.all([
+  const [calendarEvents, predictions, featureRows, readinessRows] = await Promise.all([
     sql`SELECT title, kind, starts_at FROM calendar_events
         WHERE user_id = ${USER_ID} AND starts_at >= ${today} AND starts_at <= ${twoWeeksAhead}
         ORDER BY starts_at ASC LIMIT 5`,
@@ -80,7 +80,15 @@ export async function generateBriefing(tz: string): Promise<BriefingOutput> {
         ORDER BY target_date ASC LIMIT 3`,
     sql`SELECT wellness_score, academic_momentum, recovery_index, cognitive_load_index
         FROM daily_feature_vectors WHERE user_id = ${USER_ID} AND vector_date = ${today} LIMIT 1`,
+    sql`SELECT readiness_score FROM oura_daily
+        WHERE user_id = ${USER_ID} ORDER BY day DESC LIMIT 1`,
   ]);
+
+  // Adapt the briefing's voice to today's recovery state (peak → push,
+  // low → rest) without changing the underlying facts.
+  const todayReadiness = (readinessRows[0] as { readiness_score: number | null } | undefined)?.readiness_score ?? null;
+  const tone = recoveryToneFor(todayReadiness);
+  const briefingSystem = `${BRIEFING_SYSTEM}\n\nTODAY'S RECOVERY TONE — ${BRIEFING_TONE[tone]}`;
 
   const dailySummaries = memRecords.filter((r) => r.source_type === "daily_summary");
   const insights = memRecords.filter((r) => r.source_type === "insight");
@@ -111,7 +119,7 @@ export async function generateBriefing(tz: string): Promise<BriefingOutput> {
   }
 
   const out = await extractWithTool<BriefingOutput>({
-    system: BRIEFING_SYSTEM,
+    system: briefingSystem,
     userText: lines.join("\n"),
     tool: briefingTool,
     maxTokens: 1000,
@@ -130,7 +138,12 @@ export async function generateBriefing(tz: string): Promise<BriefingOutput> {
   `;
 
   try {
-    await sendPushToUser(USER_ID, "Morning briefing", out.headline ?? out.key_risk?.slice(0, 120) ?? "Your briefing is ready.");
+    await sendPushToUser(
+      USER_ID,
+      "Morning briefing",
+      out.headline ?? out.key_risk?.slice(0, 120) ?? "Your briefing is ready.",
+      { respectQuietHours: true, tz },
+    );
   } catch {}
 
   return out;
@@ -250,7 +263,10 @@ export async function runDailyJob() {
       if (prevRows.length > 0 && todayRow.readiness_score != null) {
         const avgPrev = prevRows.reduce((s, r) => s + r.readiness_score!, 0) / prevRows.length;
         if (todayRow.readiness_score <= avgPrev - 15) {
-          await sendPushToUser(USER_ID, "Low readiness today", "Readiness is low — protect your evening.");
+          await sendPushToUser(USER_ID, "Low readiness today", "Readiness is low — protect your evening.", {
+            respectQuietHours: true,
+            tz,
+          });
         }
       }
     }

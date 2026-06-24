@@ -90,6 +90,26 @@ Frame patterns as tentative observations, NEVER as causal claims. Be specific an
 Prioritize upcoming high-stakes events. Stay calm and encouraging, never alarming. No medical advice.
 Write the headline first — it must work as a standalone push notification.`;
 
+// The briefing's *voice* adapts to today's recovery state so the same facts
+// land differently on a peak day vs. a recovery day. Mirrors the dashboard
+// recovery-zone thresholds (see getRecoveryZone in app/dashboard/page.tsx).
+export type RecoveryTone = "peak" | "steady" | "cautious" | "recovery";
+
+export function recoveryToneFor(readiness: number | null | undefined): RecoveryTone {
+  if (readiness == null) return "steady";
+  if (readiness >= 80) return "peak";
+  if (readiness >= 65) return "steady";
+  if (readiness >= 55) return "cautious";
+  return "recovery";
+}
+
+export const BRIEFING_TONE: Record<RecoveryTone, string> = {
+  peak: "Recovery is HIGH today. Tone: confident and ambitious. Encourage seizing the day and stacking demanding work — this is a day to push and capitalize.",
+  steady: "Recovery is SOLID today. Tone: balanced and matter-of-fact. Encourage steady, consistent progress without overreaching.",
+  cautious: "Recovery is BELOW baseline today. Tone: measured and protective. Encourage prioritizing essentials, pacing effort, and guarding energy.",
+  recovery: "Recovery is LOW today. Tone: gentle and reassuring. Emphasize rest, a lighter load, and self-compassion; avoid pressure or alarm.",
+};
+
 export const weeklyNoteTool: Anthropic.Tool = {
   name: "write_weekly_note",
   description: "Write ONE short sentence summarizing what stood out this week.",
@@ -275,6 +295,31 @@ export const observationTool: Anthropic.Tool = {
 };
 
 export const OBSERVATION_SYSTEM = `You are a personal performance coach. From a compact summary of pre-computed trends and the person's own reflections, write ONE concise observation: what's happening, what to change, why, and for what outcome. Reference the actual numbers. Be specific and practical. Never invent data not present in the summary. No medical diagnoses.`;
+
+// "Ask your data" — answers a free-text question grounded ONLY in a compact,
+// pre-computed summary (recent trends, daily summaries, active insights). The
+// model never sees raw rows, keeping token cost bounded and flat.
+export const askDataTool: Anthropic.Tool = {
+  name: "answer_from_data",
+  description:
+    "Answer the user's question using ONLY the supplied data summary. If the summary does not contain enough to answer, say so plainly. Reference concrete numbers when present. 2–4 sentences, plain text.",
+  input_schema: {
+    type: "object",
+    properties: {
+      answer: {
+        type: "string",
+        description: "A direct, specific answer grounded only in the provided summary. 2–4 sentences, plain text, no markdown headers.",
+      },
+      grounded: {
+        type: "boolean",
+        description: "True if the summary contained enough relevant data to answer; false if you had to decline.",
+      },
+    },
+    required: ["answer", "grounded"],
+  },
+};
+
+export const ASK_DATA_SYSTEM = `You answer questions about one person's health and performance using ONLY the data summary provided. Never invent numbers or facts not in the summary. If the data can't answer the question, say what's missing instead of guessing. Be concrete, reference actual figures, stay practical, and give no medical diagnoses.`;
 
 export const DAILY_SUMMARY_SYSTEM = `You are a terse health data analyst. Write compact, factual daily summaries from structured data. Do not speculate. Report what happened.`;
 

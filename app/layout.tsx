@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist_Mono } from "next/font/google";
 import ServiceWorkerRegistration from "./components/ServiceWorkerRegistration";
 import TabBar from "./components/TabBar";
+import CommandPalette from "./components/CommandPalette";
 import CircadianBackground from "./components/CircadianBackground";
 import StatusBar from "./components/StatusBar";
 import "./globals.css";
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <StatusBar />
         {children}
         <TabBar />
+        <CommandPalette />
         <ServiceWorkerRegistration />
       </body>
     </html>

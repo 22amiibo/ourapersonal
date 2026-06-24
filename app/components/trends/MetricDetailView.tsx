@@ -38,6 +38,11 @@ export default function MetricDetailView({
   const [data, setData] = useState<TrendResult>(initial);
   const [loading, setLoading] = useState(false);
 
+  // Light haptic confirmation as the sheet rises (no-op where unsupported).
+  useEffect(() => {
+    navigator.vibrate?.(8);
+  }, []);
+
   useEffect(() => {
     // W is preloaded; fetch only when switching to another range.
     if (range === initial.range) {
@@ -111,7 +116,14 @@ export default function MetricDetailView({
         </div>
         <p className="mt-1 text-[13px] text-ink-3">{rangeSubtitle(data.points)}</p>
 
-        <div className="mt-4" style={{ opacity: loading ? 0.4 : 1, transition: "opacity .2s" }}>
+        <div
+          className="mt-4"
+          style={{
+            opacity: loading ? 0.4 : 1,
+            transition: "opacity .2s",
+            viewTransitionName: `vt-chart-${metric}`,
+          } as React.CSSProperties}
+        >
           <MetricBarChart values={values} labels={labels} accent showAxis height={180} />
         </div>
 

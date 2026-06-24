@@ -23,6 +23,12 @@ export default function Ring({ score, size = 132, stroke = 9, label, color }: Ri
     : color === "var(--color-amber)"
     ? "var(--shadow-glow-amber)"
     : "var(--shadow-glow)";
+  // Charge-up glow color tracks the arc color.
+  const arcGlow = color === "var(--color-accent-blue)"
+    ? "rgba(94,150,247,.55)"
+    : color === "var(--color-amber)"
+    ? "rgba(245,158,11,.5)"
+    : "rgba(20,184,166,.55)";
 
   const fontSize = size >= 110 ? "1.75rem" : size >= 84 ? "1.5rem" : "1.25rem";
 
@@ -65,8 +71,10 @@ export default function Ring({ score, size = 132, stroke = 9, label, color }: Ri
               {
                 "--dash": `${c}px`,
                 "--off": `${off}px`,
+                "--arc-glow": arcGlow,
                 strokeDashoffset: `${off}px`,
-                animation: "ring-draw 1s cubic-bezier(0.22, 1, 0.36, 1) both",
+                animation:
+                  "ring-draw 1s cubic-bezier(0.22, 1, 0.36, 1) both, ring-charge 1.15s ease-out both",
               } as React.CSSProperties
             }
           />

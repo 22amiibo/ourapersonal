@@ -3,6 +3,7 @@ import { USER_ID } from "@/lib/jobs";
 import { localDateStr, daysAgoStr, getGreeting } from "@/lib/dates";
 import { gradeFromScore } from "@/lib/scores";
 import Ring from "@/app/components/ui/Ring";
+import HapticReveal from "@/app/components/ui/HapticReveal";
 import Sparkline from "@/app/components/ui/Sparkline";
 import RunButton from "./RunButton";
 import MoreButton from "@/app/components/MoreButton";
@@ -204,7 +205,7 @@ export default async function DashboardPage() {
     : null;
 
   return (
-    <main className="mx-auto max-w-md pb-28 pt-5">
+    <main className="mx-auto max-w-md pb-28 pt-5 sm:max-w-3xl sm:px-2">
 
       {/* ── Circadian header ───────────────────────────────── */}
       <header className="px-5 pb-3 animate-fade-in">
@@ -242,6 +243,7 @@ export default async function DashboardPage() {
         className="flex justify-center gap-5 px-5 py-8 animate-score-pop"
         style={{ animationDelay: "80ms" }}
       >
+        <HapticReveal />
         <div className="flex flex-col items-center gap-2">
           <Ring score={oura?.readiness_score} size={96} />
           <div className="text-center">
@@ -354,6 +356,11 @@ export default async function DashboardPage() {
           </div>
         )}
       </section>
+
+      {/* Below the hero, cards flow into two balanced columns on wider
+          screens (≥640px). Mobile is unchanged — every rule is sm:-gated.
+          break-inside-avoid keeps each card whole across the column break. */}
+      <div className="sm:columns-2 sm:gap-2 sm:[&>*]:mb-3 sm:[&>*]:break-inside-avoid sm:[&>*]:!mx-2">
 
       {/* ── Wellness Score + Sleep Debt ──────────────────────── */}
       {(wellnessScore != null || hasSleepDebtData) && (
@@ -492,6 +499,7 @@ export default async function DashboardPage() {
           </ul>
         </section>
       )}
+      </div>
     </main>
   );
 }

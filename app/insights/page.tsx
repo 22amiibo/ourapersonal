@@ -1,5 +1,6 @@
 import { sql } from "@/lib/db";
 import { USER_ID } from "@/lib/jobs";
+import AskData from "./AskData";
 
 // Per-user data backed by the DB — render per request, never prerender at build.
 export const dynamic = "force-dynamic";
@@ -64,6 +65,9 @@ export default async function InsightsPage() {
           Patterns discovered from your data
         </p>
       </header>
+
+      {/* ── Ask your data ───────────────────────────────────── */}
+      <AskData />
 
       {/* ── Feed ────────────────────────────────────────────── */}
       {insights.length === 0 ? (

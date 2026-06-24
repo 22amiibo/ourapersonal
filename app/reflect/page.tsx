@@ -51,6 +51,7 @@ export default function ReflectPage() {
   const [msg, setMsg] = useState("");
   const [reflections, setReflections] = useState<PastReflection[]>([]);
   const [streak, setStreak] = useState(0);
+  const [days, setDays] = useState<{ date: string; has: boolean }[]>([]);
   const [searchQ, setSearchQ] = useState("");
   const [searchResults, setSearchResults] = useState<PastReflection[] | null>(null);
   const [searching, setSearching] = useState(false);
@@ -60,9 +61,14 @@ export default function ReflectPage() {
     try {
       const res = await fetch("/api/reflections?limit=10");
       if (res.ok) {
-        const data = (await res.json()) as { reflections: PastReflection[]; streak: number };
+        const data = (await res.json()) as {
+          reflections: PastReflection[];
+          streak: number;
+          days?: { date: string; has: boolean }[];
+        };
         setReflections(data.reflections);
         setStreak(data.streak);
+        setDays(data.days ?? []);
       }
     } catch {}
   }
@@ -132,6 +138,31 @@ export default function ReflectPage() {
           <SearchIcon />
         </button>
       </header>
+
+      {/* Last 14 days — a filled dot is a day you wrote; today is ringed. */}
+      {days.length > 0 && (
+        <div
+          className="flex items-center justify-between gap-1 px-5 animate-fade-in"
+          aria-label="Reflection activity, last 14 days"
+        >
+          {days.map((d, i) => {
+            const isToday = i === days.length - 1;
+            return (
+              <span
+                key={d.date}
+                title={d.date}
+                className="h-2 w-2 shrink-0 rounded-full transition-all"
+                style={{
+                  background: d.has ? "var(--color-accent)" : "var(--color-surface-3)",
+                  boxShadow: d.has ? "0 0 6px 0 color-mix(in oklch, var(--color-accent) 55%, transparent)" : "none",
+                  outline: isToday ? "1.5px solid var(--color-accent)" : "none",
+                  outlineOffset: 2,
+                }}
+              />
+            );
+          })}
+        </div>
+      )}
 
       {showSearch && (
         <section className="mx-4 space-y-3 rounded-card glass-1 p-5 animate-spring-in">
