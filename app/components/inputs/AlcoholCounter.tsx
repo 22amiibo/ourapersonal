@@ -30,12 +30,9 @@ export default function AlcoholCounter({
 
   return (
     <div className="rounded-card glass-1 p-5">
-      <div className="flex items-baseline justify-between">
-        <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">
-          Alcohol
-        </span>
-        <span className="font-mono text-[11px] tabular-nums text-ink-3">drinks</span>
-      </div>
+      <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">
+        Alcohol
+      </span>
 
       <div className="mt-4 flex items-center justify-center gap-7">
         <StepBtn label="−" onClick={() => setN((v) => Math.max(0, v - 1))} />

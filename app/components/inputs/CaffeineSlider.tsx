@@ -21,12 +21,9 @@ export default function CaffeineSlider({
 
   return (
     <div className="rounded-card glass-1 p-5">
-      <div className="flex items-baseline justify-between">
-        <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">
-          Caffeine
-        </span>
-        <span className="font-mono text-[11px] tabular-nums text-ink-3">{step} mg steps</span>
-      </div>
+      <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">
+        Caffeine
+      </span>
 
       <div className="mt-3 flex items-end gap-1.5">
         <span
