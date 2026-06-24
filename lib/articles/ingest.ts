@@ -20,7 +20,8 @@ function imapConfig() {
   const host = process.env.NEWSLETTER_IMAP_HOST || "imap.gmail.com";
   const port = Number(process.env.NEWSLETTER_IMAP_PORT || 993);
   const user = process.env.NEWSLETTER_IMAP_USER;
-  const pass = process.env.NEWSLETTER_IMAP_PASS;
+  // Accept NEWSLETTER_IMAP_PASSWORD (preferred) or the shorter _PASS alias.
+  const pass = process.env.NEWSLETTER_IMAP_PASSWORD || process.env.NEWSLETTER_IMAP_PASS;
   if (!user || !pass) return null;
   return { host, port, secure: true, auth: { user, pass } };
 }
