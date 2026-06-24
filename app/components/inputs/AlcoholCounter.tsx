@@ -8,8 +8,12 @@ function StepBtn({ label, onClick }: { label: "−" | "+"; onClick: () => void }
       type="button"
       onClick={onClick}
       aria-label={label === "−" ? "Decrease" : "Increase"}
-      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-[24px] leading-none text-ink transition-transform active:scale-90"
-      style={{ background: "rgba(255,255,255,0.08)", border: "0.5px solid rgba(255,255,255,0.14)" }}
+      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-[24px] font-medium leading-none transition-transform active:scale-90"
+      style={{
+        background: "color-mix(in oklch, var(--color-accent) 20%, transparent)",
+        border: "0.5px solid color-mix(in oklch, var(--color-accent) 50%, transparent)",
+        color: "var(--color-accent)",
+      }}
     >
       {label}
     </button>

@@ -104,13 +104,12 @@ const CHIP_CLASS =
 
 function chipStyle(active: boolean): React.CSSProperties {
   const base: React.CSSProperties = {
-    // Fixed (not min) dimensions → every tab is a pixel-identical container
-    // regardless of label length, and no layout shift when switching tabs.
-    width: 62,
-    height: 52,
-    flex: "none",
+    // Equal flex cells (min-w-0) so all five always share one row and shrink
+    // to fit any iPhone width — never wrapping a tab to a second line.
+    height: 54,
+    minWidth: 0,
     boxSizing: "border-box",
-    borderRadius: 16,
+    borderRadius: 17,
     backdropFilter: "blur(12px) saturate(150%)",
     WebkitBackdropFilter: "blur(12px) saturate(150%)",
     transition: "all 200ms ease-out",
@@ -119,18 +118,18 @@ function chipStyle(active: boolean): React.CSSProperties {
     return {
       ...base,
       background:
-        "linear-gradient(180deg, color-mix(in oklch, var(--color-accent) 32%, transparent), color-mix(in oklch, var(--color-accent) 12%, transparent))",
-      border: "0.5px solid color-mix(in oklch, var(--color-accent) 45%, transparent)",
+        "linear-gradient(180deg, color-mix(in oklch, var(--color-accent) 34%, transparent), color-mix(in oklch, var(--color-accent) 11%, transparent))",
+      border: "0.5px solid color-mix(in oklch, var(--color-accent) 50%, transparent)",
       boxShadow:
-        "inset 0 0.5px 0 rgba(255,255,255,0.35), 0 2px 12px color-mix(in oklch, var(--color-accent) 38%, transparent)",
+        "inset 0 1px 0 rgba(255,255,255,0.4), inset 0 -1px 0 rgba(0,0,0,0.2), 0 3px 14px color-mix(in oklch, var(--color-accent) 42%, transparent)",
     };
   }
   return {
     ...base,
     background:
-      "linear-gradient(180deg, rgba(255,255,255,0.11), rgba(255,255,255,0.035))",
-    border: "0.5px solid rgba(255,255,255,0.15)",
-    boxShadow: "inset 0 0.5px 0 rgba(255,255,255,0.22), 0 1px 2px rgba(0,0,0,0.22)",
+      "linear-gradient(180deg, rgba(255,255,255,0.13), rgba(255,255,255,0.04))",
+    border: "0.5px solid rgba(255,255,255,0.16)",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.26), inset 0 -1px 0 rgba(0,0,0,0.22), 0 2px 5px rgba(0,0,0,0.28)",
     color: "rgba(255,255,255,0.55)",
   };
 }
@@ -177,12 +176,12 @@ export default function TabBar() {
     <nav
       role="tablist"
       aria-label="Primary navigation"
-      className={`fixed inset-x-0 bottom-0 z-30 flex justify-center pb-[calc(env(safe-area-inset-bottom)+0.5rem)] transform-gpu transition-transform duration-300 ease-out will-change-transform ${
+      className={`fixed inset-x-0 bottom-0 z-30 flex justify-center px-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] transform-gpu transition-transform duration-300 ease-out will-change-transform ${
         hidden ? "translate-y-[calc(100%+env(safe-area-inset-bottom)+0.5rem)]" : "translate-y-0"
       }`}
     >
       <div
-        className="flex items-center gap-1.5 rounded-[26px] border px-2 py-1.5"
+        className="flex w-full max-w-md items-stretch gap-1.5 rounded-[26px] border px-1.5 py-1.5"
         style={{
           background:
             "linear-gradient(180deg, rgba(42,42,48,0.55), rgba(18,18,22,0.66))",
@@ -203,12 +202,12 @@ export default function TabBar() {
               aria-selected={active}
               aria-current={active ? "page" : undefined}
               aria-label={t.label}
-              className={`${CHIP_CLASS} ${active ? "text-accent" : ""}`}
+              className={`${CHIP_CLASS} flex-1 ${active ? "text-accent" : ""}`}
               style={chipStyle(active)}
             >
               <span className="relative">{t.icon(active)}{active && <ActiveDot />}</span>
               <span
-                className="text-[9px] font-medium tracking-[0.04em]"
+                className="max-w-full overflow-hidden text-[9px] font-medium tracking-[0.02em] text-ellipsis"
                 style={{ lineHeight: 1, whiteSpace: "nowrap" }}
               >
                 {t.label}

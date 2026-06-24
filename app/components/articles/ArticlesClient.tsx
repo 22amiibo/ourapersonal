@@ -46,38 +46,42 @@ export default function ArticlesClient({ initial }: { initial: Article[] }) {
   }
 
   return (
-    <div onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
-      <div
-        className="flex items-center justify-center overflow-hidden text-[12px] text-ink-3 transition-[height]"
-        style={{ height: refreshing ? 28 : pull }}
-      >
-        {refreshing ? "Refreshing…" : pull >= PULL_THRESHOLD ? "Release to refresh" : pull > 0 ? "Pull to refresh" : ""}
+    <>
+      <div onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
+        <div
+          className="flex items-center justify-center overflow-hidden text-[12px] text-ink-3 transition-[height]"
+          style={{ height: refreshing ? 28 : pull }}
+        >
+          {refreshing ? "Refreshing…" : pull >= PULL_THRESHOLD ? "Release to refresh" : pull > 0 ? "Pull to refresh" : ""}
+        </div>
+
+        {articles.length === 0 ? (
+          <div className="mx-4 rounded-card glass-1 p-6 text-center">
+            <p className="text-[15px] font-semibold text-ink">No articles yet</p>
+            <p className="mt-1 text-[13px] text-ink-3">
+              Once your newsletter mailbox is connected, new issues appear here. Pull down to check now.
+            </p>
+            <button
+              type="button"
+              onClick={refresh}
+              disabled={refreshing}
+              className="mt-4 min-h-[44px] rounded-pill bg-accent px-5 py-2.5 text-[14px] font-semibold text-bg active:scale-95 disabled:opacity-40"
+            >
+              {refreshing ? "Checking…" : "Check now"}
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4 px-4">
+            {articles.map((a) => (
+              <ArticleCard key={a.id} article={a} onOpen={() => setOpen(a)} />
+            ))}
+          </div>
+        )}
       </div>
 
-      {articles.length === 0 ? (
-        <div className="mx-4 rounded-card glass-1 p-6 text-center">
-          <p className="text-[15px] font-semibold text-ink">No articles yet</p>
-          <p className="mt-1 text-[13px] text-ink-3">
-            Once your newsletter mailbox is connected, new issues appear here. Pull down to check now.
-          </p>
-          <button
-            type="button"
-            onClick={refresh}
-            disabled={refreshing}
-            className="mt-4 min-h-[44px] rounded-pill bg-accent px-5 py-2.5 text-[14px] font-semibold text-bg active:scale-95 disabled:opacity-40"
-          >
-            {refreshing ? "Checking…" : "Check now"}
-          </button>
-        </div>
-      ) : (
-        <div className="space-y-4 px-4">
-          {articles.map((a) => (
-            <ArticleCard key={a.id} article={a} onOpen={() => setOpen(a)} />
-          ))}
-        </div>
-      )}
-
+      {/* Rendered outside the pull-to-refresh handler so its scroll/touch is
+          never intercepted (the reader itself portals to <body>). */}
       {open && <ArticleReader article={open} onClose={() => setOpen(null)} />}
-    </div>
+    </>
   );
 }

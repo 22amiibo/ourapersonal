@@ -46,11 +46,6 @@ export default function CaffeineSlider({
         className="mt-4 h-2 w-full cursor-pointer"
         style={{ accentColor: "var(--color-accent)" }}
       />
-      <div className="mt-1 flex justify-between font-mono text-[10px] text-ink-3">
-        <span>0</span>
-        <span>{max / 2}</span>
-        <span>{max}</span>
-      </div>
 
       <button
         type="button"

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import CaffeineSlider from "@/app/components/inputs/CaffeineSlider";
 import AlcoholCounter from "@/app/components/inputs/AlcoholCounter";
+import WorkoutSlider from "@/app/components/inputs/WorkoutSlider";
 
 export type IntakeEntry = {
   id: number;
@@ -12,6 +13,8 @@ export type IntakeEntry = {
   timestamp: string;
   note: string | null;
 };
+
+type InputType = "caffeine" | "alcohol" | "workout";
 
 function formatTime(ts: string): string {
   return new Date(ts).toLocaleTimeString(undefined, {
@@ -38,26 +41,20 @@ function formatDateLabel(date: string, today: string): string {
   });
 }
 
+function unitFor(type: InputType): string {
+  return type === "caffeine" ? "mg" : type === "alcohol" ? "drinks" : "min";
+}
+
+function labelFor(type: InputType, qty: number): string {
+  if (type === "caffeine") return `${qty} mg`;
+  if (type === "alcohol") return `${qty} drink${qty === 1 ? "" : "s"}`;
+  return `${qty} min`;
+}
+
 const ChevronLeft = () => <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden><path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/></svg>;
 const ChevronRight = () => <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden><path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/></svg>;
 const TrashIcon = () => <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>;
-
-const SVG = ({ c, children }: { c: string; children: React.ReactNode }) => (
-  <svg className={c} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>{children}</svg>
-);
-// Monochrome by default — icons inherit currentColor (Expo: no decorative color
-// in chrome; semantic color lives in the data, e.g. the caffeine day-total).
-const CoffeeIcon = ({ s = "h-7 w-7" }) => <SVG c={s}><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></SVG>;
-const DrinkIcon = ({ s = "h-7 w-7" }) => <SVG c={s}><path d="M8 22h8M12 11v11M3 2l2.5 14.5a2 2 0 0 0 2 1.5h9a2 2 0 0 0 2-1.5L21 2H3z"/></SVG>;
-const NoteIcon  = ({ s = "h-7 w-7" }) => <SVG c={s}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></SVG>;
-const WorkoutIcon = ({ s = "h-7 w-7" }) => <SVG c={s}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></SVG>;
-
-function EntryIcon({ type }: { type: IntakeEntry["type"] }) {
-  if (type === "caffeine") return <CoffeeIcon s="h-5 w-5" />;
-  if (type === "alcohol") return <DrinkIcon s="h-5 w-5" />;
-  if (type === "workout") return <WorkoutIcon s="h-5 w-5" />;
-  return <NoteIcon s="h-5 w-5" />;
-}
+const UndoIcon = () => <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M3 7v6h6"/><path d="M3.5 13a9 9 0 1 0 2.3-9.3L3 7"/></svg>;
 
 type WeeklyStats = { caffeine_mg: number; alcohol_drinks: number; workout_days: number } | null;
 
@@ -74,13 +71,15 @@ export default function LogTab({
   const [caffeineWarning, setCaffeineWarning] = useState(false);
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const [loading, setLoading] = useState(false);
-  const [quickBusy, setQuickBusy] = useState<"caffeine" | "alcohol" | null>(null);
+  const [quickBusy, setQuickBusy] = useState<InputType | null>(null);
+  // The most recent log made this session — backs the shared Undo button.
+  const [lastLog, setLastLog] = useState<{ id: number; label: string } | null>(null);
 
   const isToday = selectedDate === initialDate;
 
   // Direct (no-modal) log used by the Inputs slider/counter. Posts to the same
-  // /api/log/intake endpoint and prepends the new entry to the timeline.
-  async function logAmount(type: "caffeine" | "alcohol", quantity: number) {
+  // /api/log/intake endpoint, prepends the new entry, and arms Undo.
+  async function logAmount(type: InputType, quantity: number) {
     setQuickBusy(type);
     try {
       const res = await fetch("/api/log/intake", {
@@ -89,13 +88,14 @@ export default function LogTab({
         body: JSON.stringify({
           type,
           quantity,
-          unit: type === "caffeine" ? "mg" : "drinks",
+          unit: unitFor(type),
           timestamp: new Date().toISOString(),
         }),
       });
       if (res.ok) {
         const { entry } = (await res.json()) as { entry: IntakeEntry };
         setEntries((prev) => [entry, ...prev]);
+        setLastLog({ id: entry.id, label: labelFor(type, quantity) });
         if (type === "caffeine" && new Date(entry.timestamp).getHours() >= 14) {
           setCaffeineWarning(true);
         }
@@ -133,6 +133,7 @@ export default function LogTab({
     const res = await fetch(`/api/log/intake?id=${id}`, { method: "DELETE" });
     if (res.ok) {
       setEntries((prev) => prev.filter((e) => e.id !== id));
+      setLastLog((prev) => (prev?.id === id ? null : prev));
     }
   }
 
@@ -147,7 +148,7 @@ export default function LogTab({
     <main className="mx-auto max-w-md space-y-5 pb-28 pt-5">
       <header className="px-4 animate-spring-in">
         <h1 className="text-[22px] font-semibold tracking-tight text-ink">Inputs</h1>
-        <p className="mt-0.5 text-[14px] text-ink-2">Caffeine &amp; alcohol</p>
+        <p className="mt-0.5 text-[14px] text-ink-2">Caffeine, alcohol &amp; workouts</p>
       </header>
 
       {weeklyStats && (
@@ -201,11 +202,28 @@ export default function LogTab({
         </div>
       </div>
 
-      {/* Primary Inputs — caffeine slider (25 mg steps) + alcohol counter */}
+      {/* Primary Inputs — caffeine / alcohol / workout, + shared Undo */}
       {isToday && (
-        <div className="grid grid-cols-1 gap-2.5 px-4 animate-spring-in" style={{ animationDelay: "100ms" }}>
+        <div className="space-y-2.5 px-4 animate-spring-in" style={{ animationDelay: "100ms" }}>
           <CaffeineSlider busy={quickBusy === "caffeine"} onConfirm={(mg) => logAmount("caffeine", mg)} />
           <AlcoholCounter busy={quickBusy === "alcohol"} onConfirm={(n) => logAmount("alcohol", n)} />
+          <WorkoutSlider busy={quickBusy === "workout"} onConfirm={(m) => logAmount("workout", m)} />
+          {lastLog && (
+            <div className="flex justify-center pt-0.5">
+              <button
+                type="button"
+                onClick={() => deleteEntry(lastLog.id)}
+                className="flex items-center gap-2 rounded-pill px-4 py-2.5 text-[13px] font-semibold text-accent transition-transform active:scale-95 min-h-[44px]"
+                style={{
+                  background: "color-mix(in oklch, var(--color-accent) 13%, transparent)",
+                  border: "0.5px solid color-mix(in oklch, var(--color-accent) 45%, transparent)",
+                }}
+              >
+                <UndoIcon />
+                Undo {lastLog.label}
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -249,9 +267,6 @@ export default function LogTab({
                 key={entry.id}
                 className="flex items-start gap-3 rounded-card glass-1 px-4 py-4"
               >
-                <span className="mt-0.5 shrink-0 text-ink-2">
-                  <EntryIcon type={entry.type} />
-                </span>
                 <div className="min-w-0 flex-1">
                   {entry.type === "note" ? (
                     <span className="text-[12px] text-ink-3">{formatTime(entry.timestamp)}</span>
