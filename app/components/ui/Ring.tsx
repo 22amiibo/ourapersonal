@@ -1,4 +1,5 @@
 import { zoneColor, zoneLabel, zoneFor } from "@/lib/scores";
+import CountUp from "./CountUp";
 
 type RingProps = {
   score: number | null | undefined;
@@ -9,9 +10,12 @@ type RingProps = {
   // The user's recent normal (e.g. 14-day average). Drawn as a faint thinner
   // "ghost" arc under the live arc so "today vs typical" reads at a glance.
   baseline?: number | null;
+  // When set, the centered number ticks 0→score once per session (paired with
+  // the arc draw). Must be unique per ring on a screen, e.g. "readiness".
+  countKey?: string;
 };
 
-export default function Ring({ score, size = 132, stroke = 9, label, color, baseline }: RingProps) {
+export default function Ring({ score, size = 132, stroke = 9, label, color, baseline, countKey }: RingProps) {
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const pct = score == null ? 0 : Math.max(0, Math.min(100, score)) / 100;
@@ -106,12 +110,21 @@ export default function Ring({ score, size = 132, stroke = 9, label, color, base
       </svg>
 
       <div className="absolute flex flex-col items-center gap-0.5">
-        <span
-          className="font-mono font-semibold tabular-nums tracking-tight text-ink"
-          style={{ fontSize, lineHeight: 1 }}
-        >
-          {hasData ? score : "—"}
-        </span>
+        {countKey != null && hasData ? (
+          <CountUp
+            value={score}
+            seenKey={`ring-${countKey}`}
+            className="font-mono font-semibold tabular-nums tracking-tight text-ink"
+            style={{ fontSize, lineHeight: 1 }}
+          />
+        ) : (
+          <span
+            className="font-mono font-semibold tabular-nums tracking-tight text-ink"
+            style={{ fontSize, lineHeight: 1 }}
+          >
+            {hasData ? score : "—"}
+          </span>
+        )}
         {label && (
           <span className="text-[10px] font-medium uppercase tracking-wider text-ink-3">
             {label}

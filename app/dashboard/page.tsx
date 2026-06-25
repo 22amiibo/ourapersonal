@@ -324,7 +324,7 @@ export default async function DashboardPage() {
       >
         <HapticReveal />
         <div className="flex flex-col items-center gap-2">
-          <Ring score={oura?.readiness_score} size={96} baseline={baseReadiness} />
+          <Ring score={oura?.readiness_score} size={96} baseline={baseReadiness} countKey="readiness" />
           <div className="text-center">
             <p className="text-[13px] font-medium text-ink">Readiness</p>
             <p className="text-[11px] text-ink-3">Recovery</p>
@@ -342,7 +342,7 @@ export default async function DashboardPage() {
           )}
         </div>
         <div className="flex flex-col items-center gap-2">
-          <Ring score={oura?.sleep_score} size={96} color="var(--color-accent-blue)" baseline={baseSleep} />
+          <Ring score={oura?.sleep_score} size={96} color="var(--color-accent-blue)" baseline={baseSleep} countKey="sleep" />
           <div className="text-center">
             <p className="text-[13px] font-medium text-ink">Sleep</p>
             <p className="text-[11px] text-ink-3">{sleepH ?? "—"}</p>
@@ -360,7 +360,7 @@ export default async function DashboardPage() {
           )}
         </div>
         <div className="flex flex-col items-center gap-2">
-          <Ring score={oura?.activity_score} size={96} color="var(--color-amber)" baseline={baseActivity} />
+          <Ring score={oura?.activity_score} size={96} color="var(--color-amber)" baseline={baseActivity} countKey="activity" />
           <div className="text-center">
             <p className="text-[13px] font-medium text-ink">Activity</p>
             <p className="text-[11px] text-ink-3">Movement</p>

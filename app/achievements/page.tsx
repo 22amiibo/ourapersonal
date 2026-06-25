@@ -154,7 +154,17 @@ function progressCaption(a: EvaluatedAchievement): string {
   return `${a.progress} / ${a.goal}${a.unit ? " " + a.unit : ""}`;
 }
 
-function AchievementCard({ a }: { a: EvaluatedAchievement }) {
+// "2026-06-12" → "Jun 12" (UTC, no Date drift).
+function fmtShortDate(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+function AchievementCard({ a, date }: { a: EvaluatedAchievement; date?: string }) {
   if (a.unlocked) {
     return (
       <div
@@ -171,7 +181,9 @@ function AchievementCard({ a }: { a: EvaluatedAchievement }) {
           >
             <CheckIcon />
           </span>
-          <span className="text-[10px] font-semibold uppercase tracking-wide text-accent">Earned</span>
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-accent">
+            {date ? `Earned ${fmtShortDate(date)}` : "Earned"}
+          </span>
         </div>
         <p className="mt-2.5 text-[14px] font-semibold leading-tight text-ink">{a.title}</p>
         <p className="mt-0.5 text-[11px] leading-snug text-ink-3">{a.description}</p>
@@ -201,7 +213,15 @@ function AchievementCard({ a }: { a: EvaluatedAchievement }) {
   );
 }
 
-function Section({ title, items }: { title: string; items: EvaluatedAchievement[] }) {
+function Section({
+  title,
+  items,
+  dates,
+}: {
+  title: string;
+  items: EvaluatedAchievement[];
+  dates?: Record<string, string>;
+}) {
   if (items.length === 0) return null;
   return (
     <section className="mt-5 px-4">
@@ -210,11 +230,32 @@ function Section({ title, items }: { title: string; items: EvaluatedAchievement[
       </p>
       <div className="grid grid-cols-2 gap-3">
         {items.map((a) => (
-          <AchievementCard key={a.id} a={a} />
+          <AchievementCard key={a.id} a={a} date={dates?.[a.id]} />
         ))}
       </div>
     </section>
   );
+}
+
+// Record any newly-earned awards and read back the date each was first earned.
+// Entirely optional: when the achievement_unlocks table hasn't been migrated
+// this throws and we return {} (cards just show "Earned" with no date).
+async function earnedDates(earnedIds: string[]): Promise<Record<string, string>> {
+  if (earnedIds.length === 0) return {};
+  try {
+    await sql`
+      INSERT INTO achievement_unlocks (user_id, achievement_id)
+      SELECT ${USER_ID}, x FROM unnest(${earnedIds}::text[]) AS x
+      ON CONFLICT (user_id, achievement_id) DO NOTHING`;
+    const rows = await sql`
+      SELECT achievement_id, to_char(unlocked_at, 'YYYY-MM-DD') AS d
+      FROM achievement_unlocks WHERE user_id = ${USER_ID}`;
+    return Object.fromEntries(
+      (rows as { achievement_id: string; d: string }[]).map((r) => [r.achievement_id, r.d]),
+    );
+  } catch {
+    return {};
+  }
 }
 
 export default async function AchievementsPage() {
@@ -226,6 +267,8 @@ export default async function AchievementsPage() {
   const locked = evaluated.filter((a) => !a.unlocked && a.current === 0);
   const total = evaluated.length;
   const pctEarned = total > 0 ? Math.round((earned.length / total) * 100) : 0;
+
+  const dates = await earnedDates(earned.map((a) => a.id));
 
   return (
     <main className="mx-auto max-w-md pb-28 pt-5 sm:max-w-2xl">
@@ -241,7 +284,7 @@ export default async function AchievementsPage() {
       </header>
 
       <Section title="In progress" items={inProgress} />
-      <Section title="Earned" items={earned} />
+      <Section title="Earned" items={earned} dates={dates} />
       <Section title="Locked" items={locked} />
 
       {earned.length === 0 && inProgress.length === 0 && (
