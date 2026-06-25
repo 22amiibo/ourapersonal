@@ -4,6 +4,8 @@ import { useState } from "react";
 import CaffeineSlider from "@/app/components/inputs/CaffeineSlider";
 import AlcoholCounter from "@/app/components/inputs/AlcoholCounter";
 import WorkoutSlider from "@/app/components/inputs/WorkoutSlider";
+import MoodSlider from "@/app/components/inputs/MoodSlider";
+import Sparkline from "@/app/components/ui/Sparkline";
 
 export type IntakeEntry = {
   id: number;
@@ -62,16 +64,23 @@ export default function LogTab({
   initialEntries,
   initialDate,
   weeklyStats,
+  moodSeries: initialMoodSeries = [],
+  moodToday: initialMoodToday = null,
 }: {
   initialEntries: IntakeEntry[];
   initialDate: string;
   weeklyStats?: WeeklyStats;
+  moodSeries?: number[];
+  moodToday?: number | null;
 }) {
   const [entries, setEntries] = useState<IntakeEntry[]>(initialEntries);
   const [caffeineWarning, setCaffeineWarning] = useState(false);
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const [loading, setLoading] = useState(false);
   const [quickBusy, setQuickBusy] = useState<InputType | null>(null);
+  const [moodSeries, setMoodSeries] = useState<number[]>(initialMoodSeries);
+  const [moodToday, setMoodToday] = useState<number | null>(initialMoodToday);
+  const [moodBusy, setMoodBusy] = useState(false);
   // The most recent log made this session — backs the shared Undo button.
   const [lastLog, setLastLog] = useState<{ id: number; label: string } | null>(null);
 
@@ -102,6 +111,25 @@ export default function LogTab({
       }
     } finally {
       setQuickBusy(null);
+    }
+  }
+
+  async function logMood(mood: number, tags: string[]) {
+    setMoodBusy(true);
+    try {
+      const res = await fetch("/api/log/mood", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mood, tags }),
+      });
+      if (res.ok) {
+        // Optimistic: today's point is the last in the ASC series — replace it
+        // if it exists, else append a new point for today.
+        setMoodSeries((prev) => (moodToday != null && prev.length > 0 ? [...prev.slice(0, -1), mood] : [...prev, mood]));
+        setMoodToday(mood);
+      }
+    } finally {
+      setMoodBusy(false);
     }
   }
 
@@ -148,7 +176,7 @@ export default function LogTab({
     <main className="mx-auto max-w-md space-y-5 pb-28 pt-5">
       <header className="px-4 animate-spring-in">
         <h1 className="text-[22px] font-semibold tracking-tight text-ink">Inputs</h1>
-        <p className="mt-0.5 text-[14px] text-ink-2">Caffeine, alcohol &amp; workouts</p>
+        <p className="mt-0.5 text-[14px] text-ink-2">Caffeine, alcohol, workouts &amp; mood</p>
       </header>
 
       {weeklyStats && (
@@ -202,12 +230,34 @@ export default function LogTab({
         </div>
       </div>
 
-      {/* Primary Inputs — caffeine / alcohol / workout, + shared Undo */}
+      {/* Mood trend — recent daily mood (averaged per day) */}
+      {(moodToday != null || moodSeries.length >= 2) && (
+        <div className="px-4 animate-spring-in" style={{ animationDelay: "90ms" }}>
+          <div className="rounded-card glass-1 p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Mood · 14 days</span>
+              {moodToday != null && (
+                <span className="font-mono text-[15px] font-semibold tabular-nums text-ink">
+                  {moodToday}<span className="ml-0.5 text-[11px] font-normal text-ink-3">/10</span>
+                </span>
+              )}
+            </div>
+            {moodSeries.length >= 2 && (
+              <div className="mt-2">
+                <Sparkline values={moodSeries} width={320} height={40} />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Primary Inputs — caffeine / alcohol / workout / mood, + shared Undo */}
       {isToday && (
         <div className="space-y-2.5 px-4 animate-spring-in" style={{ animationDelay: "100ms" }}>
           <CaffeineSlider busy={quickBusy === "caffeine"} onConfirm={(mg) => logAmount("caffeine", mg)} />
           <AlcoholCounter busy={quickBusy === "alcohol"} onConfirm={(n) => logAmount("alcohol", n)} />
           <WorkoutSlider busy={quickBusy === "workout"} onConfirm={(m) => logAmount("workout", m)} />
+          <MoodSlider busy={moodBusy} onConfirm={(mood, tags) => logMood(mood, tags)} />
           {lastLog && (
             <div className="flex justify-center pt-0.5">
               <button

@@ -126,6 +126,8 @@ CREATE TABLE IF NOT EXISTS mood_logs (
   note      TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_mood_logs_user_date ON mood_logs (user_id, log_date);
+-- Optional context chips on a mood entry (calm / tired / energized …).
+ALTER TABLE mood_logs ADD COLUMN IF NOT EXISTS tags TEXT[];
 
 CREATE TABLE IF NOT EXISTS weight_logs (
   id        SERIAL PRIMARY KEY,
