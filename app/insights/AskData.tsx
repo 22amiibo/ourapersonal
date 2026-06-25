@@ -5,9 +5,11 @@ import { useState } from "react";
 // "Ask your data" — a question box on the Insights tab. Sends one bounded
 // request to /api/insights/ask, which answers from a pre-computed summary.
 const SUGGESTIONS = [
+  "How am I doing today?",
   "How has my sleep been this week?",
   "What's hurting my recovery?",
   "Is my HRV trending up or down?",
+  "How's my mood been lately?",
 ];
 
 export default function AskData() {
