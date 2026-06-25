@@ -317,6 +317,24 @@ input, textarea {
   }
 }
 
+/* ── Once-per-session reveal gate ─────────────────────────────
+   RevealGate sets data-revealed on <html> after the first reveal of the
+   session. From then on, entrance animations inside page content (<main>)
+   are neutralized so navigating between tabs — or a card remounting on a
+   background refetch — doesn't replay every entrance. The base styles of
+   these elements are already visible (opacity:1, no transform), so removing
+   the animation simply shows them in place. Scoped to <main> so the
+   per-navigation page transition (template `page-enter`) and the modal /
+   article-reader / command-palette animations (rendered outside <main>)
+   keep firing every time. */
+html[data-revealed] main .animate-spring-in,
+html[data-revealed] main .animate-score-pop,
+html[data-revealed] main .animate-fade-up,
+html[data-revealed] main .animate-slide-up,
+html[data-revealed] main .animate-fade-in {
+  animation: none !important;
+}
+
 /* ── Utilities ───────────────────────────────────────────── */
 
 @layer utilities {

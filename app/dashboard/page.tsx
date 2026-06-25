@@ -4,6 +4,7 @@ import { USER_ID } from "@/lib/jobs";
 import { localDateStr, daysAgoStr, getGreeting } from "@/lib/dates";
 import { gradeFromScore, computeWellness } from "@/lib/scores";
 import Ring from "@/app/components/ui/Ring";
+import CountUp from "@/app/components/ui/CountUp";
 import HapticReveal from "@/app/components/ui/HapticReveal";
 import Sparkline from "@/app/components/ui/Sparkline";
 import RunButton from "./RunButton";
@@ -459,9 +460,11 @@ export default async function DashboardPage() {
             <div className="flex-1 rounded-card glass-1 p-4">
               <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Wellness</p>
               <div className="mt-1.5 flex items-baseline gap-2">
-                <p className="font-mono text-[28px] font-semibold tabular-nums tracking-[-0.02em] text-ink leading-none">
-                  {wellness.score}
-                </p>
+                <CountUp
+                  value={wellness.score}
+                  seenKey="wellness"
+                  className="font-mono text-[28px] font-semibold tabular-nums tracking-[-0.02em] text-ink leading-none"
+                />
                 <span
                   className="rounded px-1.5 py-0.5 text-[14px] font-bold"
                   style={{

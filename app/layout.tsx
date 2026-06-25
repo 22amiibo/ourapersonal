@@ -5,7 +5,13 @@ import TabBar from "./components/TabBar";
 import CommandPalette from "./components/CommandPalette";
 import CircadianBackground from "./components/CircadianBackground";
 import StatusBar from "./components/StatusBar";
+import RevealGate from "./components/RevealGate";
 import "./globals.css";
+
+// Set data-revealed before first paint on any reload/return within a session,
+// so already-seen pages don't flash their entrance animations. The first load
+// of a session leaves it unset (RevealGate sets it after entrances finish).
+const REVEAL_BOOT = `try{if(sessionStorage.getItem('revealed'))document.documentElement.setAttribute('data-revealed','1')}catch(e){}`;
 
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
@@ -29,6 +35,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${geistMono.variable}`}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: REVEAL_BOOT }} />
+      </head>
       <body className="flex min-h-dvh flex-col bg-bg font-sans text-ink antialiased">
         <svg style={{ display: "none" }}>
           <defs>
@@ -40,6 +49,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </svg>
         <CircadianBackground />
         <StatusBar />
+        <RevealGate />
         {children}
         <TabBar />
         <CommandPalette />
