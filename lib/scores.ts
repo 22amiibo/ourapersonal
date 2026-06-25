@@ -44,6 +44,46 @@ export function gradeFromScore(score: number | null | undefined): Grade {
   return { letter: "F", color: "var(--color-rose)" };
 }
 
+export type WellnessPillar = {
+  key: "sleep" | "readiness" | "activity";
+  label: string;
+  value: number;
+  weight: number;
+};
+export type Wellness = { score: number; pillars: WellnessPillar[] };
+
+// The Summary "Wellness" pillars — a weighted blend of the three Oura 0–100
+// sub-scores. Single source of truth (was inlined on the dashboard).
+const WELLNESS_PILLARS = [
+  { key: "sleep", label: "Sleep", weight: 0.35 },
+  { key: "readiness", label: "Readiness", weight: 0.35 },
+  { key: "activity", label: "Activity", weight: 0.3 },
+] as const;
+
+/**
+ * Compute the explainable Wellness score from the three Oura sub-scores. Needs
+ * ≥2 pillars present; weights are renormalized over whatever is available, so a
+ * single missing metric never zeroes the score. Returns the contributing
+ * pillars too (value + weight) so the UI can show *why* the number is what it is.
+ * Pass null/undefined for any missing metric.
+ */
+export function computeWellness(vals: {
+  sleep: number | null | undefined;
+  readiness: number | null | undefined;
+  activity: number | null | undefined;
+}): Wellness | null {
+  const present: WellnessPillar[] = WELLNESS_PILLARS.flatMap((p) => {
+    const value = vals[p.key];
+    return value == null || !Number.isFinite(value)
+      ? []
+      : [{ key: p.key, label: p.label, value, weight: p.weight }];
+  });
+  if (present.length < 2) return null;
+  const totalW = present.reduce((s, p) => s + p.weight, 0);
+  const score = Math.round(present.reduce((s, p) => s + p.value * p.weight, 0) / totalW);
+  return { score, pillars: present };
+}
+
 export type FeatureVector = {
   user_id: number;
   vector_date: string;

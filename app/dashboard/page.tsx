@@ -1,7 +1,7 @@
 import { sql } from "@/lib/db";
 import { USER_ID } from "@/lib/jobs";
 import { localDateStr, daysAgoStr, getGreeting } from "@/lib/dates";
-import { gradeFromScore } from "@/lib/scores";
+import { gradeFromScore, computeWellness } from "@/lib/scores";
 import Ring from "@/app/components/ui/Ring";
 import HapticReveal from "@/app/components/ui/HapticReveal";
 import Sparkline from "@/app/components/ui/Sparkline";
@@ -116,8 +116,9 @@ export default async function DashboardPage() {
   const tz = await getTz();
   const today = localDateStr(tz);
   const weekAgo = daysAgoStr(tz, 7);
+  const twoWeeksAgo = daysAgoStr(tz, 14);
 
-  const [briefingRows, ouraRows, trendRows, events, sleepDebtRows] = await Promise.all([
+  const [briefingRows, ouraRows, trendRows, events, sleepDebtRows, baselineRows] = await Promise.all([
     sql`
       SELECT summary_text, recommendations, context_window FROM briefings
       WHERE user_id = ${USER_ID} ORDER BY briefing_date DESC LIMIT 1`,
@@ -140,6 +141,12 @@ export default async function DashboardPage() {
              COUNT(*) AS nights
       FROM oura_daily
       WHERE user_id = ${USER_ID} AND day >= ${weekAgo} AND total_sleep_seconds IS NOT NULL`,
+    sql`
+      SELECT AVG(readiness_score) AS readiness,
+             AVG(sleep_score) AS sleep,
+             AVG((raw_payload->>'activity_score')::numeric) AS activity
+      FROM oura_daily
+      WHERE user_id = ${USER_ID} AND day >= ${twoWeeksAgo}`,
   ]);
 
   // prediction_records is part of the intelligence layer and may not be
@@ -198,18 +205,27 @@ export default async function DashboardPage() {
   const dayInsight = getDayInsight(readinessTrendDir, sleepDelta, sleepDebtSeconds, hasSleepDebtData);
   const recoveryZone = getRecoveryZone(oura?.readiness_score ?? null);
 
-  const wellnessComponents = [
-    { val: oura?.sleep_score, w: 0.35 },
-    { val: oura?.readiness_score, w: 0.35 },
-    { val: oura?.activity_score, w: 0.30 },
-  ].filter((c): c is { val: number; w: number } => c.val != null);
-  let wellnessScore: number | null = null;
-  if (wellnessComponents.length >= 2) {
-    const totalW = wellnessComponents.reduce((s, c) => s + c.w, 0);
-    wellnessScore = Math.round(
-      wellnessComponents.reduce((s, c) => s + c.val * c.w, 0) / totalW
-    );
-  }
+  const wellness = computeWellness({
+    sleep: oura?.sleep_score,
+    readiness: oura?.readiness_score,
+    activity: oura?.activity_score,
+  });
+
+  // 14-day baselines for the ring ghost arcs ("today vs your normal").
+  const baselineRow = baselineRows[0] as
+    | { readiness: string | null; sleep: string | null; activity: string | null }
+    | undefined;
+  const toNum = (v: string | null | undefined) => (v == null ? null : Number(v));
+  const baseReadiness = toNum(baselineRow?.readiness);
+  const baseSleep = toNum(baselineRow?.sleep);
+  const baseActivity = toNum(baselineRow?.activity);
+
+  // Per-pillar accent matches its ring color, tying the breakdown to the rings.
+  const pillarColor: Record<string, string> = {
+    sleep: "var(--color-accent-blue)",
+    readiness: "var(--color-accent)",
+    activity: "var(--color-amber)",
+  };
 
   const sleepH = oura?.total_sleep_seconds
     ? (() => {
@@ -260,7 +276,7 @@ export default async function DashboardPage() {
       >
         <HapticReveal />
         <div className="flex flex-col items-center gap-2">
-          <Ring score={oura?.readiness_score} size={96} />
+          <Ring score={oura?.readiness_score} size={96} baseline={baseReadiness} />
           <div className="text-center">
             <p className="text-[13px] font-medium text-ink">Readiness</p>
             <p className="text-[11px] text-ink-3">Recovery</p>
@@ -278,7 +294,7 @@ export default async function DashboardPage() {
           )}
         </div>
         <div className="flex flex-col items-center gap-2">
-          <Ring score={oura?.sleep_score} size={96} color="var(--color-accent-blue)" />
+          <Ring score={oura?.sleep_score} size={96} color="var(--color-accent-blue)" baseline={baseSleep} />
           <div className="text-center">
             <p className="text-[13px] font-medium text-ink">Sleep</p>
             <p className="text-[11px] text-ink-3">{sleepH ?? "—"}</p>
@@ -296,7 +312,7 @@ export default async function DashboardPage() {
           )}
         </div>
         <div className="flex flex-col items-center gap-2">
-          <Ring score={oura?.activity_score} size={96} color="var(--color-amber)" />
+          <Ring score={oura?.activity_score} size={96} color="var(--color-amber)" baseline={baseActivity} />
           <div className="text-center">
             <p className="text-[13px] font-medium text-ink">Activity</p>
             <p className="text-[11px] text-ink-3">Movement</p>
@@ -388,16 +404,16 @@ export default async function DashboardPage() {
       <div className="sm:columns-2 sm:gap-2 sm:[&>*]:mb-3 sm:[&>*]:break-inside-avoid sm:[&>*]:!mx-2">
 
       {/* ── Wellness Score + Sleep Debt ──────────────────────── */}
-      {(wellnessScore != null || hasSleepDebtData) && (
-        <div className="flex gap-3 px-4 mb-3 animate-spring-in" style={{ animationDelay: "180ms" }}>
-          {wellnessScore != null && (() => {
-            const g = gradeFromScore(wellnessScore);
+      {(wellness != null || hasSleepDebtData) && (
+        <div className="flex items-start gap-3 px-4 mb-3 animate-spring-in" style={{ animationDelay: "180ms" }}>
+          {wellness != null && (() => {
+            const g = gradeFromScore(wellness.score);
             return (
             <div className="flex-1 rounded-card glass-1 p-4">
               <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Wellness</p>
               <div className="mt-1.5 flex items-baseline gap-2">
                 <p className="font-mono text-[28px] font-semibold tabular-nums tracking-[-0.02em] text-ink leading-none">
-                  {wellnessScore}
+                  {wellness.score}
                 </p>
                 <span
                   className="rounded px-1.5 py-0.5 text-[14px] font-bold"
@@ -419,6 +435,25 @@ export default async function DashboardPage() {
               ) : (
                 <p className="mt-1 text-[11px] text-ink-3">Composite score</p>
               )}
+              {/* Explainable breakdown: each pillar's score + its weight. */}
+              <div className="mt-3 space-y-1.5 border-t border-line pt-2.5">
+                {wellness.pillars.map((p) => (
+                  <div key={p.key} className="flex items-center gap-1.5">
+                    <span className="w-[60px] shrink-0 text-[9px] font-medium uppercase tracking-wide text-ink-3">
+                      {p.label} {Math.round(p.weight * 100)}%
+                    </span>
+                    <div className="h-1 flex-1 overflow-hidden rounded-full" style={{ background: "var(--color-surface-3)" }}>
+                      <div
+                        className="h-full rounded-full"
+                        style={{ width: `${Math.max(0, Math.min(100, p.value))}%`, background: pillarColor[p.key] }}
+                      />
+                    </div>
+                    <span className="w-5 shrink-0 text-right font-mono text-[10px] tabular-nums text-ink-2">
+                      {Math.round(p.value)}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
             );
           })()}

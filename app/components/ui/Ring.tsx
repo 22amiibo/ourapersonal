@@ -6,13 +6,21 @@ type RingProps = {
   stroke?: number;
   label?: string;
   color?: string;
+  // The user's recent normal (e.g. 14-day average). Drawn as a faint thinner
+  // "ghost" arc under the live arc so "today vs typical" reads at a glance.
+  baseline?: number | null;
 };
 
-export default function Ring({ score, size = 132, stroke = 9, label, color }: RingProps) {
+export default function Ring({ score, size = 132, stroke = 9, label, color, baseline }: RingProps) {
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const pct = score == null ? 0 : Math.max(0, Math.min(100, score)) / 100;
   const off = c * (1 - pct);
+
+  const baselinePct =
+    baseline == null || !Number.isFinite(baseline) ? null : Math.max(0, Math.min(100, baseline)) / 100;
+  const baselineOff = baselinePct == null ? null : c * (1 - baselinePct);
+  const ghostStroke = Math.max(2, stroke * 0.5);
 
   const zone = zoneFor(score);
   const arcColor = color ?? zoneColor[zone];
@@ -55,6 +63,22 @@ export default function Ring({ score, size = 132, stroke = 9, label, color }: Ri
           stroke="var(--color-line-strong)"
           strokeWidth={stroke}
         />
+        {/* Baseline ghost arc — "your normal", faint + thin, beneath the value. */}
+        {baselineOff != null && hasData && (
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke={arcColor}
+            strokeOpacity={0.3}
+            strokeWidth={ghostStroke}
+            strokeLinecap="round"
+            strokeDasharray={c}
+            strokeDashoffset={baselineOff}
+            transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          />
+        )}
         {/* Value arc */}
         {hasData && (
           <circle
