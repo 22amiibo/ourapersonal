@@ -2,12 +2,13 @@ import type { TrendMetric, TrendRange, Sentiment } from "@/lib/trends";
 
 export type MetricMeta = { metric: TrendMetric; label: string; noun: string };
 
-// Sentiment → color. Good = teal accent, bad = rose, neutral = muted ink.
-// Keep this the single mapping so good/bad always reads the same hue.
+// Sentiment → semantic status color. Good = success (teal), bad = danger
+// (rose), neutral = muted. Driving this off the semantic tokens means good/bad
+// reads the same hue everywhere AND picks up the AA-tuned light-mode values.
 export const SENTIMENT_COLOR: Record<Sentiment, string> = {
-  good: "var(--color-accent)",
-  bad: "var(--color-rose)",
-  neutral: "var(--color-ink-3)",
+  good: "var(--color-success)",
+  bad: "var(--color-danger)",
+  neutral: "var(--color-neutral)",
 };
 
 // The metrics surfaced on the Trends tab, in display order.

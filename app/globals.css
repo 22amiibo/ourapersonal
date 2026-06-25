@@ -16,6 +16,14 @@
   --color-attention: #f59e0b;
   --color-low: #f43f5e;
 
+  /* Semantic status colors — meaning-named aliases (good / warn / bad /
+     muted) with AA-tuned light-mode counterparts in the light block. Use these
+     so a color's meaning never drifts across components. */
+  --color-success: #14b8a6;
+  --color-warning: #f59e0b;
+  --color-danger:  #f43f5e;
+  --color-neutral: #56566a;
+
   --font-sans: "SF Pro Rounded", ui-rounded, system-ui, -apple-system, sans-serif;
   --font-mono: "Geist Mono", monospace;
 
@@ -48,6 +56,10 @@
   --color-rose: #f43f5e;
   --color-attention: #f59e0b;
   --color-low: #f43f5e;
+  --color-success: #14b8a6;
+  --color-warning: #f59e0b;
+  --color-danger:  #f43f5e;
+  --color-neutral: #56566a;
   --color-bg-soft: rgba(245,245,250,.04);
 
   --bg: #0a0a0a;
@@ -129,6 +141,10 @@
     --color-line-strong: #c5c5d3;
     --color-attention: #b4730a;
     --color-low: #d62b46;
+    --color-success: #0f9b8e;
+    --color-warning: #b4730a;
+    --color-danger:  #d62b46;
+    --color-neutral: #ababbc;
     --color-bg-soft: rgba(8,8,15,.04);
     --shadow-card: 0 1px 4px rgba(0,0,0,.06), 0 0 0 .5px rgba(0,0,0,.06);
     --shadow-elevated: 0 8px 40px rgba(0,0,0,.12), 0 0 0 .5px rgba(0,0,0,.06);
@@ -356,6 +372,10 @@ html[data-revealed] main .animate-fade-in {
   .text-amber      { color: var(--color-amber); }
   .text-rose       { color: var(--color-rose); }
   .text-bg         { color: var(--color-bg); }
+  .text-success    { color: var(--color-success); }
+  .text-warning    { color: var(--color-warning); }
+  .text-danger     { color: var(--color-danger); }
+  .text-neutral    { color: var(--color-neutral); }
 
   .border-line        { border-color: var(--color-line); }
   .border-line-strong { border-color: var(--color-line-strong); }

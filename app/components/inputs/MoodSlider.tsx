@@ -19,7 +19,7 @@ export default function MoodSlider({
   const [tags, setTags] = useState<string[]>([]);
 
   const moodColor =
-    mood >= 7 ? "var(--color-accent)" : mood >= 4 ? "var(--color-amber)" : "var(--color-rose)";
+    mood >= 7 ? "var(--color-success)" : mood >= 4 ? "var(--color-warning)" : "var(--color-danger)";
 
   function toggle(t: string) {
     setTags((prev) =>
