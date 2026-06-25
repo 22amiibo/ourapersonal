@@ -96,19 +96,8 @@ export default function ArticleReader({ article, onClose }: { article: Article; 
           className="h-full overflow-y-auto overflow-x-clip overscroll-contain no-scrollbar"
           style={{ WebkitOverflowScrolling: "touch" }}
         >
-          <div className="relative">
-            {article.image_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={article.image_url} alt="" className="h-64 w-full object-cover" />
-            ) : (
-              <div
-                className="h-40 w-full"
-                style={{ background: "linear-gradient(135deg, color-mix(in oklch, var(--color-accent) 40%, #0a0a0f), #0a0a0f)" }}
-              />
-            )}
-          </div>
-
-          <article className="mx-auto max-w-md px-5 pb-[calc(env(safe-area-inset-bottom)+6rem)] pt-5">
+          {/* Text-only reader (no hero image). Top padding clears the pinned X. */}
+          <article className="mx-auto max-w-md px-5 pb-[calc(env(safe-area-inset-bottom)+6rem)] pt-[calc(env(safe-area-inset-top)+3.5rem)]">
             <h1 className="text-[28px] font-bold leading-tight text-ink text-balance">{article.title}</h1>
             <div
               className="article-body mt-4 text-[16px] leading-relaxed text-ink-2"
