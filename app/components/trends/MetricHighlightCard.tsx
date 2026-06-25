@@ -1,7 +1,8 @@
 "use client";
 
 import type { TrendResult } from "@/lib/trends";
-import { metaFor, formatValue, weekdayLetter } from "./metricMeta";
+import { trendSentiment } from "@/lib/trends";
+import { metaFor, formatValue, weekdayLetter, daysSince, SENTIMENT_COLOR } from "./metricMeta";
 import MetricBarChart from "./MetricBarChart";
 
 // Apple-Health "Highlights" card: headline sentence + mini bars with the
@@ -22,8 +23,17 @@ export default function MetricHighlightCard({
   const labels = result.points.map((p) => weekdayLetter(p.date));
   const total = result.points.length;
 
+  // Stale-data honesty: how old is the freshest real value? ≥2 days reads as a
+  // sync gap worth flagging so the average isn't mistaken for "as of today".
+  const lastReal = [...result.points].reverse().find((p) => p.value != null);
+  const ageDays = lastReal ? daysSince(lastReal.date) : null;
+  const stale = ageDays != null && ageDays >= 2;
+
   const dirWord =
     result.direction === "flat" ? "in line with" : result.direction === "up" ? "above" : "below";
+  // Color the direction by sentiment, not raw direction: "below" is good for
+  // resting HR but bad for HRV. Honors each metric's higherIsBetter.
+  const dirColor = SENTIMENT_COLOR[trendSentiment(result.metric, result.direction)];
 
   return (
     <button
@@ -38,7 +48,7 @@ export default function MetricHighlightCard({
 
       <p className="mt-2 text-[16px] font-semibold leading-snug text-ink">
         The last 7 days, your {meta.noun} averaged {formatValue(result.metric, result.average, result.unit)}
-        {" "}— {dirWord} your baseline.
+        {" "}— <span style={{ color: dirColor }}>{dirWord}</span> your baseline.
       </p>
 
       <div className="mt-4">
@@ -61,6 +71,11 @@ export default function MetricHighlightCard({
       <p className="mt-1 text-[12px] text-ink-3">
         {result.daysAbove} of {total} days above baseline · {result.daysBelow} below
       </p>
+      {stale && (
+        <p className="mt-1 text-[12px] font-medium" style={{ color: "var(--color-amber)" }}>
+          Last value {ageDays}d ago — may be out of date
+        </p>
+      )}
     </button>
   );
 }

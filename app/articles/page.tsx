@@ -22,7 +22,7 @@ export default async function ArticlesPage() {
   }
 
   return (
-    <main className="mx-auto max-w-md pb-28 pt-5">
+    <main className="mx-auto w-full min-w-0 max-w-md overflow-x-clip pb-28 pt-5">
       <header className="flex items-center justify-between px-5 pb-3 animate-fade-in">
         <h1 className="text-display font-semibold text-ink">Articles</h1>
         <Link

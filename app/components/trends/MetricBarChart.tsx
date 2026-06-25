@@ -55,6 +55,20 @@ export default function MetricBarChart({
   const barColor = accent ? "var(--color-accent)" : "rgba(255,255,255,0.20)";
   const gridFracs = showAxis ? [0, 0.5, 1] : [];
 
+  // Footprint-preserving empty state: no numeric values → keep the exact chart
+  // height but show a friendly note + a faint baseline instead of a blank grid,
+  // so switching to a sparse range never collapses the layout.
+  if (nums.length === 0) {
+    return (
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="No data in this range">
+        <line x1={PAD.left} y1={baseline} x2={W - PAD.right} y2={baseline} stroke="var(--color-line)" strokeWidth="1" />
+        <text x={W / 2} y={H / 2} textAnchor="middle" fontSize="11" fill="var(--color-ink-3)" fontFamily="var(--font-sans)">
+          No data in this range
+        </text>
+      </svg>
+    );
+  }
+
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" aria-hidden="true">
       {/* Horizontal gridlines + right-axis labels */}

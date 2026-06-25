@@ -92,6 +92,23 @@ export function rangeDays(range: TrendRange): number {
   return n;
 }
 
+export type Sentiment = "good" | "bad" | "neutral";
+
+/**
+ * Is a directional change good, bad, or neutral for this metric? Honors each
+ * metric's `higherIsBetter`, so an upward move is "good" for HRV but "bad" for
+ * resting HR — color must mean the same thing everywhere. Pure: the caller maps
+ * the sentiment to a color (see SENTIMENT_COLOR in the trends UI).
+ */
+export function trendSentiment(
+  metric: TrendMetric,
+  direction: TrendResult["direction"],
+): Sentiment {
+  if (direction === "flat") return "neutral";
+  const movingUp = direction === "up";
+  return movingUp === metricSpec(metric).higherIsBetter ? "good" : "bad";
+}
+
 function mean(xs: number[]): number {
   return xs.length === 0 ? 0 : xs.reduce((a, b) => a + b, 0) / xs.length;
 }

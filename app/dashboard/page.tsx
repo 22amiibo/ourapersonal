@@ -103,6 +103,15 @@ function fmtDuration(secs: number): string {
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
+// Whole days between two YYYY-MM-DD strings (to − from).
+function daysBetweenStr(fromIso: string, toIso: string): number {
+  const p = (s: string) => {
+    const [y, m, d] = s.split("-").map(Number);
+    return Date.UTC(y, m - 1, d);
+  };
+  return Math.round((p(toIso) - p(fromIso)) / 86_400_000);
+}
+
 export default async function DashboardPage() {
   const tz = await getTz();
   const today = localDateStr(tz);
@@ -114,6 +123,7 @@ export default async function DashboardPage() {
       WHERE user_id = ${USER_ID} ORDER BY briefing_date DESC LIMIT 1`,
     sql`
       SELECT sleep_score, readiness_score, total_sleep_seconds,
+             to_char(day, 'YYYY-MM-DD') AS day,
              (raw_payload->>'activity_score')::numeric AS activity_score
       FROM oura_daily WHERE user_id = ${USER_ID} ORDER BY day DESC LIMIT 1`,
     sql`
@@ -154,8 +164,13 @@ export default async function DashboardPage() {
   const briefing = briefingRow;
 
   const oura = ouraRows[0] as
-    | { sleep_score: number | null; readiness_score: number | null; activity_score: number | null; total_sleep_seconds: number | null }
+    | { sleep_score: number | null; readiness_score: number | null; activity_score: number | null; total_sleep_seconds: number | null; day: string | null }
     | undefined;
+
+  // Stale-data honesty: flag when the freshest Oura day is more than a normal
+  // overnight lag old (≥2d), so the rings aren't mistaken for "as of today".
+  const ouraAgeDays = oura?.day ? daysBetweenStr(oura.day, today) : null;
+  const ouraStale = ouraAgeDays != null && ouraAgeDays >= 2;
 
   const greeting = getGreeting(tz);
 
@@ -299,6 +314,16 @@ export default async function DashboardPage() {
           )}
         </div>
       </section>
+
+      {/* Stale-data honesty — only when Oura hasn't synced in ≥2 days. */}
+      {ouraStale && (
+        <p
+          className="-mt-3 mb-2 px-5 text-center text-[12px] font-medium"
+          style={{ color: "var(--color-amber)" }}
+        >
+          Oura last synced {ouraAgeDays}d ago — scores may be out of date
+        </p>
+      )}
 
       {/* ── Daily Briefing (promoted: the app's core value) ──── */}
       <section

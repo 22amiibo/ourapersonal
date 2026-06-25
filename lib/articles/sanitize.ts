@@ -52,12 +52,23 @@ export function firstImageUrl(html: string): string | null {
   return null;
 }
 
-// Short plain-text description from the email's text (preheader / first line).
-export function deriveDescription(text: string | undefined, fallbackHtml: string): string {
-  const fromText = (text ?? "").replace(/\s+/g, " ").trim();
-  if (fromText) return fromText.slice(0, 200);
-  const stripped = sanitizeHtml(fallbackHtml, { allowedTags: [], allowedAttributes: {} })
+// Drop newsletter preheader noise: beehiiv's plain-text part leads with
+// "View image: (https://…)" placeholders and bare tracking URLs. Left in, the
+// unbroken URLs also overflow the card horizontally (zoomed-in layout on iOS).
+function stripPreviewNoise(s: string): string {
+  return s
+    .replace(/view image:?\s*\(?https?:\/\/\S+\)?/gi, " ")
+    .replace(/https?:\/\/\S+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+// Short plain-text description from the email's text (preheader / first line).
+export function deriveDescription(text: string | undefined, fallbackHtml: string): string {
+  const fromText = stripPreviewNoise((text ?? "").replace(/\s+/g, " ").trim());
+  if (fromText) return fromText.slice(0, 200);
+  const stripped = stripPreviewNoise(
+    sanitizeHtml(fallbackHtml, { allowedTags: [], allowedAttributes: {} }).replace(/\s+/g, " ").trim(),
+  );
   return stripped.slice(0, 200);
 }

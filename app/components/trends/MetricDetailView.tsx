@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import type { TrendMetric, TrendRange, TrendResult } from "@/lib/trends";
-import { metaFor, formatValue, chartLabels } from "./metricMeta";
+import { trendSentiment } from "@/lib/trends";
+import { metaFor, formatValue, chartLabels, SENTIMENT_COLOR } from "./metricMeta";
 import MetricBarChart from "./MetricBarChart";
 import TimeRangeToggle from "./TimeRangeToggle";
 import TrendPill from "./TrendPill";
@@ -37,6 +38,7 @@ export default function MetricDetailView({
   const [range, setRange] = useState<TrendRange>(initial.range);
   const [data, setData] = useState<TrendResult>(initial);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
 
   // Light haptic confirmation as the sheet rises (no-op where unsupported).
   useEffect(() => {
@@ -47,16 +49,20 @@ export default function MetricDetailView({
     // W is preloaded; fetch only when switching to another range.
     if (range === initial.range) {
       setData(initial);
+      setError(false);
       return;
     }
     let cancelled = false;
     setLoading(true);
+    setError(false);
     fetch(`/api/trends?metric=${metric}&range=${range}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error("trend fetch failed"))))
       .then((d: TrendResult) => {
         if (!cancelled) setData(d);
       })
-      .catch(() => {})
+      .catch(() => {
+        if (!cancelled) setError(true);
+      })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
@@ -74,6 +80,8 @@ export default function MetricDetailView({
     data.direction === "flat"
       ? "no change"
       : `${data.delta > 0 ? "+" : ""}${formatValue(metric, data.delta, "")} vs prior`;
+  // Tint the delta by metric-aware sentiment (resting-HR up = bad, HRV up = good).
+  const deltaColor = SENTIMENT_COLOR[trendSentiment(metric, data.direction)];
 
   return (
     <div
@@ -127,8 +135,14 @@ export default function MetricDetailView({
           <MetricBarChart values={values} labels={labels} accent showAxis height={180} />
         </div>
 
+        {error && (
+          <p className="mt-3 text-center text-[12px] font-medium" style={{ color: "var(--color-rose)" }}>
+            Couldn’t load this range — showing the last loaded data.
+          </p>
+        )}
+
         <div className="mt-4">
-          <TrendPill label="Trend" value={deltaStr} />
+          <TrendPill label="Trend" value={deltaStr} valueColor={deltaColor} />
         </div>
       </div>
     </div>

@@ -71,7 +71,7 @@ export default function ArticlesClient({ initial }: { initial: Article[] }) {
             </button>
           </div>
         ) : (
-          <div className="space-y-4 px-4">
+          <div className="space-y-3 px-4">
             {articles.map((a) => (
               <ArticleCard key={a.id} article={a} onOpen={() => setOpen(a)} />
             ))}

@@ -36,14 +36,10 @@ export default function ArticleReader({ article, onClose }: { article: Article; 
   // Portal target only exists on the client; gate render until mounted.
   useEffect(() => setMounted(true), []);
 
-  // Lock background scroll while the reader is open.
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, []);
+  // No body `overflow:hidden` lock: it's unreliable on iOS and, with a portaled
+  // fixed overlay, can stop the reader's own scroller from receiving touch
+  // (the "frozen article" bug). The opaque full-screen overlay hides the page
+  // and `overscroll-contain` on the scroller prevents scroll-chaining instead.
 
   // Close on Escape (external keyboards / desktop).
   useEffect(() => {
@@ -71,49 +67,56 @@ export default function ArticleReader({ article, onClose }: { article: Article; 
   // scroll its full height on iOS.
   return createPortal(
     <div
-      className="fixed inset-0 z-[60] animate-sheet-up"
+      className="fixed inset-0 z-[60]"
       style={{ background: "var(--color-bg)" }}
       role="dialog"
       aria-modal="true"
       aria-label={article.title}
     >
-      {/* Pinned close — always reachable while the body scrolls beneath it. */}
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label="Close article"
-        className="absolute right-4 z-20 flex h-9 w-9 items-center justify-center rounded-full text-white"
-        style={{ top: "calc(env(safe-area-inset-top) + 12px)", background: "rgba(0,0,0,0.55)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
-      >
-        <svg width="15" height="15" viewBox="0 0 14 14" fill="none" aria-hidden>
-          <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
-        </svg>
-      </button>
+      {/* The slide-up entrance lives on this inner wrapper, NOT the fixed
+          overlay: a lingering transform (animation-fill `both` settles at
+          translateY(0)) on a fixed ancestor breaks inner scrolling on iOS.
+          `h-dvh` gives the scroller a definite viewport height regardless of
+          the body chain. */}
+      <div className="relative h-dvh animate-sheet-up">
+        {/* Pinned close — always reachable while the article scrolls beneath it. */}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close article"
+          className="absolute right-4 z-20 flex h-9 w-9 items-center justify-center rounded-full text-white"
+          style={{ top: "calc(env(safe-area-inset-top) + 12px)", background: "rgba(0,0,0,0.55)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
+        >
+          <svg width="15" height="15" viewBox="0 0 14 14" fill="none" aria-hidden>
+            <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+          </svg>
+        </button>
 
-      <div
-        className="h-full overflow-y-auto overscroll-contain no-scrollbar"
-        style={{ WebkitOverflowScrolling: "touch" }}
-      >
-        <div className="relative">
-          {article.image_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={article.image_url} alt="" className="h-64 w-full object-cover" />
-          ) : (
+        <div
+          className="h-full overflow-y-auto overflow-x-clip overscroll-contain no-scrollbar"
+          style={{ WebkitOverflowScrolling: "touch" }}
+        >
+          <div className="relative">
+            {article.image_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={article.image_url} alt="" className="h-64 w-full object-cover" />
+            ) : (
+              <div
+                className="h-40 w-full"
+                style={{ background: "linear-gradient(135deg, color-mix(in oklch, var(--color-accent) 40%, #0a0a0f), #0a0a0f)" }}
+              />
+            )}
+          </div>
+
+          <article className="mx-auto max-w-md px-5 pb-[calc(env(safe-area-inset-bottom)+6rem)] pt-5">
+            <h1 className="text-[28px] font-bold leading-tight text-ink text-balance">{article.title}</h1>
             <div
-              className="h-40 w-full"
-              style={{ background: "linear-gradient(135deg, color-mix(in oklch, var(--color-accent) 40%, #0a0a0f), #0a0a0f)" }}
+              className="article-body mt-4 text-[16px] leading-relaxed text-ink-2"
+              onClick={onBodyClick}
+              dangerouslySetInnerHTML={{ __html: article.body_html ?? "" }}
             />
-          )}
+          </article>
         </div>
-
-        <article className="mx-auto max-w-md px-5 pb-[calc(env(safe-area-inset-bottom)+6rem)] pt-5">
-          <h1 className="text-[28px] font-bold leading-tight text-ink text-balance">{article.title}</h1>
-          <div
-            className="article-body mt-4 text-[16px] leading-relaxed text-ink-2"
-            onClick={onBodyClick}
-            dangerouslySetInnerHTML={{ __html: article.body_html ?? "" }}
-          />
-        </article>
       </div>
 
       {linkUrl && <InAppLink url={linkUrl} onClose={() => setLinkUrl(null)} />}

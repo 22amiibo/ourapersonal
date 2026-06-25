@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { summarizeTrend, metricSpec, rangeDays, type TrendPoint } from "./trends";
+import { summarizeTrend, metricSpec, rangeDays, trendSentiment, type TrendPoint } from "./trends";
 
 // Helper: build dated points from a list of values.
 const pts = (vals: (number | null)[]): TrendPoint[] =>
@@ -76,4 +76,17 @@ test("rangeDays maps D/W/M to 14/7/30", () => {
 test("unknown metric and range throw", () => {
   assert.throws(() => metricSpec("bogus" as never));
   assert.throws(() => rangeDays("X" as never));
+});
+
+test("trendSentiment is metric-aware: up is good for HRV, bad for resting HR", () => {
+  assert.equal(trendSentiment("hrv", "up"), "good");
+  assert.equal(trendSentiment("hrv", "down"), "bad");
+  assert.equal(trendSentiment("resting_hr", "up"), "bad");
+  assert.equal(trendSentiment("resting_hr", "down"), "good");
+  assert.equal(trendSentiment("readiness", "up"), "good");
+});
+
+test("trendSentiment is neutral when flat", () => {
+  assert.equal(trendSentiment("hrv", "flat"), "neutral");
+  assert.equal(trendSentiment("resting_hr", "flat"), "neutral");
 });
