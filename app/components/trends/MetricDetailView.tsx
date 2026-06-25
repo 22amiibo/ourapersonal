@@ -76,11 +76,15 @@ export default function MetricDetailView({
     data.points.map((p) => p.date),
     range,
   );
-  const deltaStr =
-    data.direction === "flat"
-      ? "no change"
-      : `${data.delta > 0 ? "+" : ""}${formatValue(metric, data.delta, "")} vs prior`;
-  // Tint the delta by metric-aware sentiment (resting-HR up = bad, HRV up = good).
+  // Explicit period-over-period comparison: prior-window average → this window,
+  // with the signed delta. Label names the window so "is this better?" is clear.
+  const periodLabel = range === "W" ? "vs last week" : range === "M" ? "vs last month" : "vs prior 2 weeks";
+  const cmpStr =
+    `${formatValue(metric, data.prevAverage, "")} → ${formatValue(metric, data.average, "")}` +
+    (data.direction === "flat"
+      ? " · no change"
+      : ` · ${data.delta > 0 ? "+" : ""}${formatValue(metric, data.delta, "")}`);
+  // Tint by metric-aware sentiment (resting-HR up = bad, HRV up = good).
   const deltaColor = SENTIMENT_COLOR[trendSentiment(metric, data.direction)];
 
   return (
@@ -142,7 +146,7 @@ export default function MetricDetailView({
         )}
 
         <div className="mt-4">
-          <TrendPill label="Trend" value={deltaStr} valueColor={deltaColor} />
+          <TrendPill label={periodLabel} value={cmpStr} valueColor={deltaColor} />
         </div>
       </div>
     </div>
