@@ -15,7 +15,7 @@ type Tab = {
 
 const sw = (active: boolean) => (active ? 2.2 : 1.75);
 
-// Five tabs, replacing the previous Today/Health/Reflect/Log + More set.
+// Six tabs, replacing the previous Today/Health/Reflect/Log + More set.
 // Apple-Health structure, Briefing's own teal icon set.
 const TABS: Tab[] = [
   {
@@ -84,6 +84,21 @@ const TABS: Tab[] = [
       </svg>
     ),
   },
+  {
+    href: "/achievements",
+    label: "Awards",
+    // Line-style award medal (circle + ribbon tails) — not a 3-D trophy.
+    icon: (active) => (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        strokeWidth={sw(active)} strokeLinecap="round" strokeLinejoin="round">
+        {active
+          ? <circle cx="12" cy="8" r="6" fill="currentColor" fillOpacity=".18" />
+          : null}
+        <circle cx="12" cy="8" r="6" />
+        <path d="M15.5 13.5 17 22l-5-3-5 3 1.5-8.5" />
+      </svg>
+    ),
+  },
 ];
 
 const HIDE_THRESHOLD = 12;
@@ -98,13 +113,13 @@ function ActiveDot() {
   );
 }
 
-// One source of truth for every tab chip — guarantees all five are identical.
+// One source of truth for every tab chip — guarantees all six are identical.
 const CHIP_CLASS =
   "relative flex flex-col items-center justify-center gap-1 transition-all duration-200 active:scale-90";
 
 function chipStyle(active: boolean): React.CSSProperties {
   const base: React.CSSProperties = {
-    // Equal flex cells (min-w-0) so all five always share one row and shrink
+    // Equal flex cells (min-w-0) so all six always share one row and shrink
     // to fit any iPhone width — never wrapping a tab to a second line.
     height: 54,
     minWidth: 0,

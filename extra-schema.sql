@@ -129,6 +129,18 @@ CREATE INDEX IF NOT EXISTS idx_mood_logs_user_date ON mood_logs (user_id, log_da
 -- Optional context chips on a mood entry (calm / tired / energized …).
 ALTER TABLE mood_logs ADD COLUMN IF NOT EXISTS tags TEXT[];
 
+-- Achievements: OPTIONAL persistence. The Achievements tab computes earned
+-- state live from existing tables (oura_daily, reflections, intake_log,
+-- mood_logs, briefings), so it works WITHOUT this table. Run it only when you
+-- want to record the exact date each award was first earned (for an
+-- "Earned Jun 12" label and a future unlock animation).
+CREATE TABLE IF NOT EXISTS achievement_unlocks (
+  user_id        INTEGER NOT NULL,
+  achievement_id TEXT NOT NULL,
+  unlocked_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (user_id, achievement_id)
+);
+
 CREATE TABLE IF NOT EXISTS weight_logs (
   id        SERIAL PRIMARY KEY,
   user_id   INTEGER NOT NULL,

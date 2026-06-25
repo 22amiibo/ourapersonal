@@ -32,6 +32,7 @@ const COMMANDS: Command[] = [
   { label: "Observations", hint: "Reflections & AI notes", href: "/observations", keywords: "observations notes ai insight", icon: <I d="M9 18h6M10 22h4M12 2a7 7 0 0 1 7 7c0 2.6-1.4 4.9-3.5 6.2V17a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-1.8A7 7 0 0 1 12 2z" /> },
   { label: "Inputs", hint: "Log caffeine & alcohol", href: "/log", keywords: "inputs log caffeine alcohol intake add", icon: <I d="M12 3v18M3 12h18" /> },
   { label: "Articles", hint: "Newsletter reader", href: "/articles", keywords: "articles newsletter read email", icon: <I d="M4 5h16v14H4zM7 9h10M7 13h7" /> },
+  { label: "Achievements", hint: "Awards & milestones", href: "/achievements", keywords: "achievements awards milestones badges streaks trophies progress", icon: <I d="M12 3l2.4 5 5.6.6-4 4 1 5.4-5-2.8-5 2.8 1-5.4-4-4 5.6-.6z" /> },
   { label: "Reflect", hint: "Write tonight's reflection", href: "/reflect", keywords: "reflect journal write evening reflection", icon: <I d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" /> },
   { label: "Insights", hint: "Discovered patterns", href: "/insights", keywords: "insights patterns intelligence ask", icon: <I d="M9 18h6M10 22h4M12 2a7 7 0 0 1 7 7c0 2.6-1.4 4.9-3.5 6.2V17a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-1.8A7 7 0 0 1 12 2z" /> },
   { label: "Weekly", hint: "Weekly review", href: "/weekly", keywords: "weekly review summary rollup", icon: <I d="M3 5h18v16H3zM3 9h18M8 3v4M16 3v4" /> },
