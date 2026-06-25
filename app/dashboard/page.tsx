@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { sql } from "@/lib/db";
 import { USER_ID } from "@/lib/jobs";
 import { localDateStr, daysAgoStr, getGreeting } from "@/lib/dates";
@@ -103,6 +104,26 @@ function fmtDuration(secs: number): string {
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
+// The single most important thing to do right now + one action. A priority
+// ladder over data we already have — surfaces one verdict, not a wall of cards.
+type Verdict = { message: string; cta: { label: string; href: string } };
+function resolveVerdict(opts: {
+  hasOura: boolean;
+  readiness: number | null;
+  sleepDebtSeconds: number;
+  hasSleepDebtData: boolean;
+  reflectedToday: boolean;
+}): Verdict | null {
+  if (!opts.hasOura) return null;
+  if (opts.readiness != null && opts.readiness < 55)
+    return { message: "Low readiness — keep today easy and prioritize recovery.", cta: { label: "Recovery", href: "/trends" } };
+  if (opts.hasSleepDebtData && opts.sleepDebtSeconds > 4 * 3600)
+    return { message: `You're carrying ${fmtDuration(opts.sleepDebtSeconds)} of sleep debt.`, cta: { label: "Sleep trend", href: "/trends" } };
+  if (!opts.reflectedToday)
+    return { message: "Capture today — it sharpens tomorrow's briefing.", cta: { label: "Reflect", href: "/reflect" } };
+  return null;
+}
+
 // Whole days between two YYYY-MM-DD strings (to − from).
 function daysBetweenStr(fromIso: string, toIso: string): number {
   const p = (s: string) => {
@@ -118,7 +139,7 @@ export default async function DashboardPage() {
   const weekAgo = daysAgoStr(tz, 7);
   const twoWeeksAgo = daysAgoStr(tz, 14);
 
-  const [briefingRows, ouraRows, trendRows, events, sleepDebtRows, baselineRows] = await Promise.all([
+  const [briefingRows, ouraRows, trendRows, events, sleepDebtRows, baselineRows, reflectionRows] = await Promise.all([
     sql`
       SELECT summary_text, recommendations, context_window FROM briefings
       WHERE user_id = ${USER_ID} ORDER BY briefing_date DESC LIMIT 1`,
@@ -147,6 +168,9 @@ export default async function DashboardPage() {
              AVG((raw_payload->>'activity_score')::numeric) AS activity
       FROM oura_daily
       WHERE user_id = ${USER_ID} AND day >= ${twoWeeksAgo}`,
+    sql`
+      SELECT 1 FROM reflections
+      WHERE user_id = ${USER_ID} AND entry_date = ${today} LIMIT 1`,
   ]);
 
   // prediction_records is part of the intelligence layer and may not be
@@ -204,6 +228,15 @@ export default async function DashboardPage() {
   const dayState = getDayState(oura?.readiness_score ?? null, readinessTrendDir, greeting);
   const dayInsight = getDayInsight(readinessTrendDir, sleepDelta, sleepDebtSeconds, hasSleepDebtData);
   const recoveryZone = getRecoveryZone(oura?.readiness_score ?? null);
+
+  const reflectedToday = (reflectionRows as unknown[]).length > 0;
+  const verdict = resolveVerdict({
+    hasOura: !!oura,
+    readiness: oura?.readiness_score ?? null,
+    sleepDebtSeconds,
+    hasSleepDebtData,
+    reflectedToday,
+  });
 
   const wellness = computeWellness({
     sleep: oura?.sleep_score,
@@ -266,6 +299,20 @@ export default async function DashboardPage() {
             <span className="text-[12px] font-semibold" style={{ color: recoveryZone.color }}>{recoveryZone.label}</span>
             <span className="text-[12px] text-ink-3">{recoveryZone.advice}</span>
           </div>
+        )}
+        {verdict && (
+          <Link
+            href={verdict.cta.href}
+            className="mt-3 flex items-center justify-between gap-3 rounded-control glass-1 px-4 py-3 transition-transform active:scale-[0.99]"
+          >
+            <span className="text-[13px] font-medium leading-snug text-ink">{verdict.message}</span>
+            <span className="flex shrink-0 items-center gap-0.5 text-[12px] font-semibold text-accent">
+              {verdict.cta.label}
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden>
+                <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+          </Link>
         )}
       </header>
 
