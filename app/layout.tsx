@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist_Mono } from "next/font/google";
 import ServiceWorkerRegistration from "./components/ServiceWorkerRegistration";
 import TabBar from "./components/TabBar";
-import HamburgerMenu from "./components/HamburgerMenu";
+import NavShell from "./components/NavShell";
 import CommandPalette from "./components/CommandPalette";
 import CircadianBackground from "./components/CircadianBackground";
 import StatusBar from "./components/StatusBar";
@@ -49,13 +49,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </defs>
         </svg>
         <CircadianBackground />
-        <StatusBar />
-        <RevealGate />
-        <HamburgerMenu />
-        {children}
-        <TabBar />
-        <CommandPalette />
-        <ServiceWorkerRegistration />
+        <NavShell>
+          <StatusBar />
+          <RevealGate />
+          {children}
+          <TabBar />
+          <CommandPalette />
+          <ServiceWorkerRegistration />
+        </NavShell>
       </body>
     </html>
   );

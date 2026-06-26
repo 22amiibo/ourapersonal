@@ -492,6 +492,47 @@ html[data-revealed] main .animate-fade-in {
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 }
 
+/* ── Sliding push-panel navigation (NavShell) ─────────────────
+   Opening shifts the whole app shell right (page stays partially visible) and
+   slides a left panel in. The panel scrolls on its own; body scroll is never
+   locked. Both eased on the same curve so the motion feels like one gesture. */
+:root { --nav-w: min(82vw, 340px); }
+
+.nav-shell {
+  transition: transform .42s cubic-bezier(.22,1,.36,1), border-radius .42s cubic-bezier(.22,1,.36,1);
+}
+.nav-shell[data-open="true"] {
+  transform: translateX(var(--nav-w)) scale(.965);
+  transform-origin: left center;
+  border-radius: 28px;
+  overflow: clip;
+  box-shadow: -10px 0 44px rgba(0,0,0,.45);
+}
+
+.nav-panel {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--nav-w);
+  z-index: 50;
+  transform: translateX(-100%);
+  transition: transform .42s cubic-bezier(.22,1,.36,1);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--glass-2-bg);
+  backdrop-filter: var(--glass-2-blur);
+  -webkit-backdrop-filter: var(--glass-2-blur);
+  border-right: 0.5px solid var(--glass-2-border);
+  box-shadow: var(--shadow-glass-2);
+}
+.nav-panel[data-open="true"] { transform: translateX(0); }
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-shell, .nav-panel { transition: none; }
+  .nav-shell[data-open="true"] { transform: none; box-shadow: none; border-radius: 0; }
+}
+
 /* ── Article reader body — styles sanitized newsletter HTML ─── */
 .article-body { word-break: break-word; overflow-wrap: anywhere; }
 /* Nothing inside an email may exceed the reader width (guards fixed px widths

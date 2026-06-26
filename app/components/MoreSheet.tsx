@@ -67,10 +67,7 @@ export default function MoreSheet({ open, onClose }: { open: boolean; onClose: (
                 >
                   {item.icon}
                 </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[15px] font-semibold text-ink">{item.label}</span>
-                  <span className="block truncate text-[12px] text-ink-3">{item.subtitle}</span>
-                </span>
+                <span className="min-w-0 flex-1 text-[15px] font-semibold text-ink">{item.label}</span>
                 <span className="shrink-0 text-ink-3"><Chevron /></span>
               </Link>
             );

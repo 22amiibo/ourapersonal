@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
 
 // Single source of truth for secondary destinations (everything not in the
-// bottom TabBar). Both the "More" sheet and the hamburger drawer render from
-// this list so the two A/B surfaces can never drift apart.
+// bottom TabBar). Both the "More" sheet and the hamburger panel render from
+// this list so the two A/B surfaces can never drift apart. Name + icon only —
+// no descriptions, for a minimal, scannable menu.
 export type NavItem = {
   href: string;
   label: string;
-  subtitle: string;
   icon: ReactNode;
 };
 
@@ -14,7 +14,6 @@ export const SECONDARY_NAV: NavItem[] = [
   {
     href: "/weekly",
     label: "Weekly",
-    subtitle: "Trends over the last 12 weeks",
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
         strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -28,7 +27,6 @@ export const SECONDARY_NAV: NavItem[] = [
   {
     href: "/insights",
     label: "Insights",
-    subtitle: "Patterns discovered from your data",
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
         strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -39,7 +37,6 @@ export const SECONDARY_NAV: NavItem[] = [
   {
     href: "/settings",
     label: "Settings",
-    subtitle: "Oura, notifications, account",
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
         strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -51,7 +48,6 @@ export const SECONDARY_NAV: NavItem[] = [
   {
     href: "/achievements",
     label: "Awards",
-    subtitle: "Achievements you've earned",
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
         strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
