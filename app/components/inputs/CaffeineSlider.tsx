@@ -9,23 +9,21 @@ export default function CaffeineSlider({
   max = 600,
   initial = 100,
   busy = false,
+  bare = false,
   onConfirm,
 }: {
   step?: number;
   max?: number;
   initial?: number;
   busy?: boolean;
+  bare?: boolean;
   onConfirm: (mg: number) => void;
 }) {
   const [mg, setMg] = useState(Math.min(max, Math.round(initial / step) * step));
 
-  return (
-    <div className="rounded-card glass-1 p-5">
-      <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">
-        Caffeine
-      </span>
-
-      <div className="mt-3 flex items-end gap-1.5">
+  const body = (
+    <>
+      <div className={`${bare ? "" : "mt-3 "}flex items-end gap-1.5`}>
         <span
           className="font-mono text-[40px] font-semibold leading-none tabular-nums"
           style={{ color: mg > 400 ? "var(--color-rose)" : mg > 200 ? "var(--color-amber)" : "var(--color-ink)" }}
@@ -55,6 +53,14 @@ export default function CaffeineSlider({
       >
         {busy ? "Logging…" : `Log ${mg} mg`}
       </button>
+    </>
+  );
+
+  if (bare) return <div className="px-5 pb-5 pt-4">{body}</div>;
+  return (
+    <div className="rounded-card glass-1 p-5">
+      <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Caffeine</span>
+      {body}
     </div>
   );
 }

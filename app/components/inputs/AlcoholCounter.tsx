@@ -24,21 +24,19 @@ function StepBtn({ label, onClick }: { label: "−" | "+"; onClick: () => void }
 export default function AlcoholCounter({
   initial = 1,
   busy = false,
+  bare = false,
   onConfirm,
 }: {
   initial?: number;
   busy?: boolean;
+  bare?: boolean;
   onConfirm: (drinks: number) => void;
 }) {
   const [n, setN] = useState(Math.max(0, initial));
 
-  return (
-    <div className="rounded-card glass-1 p-5">
-      <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">
-        Alcohol
-      </span>
-
-      <div className="mt-4 flex items-center justify-center gap-7">
+  const body = (
+    <>
+      <div className={`${bare ? "" : "mt-4 "}flex items-center justify-center gap-7`}>
         <StepBtn label="−" onClick={() => setN((v) => Math.max(0, v - 1))} />
         <span
           className="w-16 text-center font-mono text-[44px] font-semibold leading-none tabular-nums"
@@ -57,6 +55,14 @@ export default function AlcoholCounter({
       >
         {busy ? "Logging…" : `Log ${n} drink${n === 1 ? "" : "s"}`}
       </button>
+    </>
+  );
+
+  if (bare) return <div className="px-5 pb-5 pt-4">{body}</div>;
+  return (
+    <div className="rounded-card glass-1 p-5">
+      <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Alcohol</span>
+      {body}
     </div>
   );
 }

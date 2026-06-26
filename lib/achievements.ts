@@ -25,10 +25,14 @@ export type AchievementStats = {
   workoutTotal: number; // total workouts logged
   workoutDays: number; // distinct days with a workout
   stepDaysOver10k: number; // days with ≥10k steps
+  bestSteps: number; // best single-day step count
   briefingsTotal: number; // briefings generated
   bestHrv: number; // best single-day HRV (ms)
   bestReadiness: number; // best single-day readiness
 };
+
+// 1 = entry tier … 5 = pinnacle. Drives the desaturated-metal badge.
+export type Tier = 1 | 2 | 3 | 4 | 5;
 
 export type AchievementDef = {
   id: string;
@@ -38,6 +42,9 @@ export type AchievementDef = {
   stat: keyof AchievementStats;
   goal: number;
   unit?: string; // e.g. "days", "nights" — for the progress caption
+  tier?: Tier; // difficulty band → metal badge (undefined = single/no tier)
+  family?: string; // groups a tier ladder under one label in the UI
+  hidden?: boolean; // render as "???" until unlocked, then reveal
 };
 
 export type EvaluatedAchievement = AchievementDef & {
@@ -56,40 +63,123 @@ export const CATEGORY_LABEL: Record<AchievementCategory, string> = {
   milestone: "Personal Bests",
 };
 
-// The catalog. Single-level milestones first; tiers can come later as teal
-// intensity rather than bronze/silver/gold metals.
-export const ACHIEVEMENTS: AchievementDef[] = [
-  // Consistency
-  { id: "first-reflection", title: "First Words", description: "Write your first reflection.", category: "consistency", stat: "reflectionTotal", goal: 1 },
-  { id: "reflect-week", title: "Reflection Week", description: "Reflect 7 days in a row.", category: "consistency", stat: "reflectionStreak", goal: 7, unit: "days" },
-  { id: "reflect-fortnight", title: "Reflection Habit", description: "Reflect 14 days in a row.", category: "consistency", stat: "reflectionStreak", goal: 14, unit: "days" },
-  { id: "mood-aware", title: "Mood Aware", description: "Log your mood once.", category: "consistency", stat: "moodLogTotal", goal: 1 },
-  { id: "mood-habit", title: "In Tune", description: "Log your mood 14 times.", category: "consistency", stat: "moodLogTotal", goal: 14, unit: "logs" },
+// Desaturated, premium metals — muted on purpose so the grid reads calm, not
+// arcade. Mirrored as CSS tokens (--tier-1…--tier-5) in globals.css.
+export const TIER_LABEL: Record<Tier, string> = {
+  1: "Bronze",
+  2: "Silver",
+  3: "Champagne",
+  4: "Platinum",
+  5: "Diamond",
+};
 
-  // Sleep
-  { id: "full-night", title: "Full Night", description: "Sleep 8 hours in a night.", category: "sleep", stat: "nights8h", goal: 1, unit: "nights" },
-  { id: "well-rested", title: "Well Rested", description: "Get 7 nights of 8h+ sleep.", category: "sleep", stat: "nights8h", goal: 7, unit: "nights" },
-  { id: "sleep-champion", title: "Sleep Champion", description: "Get 30 nights of 8h+ sleep.", category: "sleep", stat: "nights8h", goal: 30, unit: "nights" },
+export const TIER_TOKEN: Record<Tier, string> = {
+  1: "var(--tier-1)",
+  2: "var(--tier-2)",
+  3: "var(--tier-3)",
+  4: "var(--tier-4)",
+  5: "var(--tier-5)",
+};
+
+// Ordered for display within a family. Labels groups in the UI.
+export const FAMILY_LABEL: Record<string, string> = {
+  steps: "Daily Steps",
+  "step-days": "10K Step Days",
+  nights8h: "Full Nights",
+  "peak-readiness": "Peak Days",
+  "readiness-streak": "Readiness Streak",
+  "reflection-total": "Reflections",
+  "reflection-streak": "Reflection Streak",
+  mood: "Mood Logs",
+  workouts: "Workout Days",
+  briefings: "Daily Briefings",
+  hrv: "HRV Milestones",
+  "readiness-best": "Readiness Peaks",
+};
+
+// The catalog. Tier ladders share a `family` and carry a `tier` 1–5; the page
+// groups them under one label so 50+ entries still scan as progression.
+export const ACHIEVEMENTS: AchievementDef[] = [
+  // ── Activity · Daily Steps (best single day) ──────────────────────────────
+  { id: "steps-3k", title: "First Steps", description: "Reach 3,000 steps in a day.", category: "activity", stat: "bestSteps", goal: 3000, unit: "steps", family: "steps", tier: 1 },
+  { id: "steps-5k", title: "Up & About", description: "Reach 5,000 steps in a day.", category: "activity", stat: "bestSteps", goal: 5000, unit: "steps", family: "steps", tier: 1 },
+  { id: "steps-7k", title: "Stride", description: "Reach 7,500 steps in a day.", category: "activity", stat: "bestSteps", goal: 7500, unit: "steps", family: "steps", tier: 2 },
+  { id: "steps-10k", title: "10K Club", description: "Reach 10,000 steps in a day.", category: "activity", stat: "bestSteps", goal: 10000, unit: "steps", family: "steps", tier: 3 },
+  { id: "steps-15k", title: "Trailblazer", description: "Reach 15,000 steps in a day.", category: "activity", stat: "bestSteps", goal: 15000, unit: "steps", family: "steps", tier: 4 },
+  { id: "steps-20k", title: "Distance", description: "Reach 20,000 steps in a day.", category: "activity", stat: "bestSteps", goal: 20000, unit: "steps", family: "steps", tier: 5 },
+
+  // ── Activity · 10K step days (consistency) ────────────────────────────────
+  { id: "step-days-1", title: "On Your Feet", description: "Hit 10K steps on a day.", category: "activity", stat: "stepDaysOver10k", goal: 1, unit: "days", family: "step-days", tier: 1 },
+  { id: "step-days-10", title: "Mover", description: "Hit 10K steps on 10 days.", category: "activity", stat: "stepDaysOver10k", goal: 10, unit: "days", family: "step-days", tier: 3 },
+  { id: "step-days-30", title: "Relentless", description: "Hit 10K steps on 30 days.", category: "activity", stat: "stepDaysOver10k", goal: 30, unit: "days", family: "step-days", tier: 5 },
+
+  // ── Activity · Workout days ───────────────────────────────────────────────
+  { id: "workout-1", title: "First Rep", description: "Log your first workout.", category: "activity", stat: "workoutDays", goal: 1, unit: "days", family: "workouts", tier: 1 },
+  { id: "workout-10", title: "Consistent Mover", description: "Work out on 10 days.", category: "activity", stat: "workoutDays", goal: 10, unit: "days", family: "workouts", tier: 2 },
+  { id: "workout-30", title: "Dedicated", description: "Work out on 30 days.", category: "activity", stat: "workoutDays", goal: 30, unit: "days", family: "workouts", tier: 4 },
+  { id: "workout-60", title: "Athlete", description: "Work out on 60 days.", category: "activity", stat: "workoutDays", goal: 60, unit: "days", family: "workouts", tier: 5 },
+
+  // ── Sleep · Full nights (≥8h) ─────────────────────────────────────────────
+  { id: "nights8h-1", title: "Full Night", description: "Sleep 8 hours in a night.", category: "sleep", stat: "nights8h", goal: 1, unit: "nights", family: "nights8h", tier: 1 },
+  { id: "nights8h-7", title: "Well Rested", description: "Get 7 nights of 8h+ sleep.", category: "sleep", stat: "nights8h", goal: 7, unit: "nights", family: "nights8h", tier: 2 },
+  { id: "nights8h-30", title: "Sleep Champion", description: "Get 30 nights of 8h+ sleep.", category: "sleep", stat: "nights8h", goal: 30, unit: "nights", family: "nights8h", tier: 3 },
+  { id: "nights8h-60", title: "Restored", description: "Get 60 nights of 8h+ sleep.", category: "sleep", stat: "nights8h", goal: 60, unit: "nights", family: "nights8h", tier: 4 },
+  { id: "nights8h-100", title: "Sleep Master", description: "Get 100 nights of 8h+ sleep.", category: "sleep", stat: "nights8h", goal: 100, unit: "nights", family: "nights8h", tier: 5 },
+
+  // ── Sleep · Debt ──────────────────────────────────────────────────────────
   { id: "debt-free", title: "Debt Free", description: "Clear your weekly sleep debt.", category: "sleep", stat: "sleepDebtCleared", goal: 1 },
 
-  // Recovery
-  { id: "peak-day", title: "Peak Day", description: "Reach 85+ readiness.", category: "recovery", stat: "optimalDays", goal: 1, unit: "days" },
-  { id: "peak-week", title: "Peak Week", description: "Reach 85+ readiness on 7 days.", category: "recovery", stat: "optimalDays", goal: 7, unit: "days" },
-  { id: "steady-recovery", title: "Steady", description: "Hold 70+ readiness 7 days running.", category: "recovery", stat: "readiness70Streak", goal: 7, unit: "days" },
+  // ── Recovery · Peak readiness days (≥85) ──────────────────────────────────
+  { id: "peak-1", title: "Peak Day", description: "Reach 85+ readiness.", category: "recovery", stat: "optimalDays", goal: 1, unit: "days", family: "peak-readiness", tier: 1 },
+  { id: "peak-7", title: "Peak Week", description: "Reach 85+ readiness on 7 days.", category: "recovery", stat: "optimalDays", goal: 7, unit: "days", family: "peak-readiness", tier: 2 },
+  { id: "peak-30", title: "Peak Form", description: "Reach 85+ readiness on 30 days.", category: "recovery", stat: "optimalDays", goal: 30, unit: "days", family: "peak-readiness", tier: 4 },
+  { id: "peak-60", title: "Apex", description: "Reach 85+ readiness on 60 days.", category: "recovery", stat: "optimalDays", goal: 60, unit: "days", family: "peak-readiness", tier: 5 },
 
-  // Activity
-  { id: "first-workout", title: "First Rep", description: "Log your first workout.", category: "activity", stat: "workoutTotal", goal: 1 },
-  { id: "consistent-mover", title: "Consistent Mover", description: "Work out on 10 different days.", category: "activity", stat: "workoutDays", goal: 10, unit: "days" },
-  { id: "step-goal", title: "10K Steps", description: "Hit 10,000 steps in a day.", category: "activity", stat: "stepDaysOver10k", goal: 1, unit: "days" },
-  { id: "step-streak", title: "On Your Feet", description: "Hit 10K steps on 10 days.", category: "activity", stat: "stepDaysOver10k", goal: 10, unit: "days" },
+  // ── Recovery · Readiness streak (≥70) ─────────────────────────────────────
+  { id: "ready-streak-7", title: "Steady", description: "Hold 70+ readiness 7 days running.", category: "recovery", stat: "readiness70Streak", goal: 7, unit: "days", family: "readiness-streak", tier: 2 },
+  { id: "ready-streak-14", title: "Resilient", description: "Hold 70+ readiness 14 days running.", category: "recovery", stat: "readiness70Streak", goal: 14, unit: "days", family: "readiness-streak", tier: 3 },
+  { id: "ready-streak-30", title: "Unshakable", description: "Hold 70+ readiness 30 days running.", category: "recovery", stat: "readiness70Streak", goal: 30, unit: "days", family: "readiness-streak", tier: 5 },
 
-  // Engagement
-  { id: "first-briefing", title: "Briefed", description: "Generate your first daily briefing.", category: "engagement", stat: "briefingsTotal", goal: 1 },
-  { id: "well-briefed", title: "Well Briefed", description: "Build up 30 daily briefings.", category: "engagement", stat: "briefingsTotal", goal: 30, unit: "briefings" },
+  // ── Consistency · Reflections written ─────────────────────────────────────
+  { id: "reflect-1", title: "First Words", description: "Write your first reflection.", category: "consistency", stat: "reflectionTotal", goal: 1, family: "reflection-total", tier: 1 },
+  { id: "reflect-10", title: "Journaler", description: "Write 10 reflections.", category: "consistency", stat: "reflectionTotal", goal: 10, family: "reflection-total", tier: 2 },
+  { id: "reflect-50", title: "Chronicler", description: "Write 50 reflections.", category: "consistency", stat: "reflectionTotal", goal: 50, family: "reflection-total", tier: 4 },
+  { id: "reflect-100", title: "Memoirist", description: "Write 100 reflections.", category: "consistency", stat: "reflectionTotal", goal: 100, family: "reflection-total", tier: 5 },
 
-  // Personal bests
-  { id: "hrv-high", title: "Strong Heart", description: "Reach an HRV of 60 ms.", category: "milestone", stat: "bestHrv", goal: 60, unit: "ms" },
-  { id: "readiness-ace", title: "Readiness Ace", description: "Reach 90 readiness.", category: "milestone", stat: "bestReadiness", goal: 90 },
+  // ── Consistency · Reflection streak ───────────────────────────────────────
+  { id: "reflect-streak-7", title: "Reflection Week", description: "Reflect 7 days in a row.", category: "consistency", stat: "reflectionStreak", goal: 7, unit: "days", family: "reflection-streak", tier: 2 },
+  { id: "reflect-streak-14", title: "Reflection Habit", description: "Reflect 14 days in a row.", category: "consistency", stat: "reflectionStreak", goal: 14, unit: "days", family: "reflection-streak", tier: 3 },
+  { id: "reflect-streak-30", title: "Reflection Ritual", description: "Reflect 30 days in a row.", category: "consistency", stat: "reflectionStreak", goal: 30, unit: "days", family: "reflection-streak", tier: 5 },
+
+  // ── Consistency · Mood logs ───────────────────────────────────────────────
+  { id: "mood-1", title: "Mood Aware", description: "Log your mood once.", category: "consistency", stat: "moodLogTotal", goal: 1, unit: "logs", family: "mood", tier: 1 },
+  { id: "mood-14", title: "In Tune", description: "Log your mood 14 times.", category: "consistency", stat: "moodLogTotal", goal: 14, unit: "logs", family: "mood", tier: 2 },
+  { id: "mood-50", title: "Self-Aware", description: "Log your mood 50 times.", category: "consistency", stat: "moodLogTotal", goal: 50, unit: "logs", family: "mood", tier: 4 },
+  { id: "mood-100", title: "Attuned", description: "Log your mood 100 times.", category: "consistency", stat: "moodLogTotal", goal: 100, unit: "logs", family: "mood", tier: 5 },
+
+  // ── Engagement · Daily briefings ──────────────────────────────────────────
+  { id: "briefing-1", title: "Briefed", description: "Generate your first daily briefing.", category: "engagement", stat: "briefingsTotal", goal: 1, family: "briefings", tier: 1 },
+  { id: "briefing-30", title: "Well Briefed", description: "Build up 30 daily briefings.", category: "engagement", stat: "briefingsTotal", goal: 30, unit: "briefings", family: "briefings", tier: 3 },
+  { id: "briefing-90", title: "Briefing Devotee", description: "Build up 90 daily briefings.", category: "engagement", stat: "briefingsTotal", goal: 90, unit: "briefings", family: "briefings", tier: 5 },
+
+  // ── Personal Bests · HRV ──────────────────────────────────────────────────
+  { id: "hrv-40", title: "Settled Heart", description: "Reach an HRV of 40 ms.", category: "milestone", stat: "bestHrv", goal: 40, unit: "ms", family: "hrv", tier: 1 },
+  { id: "hrv-50", title: "Calm Heart", description: "Reach an HRV of 50 ms.", category: "milestone", stat: "bestHrv", goal: 50, unit: "ms", family: "hrv", tier: 2 },
+  { id: "hrv-60", title: "Strong Heart", description: "Reach an HRV of 60 ms.", category: "milestone", stat: "bestHrv", goal: 60, unit: "ms", family: "hrv", tier: 3 },
+  { id: "hrv-70", title: "Athlete's Heart", description: "Reach an HRV of 70 ms.", category: "milestone", stat: "bestHrv", goal: 70, unit: "ms", family: "hrv", tier: 4 },
+
+  // ── Personal Bests · Readiness peaks ──────────────────────────────────────
+  { id: "ready-best-80", title: "In Form", description: "Reach 80 readiness.", category: "milestone", stat: "bestReadiness", goal: 80, family: "readiness-best", tier: 1 },
+  { id: "ready-best-85", title: "Sharp", description: "Reach 85 readiness.", category: "milestone", stat: "bestReadiness", goal: 85, family: "readiness-best", tier: 2 },
+  { id: "ready-best-90", title: "Readiness Ace", description: "Reach 90 readiness.", category: "milestone", stat: "bestReadiness", goal: 90, family: "readiness-best", tier: 3 },
+  { id: "ready-best-95", title: "Prime", description: "Reach 95 readiness.", category: "milestone", stat: "bestReadiness", goal: 95, family: "readiness-best", tier: 4 },
+
+  // ── Hidden — surprises that reveal only on unlock ─────────────────────────
+  { id: "hidden-marathoner", title: "Marathoner", description: "Reach 30,000 steps in a single day.", category: "activity", stat: "bestSteps", goal: 30000, unit: "steps", tier: 5, hidden: true },
+  { id: "hidden-perfect", title: "Flawless", description: "Reach a perfect 100 readiness.", category: "milestone", stat: "bestReadiness", goal: 100, tier: 5, hidden: true },
+  { id: "hidden-iron-hrv", title: "Iron Heart", description: "Reach an HRV of 90 ms.", category: "milestone", stat: "bestHrv", goal: 90, unit: "ms", tier: 5, hidden: true },
+  { id: "hidden-devoted", title: "Devoted", description: "Reflect 60 days in a row.", category: "consistency", stat: "reflectionStreak", goal: 60, unit: "days", tier: 5, hidden: true },
+  { id: "hidden-centurion", title: "Centurion", description: "Build up 365 daily briefings.", category: "engagement", stat: "briefingsTotal", goal: 365, unit: "briefings", tier: 5, hidden: true },
 ];
 
 export function evaluateAchievements(

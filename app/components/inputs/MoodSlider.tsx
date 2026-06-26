@@ -10,9 +10,11 @@ const MAX_TAGS = 5;
 
 export default function MoodSlider({
   busy = false,
+  bare = false,
   onConfirm,
 }: {
   busy?: boolean;
+  bare?: boolean;
   onConfirm: (mood: number, tags: string[]) => void;
 }) {
   const [mood, setMood] = useState(6);
@@ -27,11 +29,9 @@ export default function MoodSlider({
     );
   }
 
-  return (
-    <div className="rounded-card glass-1 p-5">
-      <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Mood</span>
-
-      <div className="mt-3 flex items-end gap-1.5">
+  const body = (
+    <>
+      <div className={`${bare ? "" : "mt-3 "}flex items-end gap-1.5`}>
         <span
           className="font-mono text-[40px] font-semibold leading-none tabular-nums"
           style={{ color: moodColor }}
@@ -91,6 +91,14 @@ export default function MoodSlider({
       >
         {busy ? "Logging…" : "Log mood"}
       </button>
+    </>
+  );
+
+  if (bare) return <div className="px-5 pb-5 pt-4">{body}</div>;
+  return (
+    <div className="rounded-card glass-1 p-5">
+      <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Mood</span>
+      {body}
     </div>
   );
 }

@@ -24,6 +24,14 @@
   --color-danger:  #f43f5e;
   --color-neutral: #56566a;
 
+  /* Achievement tiers — desaturated, premium metals (bronze → diamond).
+     Muted on purpose so a wall of badges reads calm, not arcade. */
+  --tier-1: #b08157; /* bronze */
+  --tier-2: #c2c6cd; /* silver */
+  --tier-3: #d9bd83; /* champagne */
+  --tier-4: #e3e6ea; /* platinum */
+  --tier-5: #a9e0e6; /* diamond (cool, ties to the teal canvas) */
+
   --font-sans: "SF Pro Rounded", ui-rounded, system-ui, -apple-system, sans-serif;
   --font-mono: "Geist Mono", monospace;
 
@@ -60,6 +68,11 @@
   --color-warning: #f59e0b;
   --color-danger:  #f43f5e;
   --color-neutral: #56566a;
+  --tier-1: #b08157;
+  --tier-2: #c2c6cd;
+  --tier-3: #d9bd83;
+  --tier-4: #e3e6ea;
+  --tier-5: #a9e0e6;
   --color-bg-soft: rgba(245,245,250,.04);
 
   --bg: #0a0a0a;
@@ -285,6 +298,11 @@ input, textarea {
   to   { opacity: 1; }
 }
 
+@keyframes drawer-in {
+  from { opacity: 0; transform: translateX(-100%); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
 @keyframes shimmer {
   0%   { background-position: -200% 0; }
   100% { background-position: 200% 0; }
@@ -455,6 +473,7 @@ html[data-revealed] main .animate-fade-in {
   .animate-fade-in    { animation: fade-in .3s ease both; }
   .animate-slide-up   { animation: slide-up .4s cubic-bezier(.22,1,.36,1) both; }
   .animate-sheet-up   { animation: sheet-up .42s cubic-bezier(.22,1,.36,1) both; }
+  .animate-drawer-in  { animation: drawer-in .34s cubic-bezier(.22,1,.36,1) both; }
   .animate-scrim-in   { animation: scrim-in .25s ease both; }
   .page-enter         { animation: page-enter .38s cubic-bezier(.22,1,.36,1) both; }
 

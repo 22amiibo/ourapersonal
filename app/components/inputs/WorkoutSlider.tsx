@@ -9,23 +9,21 @@ export default function WorkoutSlider({
   max = 180,
   initial = 30,
   busy = false,
+  bare = false,
   onConfirm,
 }: {
   step?: number;
   max?: number;
   initial?: number;
   busy?: boolean;
+  bare?: boolean;
   onConfirm: (minutes: number) => void;
 }) {
   const [min, setMin] = useState(Math.min(max, Math.max(step, Math.round(initial / step) * step)));
 
-  return (
-    <div className="rounded-card glass-1 p-5">
-      <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">
-        Workout
-      </span>
-
-      <div className="mt-3 flex items-end gap-1.5">
+  const body = (
+    <>
+      <div className={`${bare ? "" : "mt-3 "}flex items-end gap-1.5`}>
         <span className="font-mono text-[40px] font-semibold leading-none tabular-nums text-ink">
           {min}
         </span>
@@ -52,6 +50,14 @@ export default function WorkoutSlider({
       >
         {busy ? "Logging…" : `Log ${min} min`}
       </button>
+    </>
+  );
+
+  if (bare) return <div className="px-5 pb-5 pt-4">{body}</div>;
+  return (
+    <div className="rounded-card glass-1 p-5">
+      <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Workout</span>
+      {body}
     </div>
   );
 }
