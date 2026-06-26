@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
-import { SECONDARY_NAV } from "./nav/secondaryNav";
+import { NAV_ALL } from "./nav/secondaryNav";
 
 // Sliding push-panel navigation. Opening translates the whole app shell to the
 // right (the page stays partially visible — not replaced by an overlay) while a
@@ -63,20 +63,23 @@ export default function NavShell({ children }: { children: ReactNode }) {
                 <line x1="3.5" y1="17" x2="20.5" y2="17" />
               </svg>
             </button>
-            <nav className="flex flex-1 flex-col justify-evenly gap-1">
-              {SECONDARY_NAV.map((item) => {
-                const active = path === item.href || path.startsWith(item.href + "/");
+            <nav className="mt-2 flex flex-col gap-0.5 font-sans">
+              {NAV_ALL.map((item) => {
+                const active =
+                  path === item.href ||
+                  path.startsWith(item.href + "/") ||
+                  (item.href === "/dashboard" && path === "/");
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
                     onClick={() => setOpen(false)}
                     aria-current={active ? "page" : undefined}
-                    className="flex flex-col items-center gap-1.5 rounded-control py-2.5 transition-transform active:scale-95"
+                    className="flex flex-col items-center gap-1 rounded-control py-2.5 transition-transform active:scale-95"
                     style={{ background: active ? "var(--color-bg-soft)" : "transparent" }}
                   >
                     <span
-                      className="flex h-11 w-11 items-center justify-center rounded-control"
+                      className="flex h-10 w-10 items-center justify-center rounded-control"
                       style={{
                         background: active ? "color-mix(in oklch, var(--color-accent) 16%, transparent)" : "var(--color-bg-soft)",
                         color: active ? "var(--color-accent)" : "var(--color-ink-2)",
@@ -85,7 +88,7 @@ export default function NavShell({ children }: { children: ReactNode }) {
                       {item.icon}
                     </span>
                     <span
-                      className="max-w-full truncate text-[10.5px] font-semibold"
+                      className="max-w-full truncate font-sans text-[10.5px] font-semibold"
                       style={{ color: active ? "var(--color-accent)" : "var(--color-ink-2)" }}
                     >
                       {item.label}
