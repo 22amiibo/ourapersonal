@@ -20,12 +20,12 @@ export default function NavShell({ children }: { children: ReactNode }) {
 
   return (
     <>
-      {!hidden && (
+      {!hidden && !open && (
         <button
           type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-label={open ? "Close menu" : "Menu"}
-          aria-expanded={open}
+          onClick={() => setOpen(true)}
+          aria-label="Menu"
+          aria-expanded={false}
           className="fixed left-3 z-[60] flex h-10 w-10 items-center justify-center rounded-full text-ink-2 transition-transform active:scale-90"
           style={{
             top: "calc(env(safe-area-inset-top) + 0.5rem)",
@@ -36,8 +36,7 @@ export default function NavShell({ children }: { children: ReactNode }) {
           }}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            strokeWidth="1.9" strokeLinecap="round" aria-hidden
-            style={{ transition: "transform .3s cubic-bezier(.22,1,.36,1)", transform: open ? "rotate(90deg)" : "none" }}>
+            strokeWidth="1.9" strokeLinecap="round" aria-hidden>
             <line x1="3.5" y1="7" x2="20.5" y2="7" />
             <line x1="3.5" y1="12" x2="20.5" y2="12" />
             <line x1="3.5" y1="17" x2="20.5" y2="17" />
@@ -45,12 +44,26 @@ export default function NavShell({ children }: { children: ReactNode }) {
         </button>
       )}
 
-      {/* Left panel — vertical, evenly spaced, independently scrollable. */}
+      {/* Left rail — slim, vertically stacked items, independently scrollable.
+          A burger at the top doubles as the close button. */}
       {!hidden && (
         <aside className="nav-panel" data-open={open} aria-hidden={!open}>
-          <div className="flex min-h-full flex-col px-3 pt-[calc(env(safe-area-inset-top)+3.75rem)] pb-[calc(env(safe-area-inset-bottom)+1.5rem)]">
-            <p className="mb-2 px-3 text-[11px] font-medium uppercase tracking-[0.14em] text-ink-3">Menu</p>
-            <nav className="flex flex-1 flex-col justify-evenly gap-1.5">
+          <div className="flex min-h-full flex-col px-1.5 pt-[calc(env(safe-area-inset-top)+0.5rem)] pb-[calc(env(safe-area-inset-bottom)+1.25rem)]">
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              aria-label="Close menu"
+              className="mx-auto flex h-10 w-10 items-center justify-center rounded-full text-ink-2 transition-transform active:scale-90"
+              style={{ background: "var(--color-bg-soft)", border: "0.5px solid var(--color-line)" }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                strokeWidth="1.9" strokeLinecap="round" aria-hidden>
+                <line x1="3.5" y1="7" x2="20.5" y2="7" />
+                <line x1="3.5" y1="12" x2="20.5" y2="12" />
+                <line x1="3.5" y1="17" x2="20.5" y2="17" />
+              </svg>
+            </button>
+            <nav className="flex flex-1 flex-col justify-evenly gap-1">
               {SECONDARY_NAV.map((item) => {
                 const active = path === item.href || path.startsWith(item.href + "/");
                 return (
@@ -59,11 +72,11 @@ export default function NavShell({ children }: { children: ReactNode }) {
                     href={item.href}
                     onClick={() => setOpen(false)}
                     aria-current={active ? "page" : undefined}
-                    className="flex items-center gap-3.5 rounded-control px-3 py-3.5 transition-colors active:scale-[0.99]"
+                    className="flex flex-col items-center gap-1.5 rounded-control py-2.5 transition-transform active:scale-95"
                     style={{ background: active ? "var(--color-bg-soft)" : "transparent" }}
                   >
                     <span
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control"
+                      className="flex h-11 w-11 items-center justify-center rounded-control"
                       style={{
                         background: active ? "color-mix(in oklch, var(--color-accent) 16%, transparent)" : "var(--color-bg-soft)",
                         color: active ? "var(--color-accent)" : "var(--color-ink-2)",
@@ -71,7 +84,12 @@ export default function NavShell({ children }: { children: ReactNode }) {
                     >
                       {item.icon}
                     </span>
-                    <span className="text-[16px] font-semibold text-ink">{item.label}</span>
+                    <span
+                      className="max-w-full truncate text-[10.5px] font-semibold"
+                      style={{ color: active ? "var(--color-accent)" : "var(--color-ink-2)" }}
+                    >
+                      {item.label}
+                    </span>
                   </Link>
                 );
               })}

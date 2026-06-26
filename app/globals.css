@@ -496,15 +496,15 @@ html[data-revealed] main .animate-fade-in {
    Opening shifts the whole app shell right (page stays partially visible) and
    slides a left panel in. The panel scrolls on its own; body scroll is never
    locked. Both eased on the same curve so the motion feels like one gesture. */
-:root { --nav-w: min(82vw, 340px); }
+:root { --nav-w: min(32vw, 110px); }
 
 .nav-shell {
   transition: transform .42s cubic-bezier(.22,1,.36,1), border-radius .42s cubic-bezier(.22,1,.36,1);
 }
 .nav-shell[data-open="true"] {
-  transform: translateX(var(--nav-w)) scale(.965);
+  transform: translateX(var(--nav-w)) scale(.975);
   transform-origin: left center;
-  border-radius: 28px;
+  border-radius: 26px;
   overflow: clip;
   box-shadow: -10px 0 44px rgba(0,0,0,.45);
 }
