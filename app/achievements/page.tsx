@@ -14,6 +14,8 @@ import {
   type Tier,
 } from "@/lib/achievements";
 import UnlockToast, { type UnlockedAward } from "./UnlockToast";
+import CategoryTray from "./CategoryTray";
+import EmptyState from "@/app/components/ui/EmptyState";
 
 // Per-user, data-backed — render per request. Everything here is pure SQL/JS
 // (zero AI tokens), matching the app's flat-cost rule.
@@ -296,21 +298,30 @@ function CategorySection({
 }) {
   if (defs.length === 0) return null;
   const earned = defs.filter((a) => a.unlocked).length;
+  // Earned first, then closest-to-earning — so the collapsed 2×2 always shows
+  // the category's proudest moments and next targets. Stable within groups.
+  const sorted = [...defs].sort(
+    (a, b) => (b.unlocked ? 1 : 0) - (a.unlocked ? 1 : 0) || b.pct - a.pct,
+  );
   return (
     <section className="mt-8 px-4">
-      <div className="mb-3 flex items-end justify-between px-0.5">
+      <div className="mb-2 flex items-end justify-between px-0.5">
         <h2 className="text-[17px] font-bold tracking-tight text-ink">{CATEGORY_LABEL[category]}</h2>
         <span className="rounded-pill px-2.5 py-1 text-[11px] font-semibold tabular-nums text-ink-2" style={{ background: "var(--color-bg-soft)" }}>
           {earned}/{defs.length}
         </span>
       </div>
-      <div className="rounded-[24px] p-2.5" style={{ background: "color-mix(in oklch, var(--color-ink) 3.5%, transparent)", border: "0.5px solid var(--color-line)" }}>
-        <div className="grid grid-cols-2 gap-2.5">
-          {defs.map((a) => (
-            <AchievementCard key={a.id} a={a} date={dates[a.id]} />
-          ))}
-        </div>
+      <div className="mb-3 h-[3px] w-full overflow-hidden rounded-full" style={{ background: "var(--color-surface-3)" }}>
+        <div
+          className="h-full rounded-full"
+          style={{ width: `${defs.length > 0 ? Math.round((earned / defs.length) * 100) : 0}%`, background: "var(--color-accent)" }}
+        />
       </div>
+      <CategoryTray
+        cards={sorted.map((a) => (
+          <AchievementCard key={a.id} a={a} date={dates[a.id]} />
+        ))}
+      />
     </section>
   );
 }
@@ -381,6 +392,24 @@ export default async function AchievementsPage() {
         </div>
       </header>
 
+      {earned.length === 0 && (
+        <div className="mt-5 px-4 animate-spring-in">
+          <EmptyState
+            icon={<MedalIcon color="var(--color-ink-3)" size={24} />}
+            heading="Nothing earned yet"
+            body="Your first award is closer than you think — keep logging and it'll find you."
+            actions={
+              <a
+                href="/reflect"
+                className="flex min-h-[44px] items-center rounded-pill bg-accent px-5 py-2.5 text-[13px] font-semibold text-bg transition-transform active:scale-95"
+              >
+                Log today
+              </a>
+            }
+          />
+        </div>
+      )}
+
       {CATEGORY_ORDER.map((cat) => (
         <CategorySection
           key={cat}
@@ -398,13 +427,11 @@ export default async function AchievementsPage() {
               {secretsEarned}/{secrets.length}
             </span>
           </div>
-          <div className="rounded-[24px] p-2.5" style={{ background: "color-mix(in oklch, var(--color-ink) 3.5%, transparent)", border: "0.5px solid var(--color-line)" }}>
-            <div className="grid grid-cols-2 gap-2.5">
-              {secrets.map((a) => (
-                <SecretCard key={a.id} a={a} date={dates[a.id]} />
-              ))}
-            </div>
-          </div>
+          <CategoryTray
+            cards={secrets.map((a) => (
+              <SecretCard key={a.id} a={a} date={dates[a.id]} />
+            ))}
+          />
         </section>
       )}
     </main>

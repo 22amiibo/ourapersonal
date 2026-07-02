@@ -20,6 +20,7 @@ export const TREND_METRICS: MetricMeta[] = [
   { metric: "resting_hr", label: "Resting HR", noun: "resting heart rate" },
   { metric: "activity_score", label: "Activity", noun: "activity score" },
   { metric: "steps", label: "Steps", noun: "step count" },
+  { metric: "active_cal", label: "Active Calories", noun: "active calories" },
 ];
 
 export function metaFor(metric: TrendMetric): MetricMeta {
@@ -55,9 +56,9 @@ export function daysSince(date: string): number {
   return Math.round((today - then) / 86_400_000);
 }
 
-// Choose chart labels by range: weekday letters for D/W, sparse dates for M.
+// Choose chart labels by range: weekday letters for D/W, sparse dates for M/Q.
 export function chartLabels(dates: string[], range: TrendRange): string[] {
-  if (range === "M") {
+  if (range === "M" || range === "Q") {
     const step = Math.ceil(dates.length / 6);
     return dates.map((d, i) => (i % step === 0 ? dayOfMonth(d) : ""));
   }

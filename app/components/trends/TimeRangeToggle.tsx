@@ -6,6 +6,7 @@ const RANGES: { value: TrendRange; label: string }[] = [
   { value: "D", label: "D" },
   { value: "W", label: "W" },
   { value: "M", label: "M" },
+  { value: "Q", label: "3M" },
 ];
 
 // Segmented control: dark pill track, selected = lighter elevated pill.

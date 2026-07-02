@@ -46,15 +46,15 @@ export const NAV_ROUTES: NavRoute[] = [
     href: "/insights",
     label: "Insights",
     hint: "Ask your data & patterns",
-    keywords: "insights patterns intelligence ask ai coach",
+    keywords: "insights patterns intelligence ask ai coach observations notes timeline",
     group: "primary",
   },
   {
     id: "reflect",
     href: "/reflect",
     label: "Reflect",
-    hint: "Write tonight's reflection",
-    keywords: "reflect journal write evening reflection",
+    hint: "Log your day & write tonight's reflection",
+    keywords: "reflect journal write evening reflection inputs log caffeine alcohol workout mood intake add",
     group: "primary",
   },
   {
@@ -81,33 +81,6 @@ export const NAV_ROUTES: NavRoute[] = [
     label: "Articles",
     hint: "Newsletter reader",
     keywords: "articles newsletter read email",
-    group: "secondary",
-  },
-  // Kept reachable until Phase 3 folds Trends into Health.
-  {
-    id: "trends",
-    href: "/trends",
-    label: "Trends",
-    hint: "Metric highlights & detail",
-    keywords: "charts graphs metrics history sleep hrv trends",
-    group: "secondary",
-  },
-  // Kept reachable until Phase 4 merges Observations into Insights.
-  {
-    id: "observations",
-    href: "/observations",
-    label: "Observations",
-    hint: "Reflections & AI notes",
-    keywords: "observations notes ai timeline",
-    group: "secondary",
-  },
-  // Kept reachable until Phase 5 merges Inputs into Reflect.
-  {
-    id: "log",
-    href: "/log",
-    label: "Inputs",
-    hint: "Log caffeine & alcohol",
-    keywords: "inputs log caffeine alcohol workout mood intake add",
     group: "secondary",
   },
   {

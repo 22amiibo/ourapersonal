@@ -52,7 +52,8 @@ export default function MetricBarChart({
   const barW = Math.max(2, slot * 0.5);
   const xAt = (i: number) => PAD.left + slot * i + slot / 2;
 
-  const barColor = accent ? "var(--color-accent)" : "rgba(255,255,255,0.20)";
+  // Muted bars read from ink so they stay visible in light mode too.
+  const barColor = accent ? "var(--color-accent)" : "color-mix(in oklch, var(--color-ink) 20%, transparent)";
   const gridFracs = showAxis ? [0, 0.5, 1] : [];
 
   // Footprint-preserving empty state: no numeric values → keep the exact chart
@@ -100,11 +101,13 @@ export default function MetricBarChart({
           />
         ))}
 
-      {/* Bars */}
+      {/* Bars — draw up from the baseline on reveal (reduced-motion neutralizes) */}
       {values.map((v, i) =>
         v == null ? null : (
           <rect
             key={`bar-${i}`}
+            className="chart-bar-draw"
+            style={{ animationDelay: `${Math.min(i * 8, 240)}ms` }}
             x={xAt(i) - barW / 2}
             y={yAt(v)}
             width={barW}

@@ -57,7 +57,7 @@ export default function HabitCheckins() {
   return (
     <section
       className="mx-4 rounded-card glass-1 p-5 animate-spring-in"
-      style={{ animationDelay: "400ms" }}
+      style={{ animationDelay: "var(--stagger-3)" }}
     >
       <div className="mb-3 flex items-center justify-between">
         <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">

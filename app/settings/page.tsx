@@ -223,7 +223,7 @@ export default function SettingsPage() {
       </header>
 
       {/* Connections */}
-      <section className="space-y-0 animate-spring-in" style={{ animationDelay: "80ms" }}>
+      <section className="space-y-0 animate-spring-in" style={{ animationDelay: "var(--stagger-1)" }}>
         <SectionLabel>Connections</SectionLabel>
         <SettingsCard>
           <Row>
@@ -277,7 +277,7 @@ export default function SettingsPage() {
       </section>
 
       {/* Notifications */}
-      <section className="space-y-0 animate-spring-in" style={{ animationDelay: "160ms" }}>
+      <section className="space-y-0 animate-spring-in" style={{ animationDelay: "var(--stagger-2)" }}>
         <SectionLabel>Notifications</SectionLabel>
         <SettingsCard>
           {notifStatus === "unsupported" ? (
@@ -311,7 +311,7 @@ export default function SettingsPage() {
       </section>
 
       {/* Preferences */}
-      <section className="space-y-0 animate-spring-in" style={{ animationDelay: "240ms" }}>
+      <section className="space-y-0 animate-spring-in" style={{ animationDelay: "var(--stagger-3)" }}>
         <SectionLabel>Preferences</SectionLabel>
         <SettingsCard>
           <Row noBorder>
@@ -336,7 +336,7 @@ export default function SettingsPage() {
       </section>
 
       {/* Notifications — Wind-down */}
-      <section className="space-y-0 animate-spring-in" style={{ animationDelay: "300ms" }}>
+      <section className="space-y-0 animate-spring-in" style={{ animationDelay: "var(--stagger-4)" }}>
         <SectionLabel>Wind-down Reminder</SectionLabel>
         <SettingsCard>
           <Row noBorder>
@@ -358,7 +358,7 @@ export default function SettingsPage() {
       </section>
 
       {/* Goals */}
-      <section className="space-y-0 animate-spring-in" style={{ animationDelay: "320ms" }}>
+      <section className="space-y-0 animate-spring-in" style={{ animationDelay: "var(--stagger-5)" }}>
         <SectionLabel>Goals</SectionLabel>
         <SettingsCard>
           {goals.map((g, i) => (
@@ -401,7 +401,7 @@ export default function SettingsPage() {
       </section>
 
       {/* Data */}
-      <section className="space-y-0 animate-spring-in" style={{ animationDelay: "400ms" }}>
+      <section className="space-y-0 animate-spring-in" style={{ animationDelay: "var(--stagger-6)" }}>
         <SectionLabel>Data</SectionLabel>
         <SettingsCard>
           <Row>

@@ -9,8 +9,9 @@ const METRICS: TrendMetric[] = [
   "resting_hr",
   "activity_score",
   "steps",
+  "active_cal",
 ];
-const RANGES: TrendRange[] = ["D", "W", "M"];
+const RANGES: TrendRange[] = ["D", "W", "M", "Q"];
 
 // GET /api/trends?metric=readiness&range=W  → TrendResult (computed in SQL/JS, no AI).
 export async function GET(req: Request) {

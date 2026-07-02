@@ -40,7 +40,7 @@ export default function OuraDetails() {
     <div className="space-y-3 px-4">
       {/* Activity summary strip */}
       {hasActivity && (
-        <div className="flex gap-2 animate-spring-in" style={{ animationDelay: "180ms" }}>
+        <div className="flex gap-2 animate-spring-in" style={{ animationDelay: "var(--stagger-4)" }}>
           {data?.steps != null && (
             <div className="glass-1 flex-1 rounded-control px-3 py-2.5 text-center">
               <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-ink-3">Steps</p>
@@ -57,14 +57,14 @@ export default function OuraDetails() {
       )}
 
       {hasSleepStages && (
-        <div className="rounded-card glass-1 p-4 animate-spring-in" style={{ animationDelay: "200ms" }}>
+        <div className="rounded-card glass-1 p-4 animate-spring-in" style={{ animationDelay: "var(--stagger-5)" }}>
           <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Sleep Stages</p>
           <SleepStageBar stages={data!.sleep_stages!} />
         </div>
       )}
 
       {hasContributors && (
-        <div className="rounded-card glass-1 p-4 animate-spring-in" style={{ animationDelay: "240ms" }}>
+        <div className="rounded-card glass-1 p-4 animate-spring-in" style={{ animationDelay: "var(--stagger-6)" }}>
           <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Readiness Contributors</p>
           <ReadinessContributors contributors={data!.readiness_contributors!} />
         </div>

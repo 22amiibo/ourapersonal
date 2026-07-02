@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import ReflectionComposer from "./ReflectionComposer";
 import ObservationCard, { type TimelineItem } from "./ObservationCard";
+import ErrorState from "@/app/components/ui/ErrorState";
+import EmptyState from "@/app/components/ui/EmptyState";
+import { SkeletonCard } from "@/app/components/ui/Skeleton";
 
 type ObsRow = { id: number; body: string; range_start: string; range_end: string; created_at: string };
 type ReflRow = { id: number; entry_date: string; raw_text: string };
@@ -12,12 +14,21 @@ export default function ObservationsClient() {
   const [loaded, setLoaded] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
+  const [loadFailed, setLoadFailed] = useState(false);
 
   const load = useCallback(async () => {
-    const [obsRes, reflRes] = await Promise.all([
-      fetch("/api/observations"),
-      fetch("/api/reflections?limit=30"),
-    ]);
+    let obsRes: Response, reflRes: Response;
+    try {
+      [obsRes, reflRes] = await Promise.all([
+        fetch("/api/observations"),
+        fetch("/api/reflections?limit=30"),
+      ]);
+    } catch {
+      setLoadFailed(true);
+      setLoaded(true);
+      return;
+    }
+    setLoadFailed(!obsRes.ok && !reflRes.ok);
     const obs: ObsRow[] = obsRes.ok ? (await obsRes.json()).observations ?? [] : [];
     const refl: ReflRow[] = reflRes.ok ? (await reflRes.json()).reflections ?? [] : [];
 
@@ -66,8 +77,6 @@ export default function ObservationsClient() {
 
   return (
     <div className="space-y-4 px-4">
-      <ReflectionComposer onSaved={load} />
-
       <button
         type="button"
         onClick={generate}
@@ -81,15 +90,23 @@ export default function ObservationsClient() {
         {generating ? "Generating…" : "Generate observation"}
       </button>
 
-      {error && <p className="text-[13px] text-rose">{error}</p>}
+      {error && (
+        <ErrorState heading="Couldn't generate an observation." body={error} onRetry={generate} />
+      )}
 
-      {loaded && items.length === 0 ? (
-        <div className="rounded-card glass-1 p-6 text-center">
-          <p className="text-[15px] font-semibold text-ink">Nothing here yet</p>
-          <p className="mt-1 text-[13px] text-ink-3">
-            Add a reflection, then generate an observation to interpret your recent data.
-          </p>
+      {!loaded ? (
+        // Reserve card-sized space while the timeline loads — no pop-in.
+        <div className="space-y-4" aria-hidden>
+          <SkeletonCard lines={3} />
+          <SkeletonCard lines={2} />
         </div>
+      ) : loadFailed ? (
+        <ErrorState heading="Couldn't load your timeline." body="Check your connection and try again." onRetry={load} />
+      ) : items.length === 0 ? (
+        <EmptyState
+          heading="Nothing here yet"
+          body="Write a reflection on the Reflect tab, then generate an observation to interpret your recent data."
+        />
       ) : (
         items.map((it) => <ObservationCard key={`${it.kind}-${it.id}`} item={it} />)
       )}

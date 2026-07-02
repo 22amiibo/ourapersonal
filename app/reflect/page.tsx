@@ -1,286 +1,97 @@
-"use client";
+import { sql } from "@/lib/db";
+import { USER_ID, userTz } from "@/lib/jobs";
+import { localDateStr, daysAgoStr } from "@/lib/dates";
+import LogTab, { type IntakeEntry } from "./LogTab";
+import ReflectionPanel from "./ReflectionPanel";
 
-import { useEffect, useState } from "react";
-import Button from "@/app/components/ui/Button";
+// Per-user data backed by the DB — render per request, never prerender at build.
+export const dynamic = "force-dynamic";
 
-type PastReflection = {
-  id: number;
-  entry_date: string;
-  raw_text: string;
-  confidence_level: number | null;
-  readiness_score: number | null;
-  sleep_score: number | null;
+// Reflect — the app's one write surface: quick-add tiles + input accordion
+// (relocated from the old Inputs tab) up top, the reflection composer and
+// history below. "What do I want to tell the app about myself?"
+
+export type WeeklyStats = {
+  caffeine_mg: number;
+  alcohol_drinks: number;
+  workout_days: number;
 };
 
-const PROMPTS = [
-  "What was the most important thing you did today?",
-  "What are you grateful for right now?",
-  "What challenged you today, and how did you respond?",
-  "What's one thing you'd do differently if you could redo today?",
-  "Where did you spend your energy, and was it worth it?",
-  "What did you learn today — about anything or anyone?",
-  "What's weighing on your mind heading into tomorrow?",
-  "When did you feel most like yourself today?",
-];
+export default async function ReflectPage() {
+  const tz = await userTz();
+  const today = localDateStr(tz);
+  const weekAgo = daysAgoStr(tz, 6);
+  const moodSince = daysAgoStr(tz, 13);
 
-function dayOfYear(d: Date = new Date()): number {
-  return Math.floor((d.getTime() - new Date(d.getFullYear(), 0, 0).getTime()) / 86400000);
-}
+  let entries: IntakeEntry[] = [];
+  let weeklyStats: WeeklyStats | null = null;
+  let moodSeries: number[] = [];
+  let moodToday: number | null = null;
 
-function SearchIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden>
-      <circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.75" />
-      <path d="M12.5 12.5L16 16" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function ShareIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
-      <path d="M2 7v5h10V7M7 1v8M4 4l3-3 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-export default function ReflectPage() {
-  const prompt = PROMPTS[dayOfYear() % PROMPTS.length];
-  const [text, setText] = useState("");
-  const [status, setStatus] = useState<"idle" | "saving" | "done" | "error">("idle");
-  const [msg, setMsg] = useState("");
-  const [reflections, setReflections] = useState<PastReflection[]>([]);
-  const [streak, setStreak] = useState(0);
-  const [days, setDays] = useState<{ date: string; has: boolean }[]>([]);
-  const [searchQ, setSearchQ] = useState("");
-  const [searchResults, setSearchResults] = useState<PastReflection[] | null>(null);
-  const [searching, setSearching] = useState(false);
-  const [showSearch, setShowSearch] = useState(false);
-
-  async function loadHistory() {
-    try {
-      const res = await fetch("/api/reflections?limit=10");
-      if (res.ok) {
-        const data = (await res.json()) as {
-          reflections: PastReflection[];
-          streak: number;
-          days?: { date: string; has: boolean }[];
-        };
-        setReflections(data.reflections);
-        setStreak(data.streak);
-        setDays(data.days ?? []);
-      }
-    } catch {}
+  // Recent daily mood (one averaged point per day) for the inputs sparkline.
+  // Separate try/catch so a missing mood_logs table never breaks the page.
+  try {
+    const moodRows = (await sql`
+      SELECT to_char(log_date, 'YYYY-MM-DD') AS date, ROUND(AVG(mood))::int AS mood
+      FROM mood_logs
+      WHERE user_id = ${USER_ID} AND log_date >= ${moodSince}
+      GROUP BY log_date ORDER BY log_date ASC
+    `) as { date: string; mood: number }[];
+    moodSeries = moodRows.map((r) => Number(r.mood));
+    moodToday = moodRows.find((r) => r.date === today)?.mood ?? null;
+  } catch {
+    // mood_logs not migrated yet — leave the mood trend empty.
   }
 
-  useEffect(() => { loadHistory(); }, []);
-
-  async function save() {
-    setStatus("saving");
-    setMsg("");
-    const res = await fetch("/api/reflections", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
-    });
-    const data = await res.json();
-    if (res.ok && data.ok) {
-      setStatus("done");
-      setMsg(data.extracted ? "Saved and analyzed." : "Saved (analysis will retry later).");
-      setText("");
-      loadHistory();
-    } else {
-      setStatus("error");
-      setMsg(data.error || "Something went wrong.");
+  try {
+    const [entryRows, statsRows] = await Promise.all([
+      sql`
+        SELECT id, type, quantity::float8, unit, timestamp, note
+        FROM intake_log
+        WHERE user_id = ${USER_ID}
+          AND DATE(timestamp AT TIME ZONE ${tz}) = ${today}::date
+        ORDER BY timestamp DESC
+      `,
+      sql`
+        SELECT
+          COALESCE(SUM(CASE WHEN type = 'caffeine' THEN quantity END), 0)::numeric AS caffeine_mg,
+          COALESCE(SUM(CASE WHEN type = 'alcohol' THEN quantity END), 0)::numeric AS alcohol_drinks,
+          COUNT(DISTINCT CASE WHEN type = 'workout' THEN DATE(timestamp AT TIME ZONE ${tz}) END) AS workout_days
+        FROM intake_log
+        WHERE user_id = ${USER_ID}
+          AND DATE(timestamp AT TIME ZONE ${tz}) >= ${weekAgo}::date
+          AND DATE(timestamp AT TIME ZONE ${tz}) <= ${today}::date
+      `,
+    ]);
+    entries = entryRows as IntakeEntry[];
+    const sr = statsRows[0] as { caffeine_mg: string; alcohol_drinks: string; workout_days: string } | undefined;
+    if (sr) {
+      weeklyStats = {
+        caffeine_mg: Math.round(Number(sr.caffeine_mg)),
+        alcohol_drinks: Number(Number(sr.alcohol_drinks).toFixed(1)),
+        workout_days: Number(sr.workout_days),
+      };
     }
+  } catch {
+    // Table doesn't exist yet; the first POST to /api/log/intake will create it
   }
-
-  async function doSearch() {
-    if (!searchQ.trim()) return;
-    setSearching(true);
-    setSearchResults(null);
-    try {
-      const res = await fetch(`/api/reflections/search?q=${encodeURIComponent(searchQ.trim())}`);
-      if (res.ok) {
-        const d = await res.json();
-        setSearchResults(d.results ?? []);
-      }
-    } finally {
-      setSearching(false);
-    }
-  }
-
-  const shareReflection = (t: string) => {
-    if ("share" in navigator) {
-      navigator.share({ text: t, title: "Evening reflection" }).catch(() => {});
-    }
-  };
 
   return (
     <main className="mx-auto max-w-md space-y-4 pb-28 pt-5">
-      <header className="flex items-start justify-between px-4 animate-spring-in">
-        <div>
-          <h1 className="text-[22px] font-semibold tracking-tight text-ink">Reflect</h1>
-          {streak > 0 ? (
-            <div className="mt-1 flex items-center gap-1.5">
-              <span className="flex h-2 w-2 rounded-full bg-accent" />
-              <p className="text-[13px] font-medium text-accent">{streak}-day streak</p>
-            </div>
-          ) : (
-            <p className="mt-0.5 text-[13px] text-ink-3">Write tonight to start a streak.</p>
-          )}
-        </div>
-        <button
-          onClick={() => { setShowSearch(!showSearch); setSearchResults(null); setSearchQ(""); }}
-          aria-label="Search reflections"
-          className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full border border-line text-ink-2 transition-transform active:scale-95"
-        >
-          <SearchIcon />
-        </button>
+      <header className="px-5 animate-fade-in">
+        <h1 className="text-display font-semibold text-ink">Reflect</h1>
+        <p className="mt-1 text-[14px] text-ink-2">Log your day, then write it down.</p>
       </header>
 
-      {/* Last 14 days — a filled dot is a day you wrote; today is ringed. */}
-      {days.length > 0 && (
-        <div
-          className="flex items-center justify-between gap-1 px-5 animate-fade-in"
-          aria-label="Reflection activity, last 14 days"
-        >
-          {days.map((d, i) => {
-            const isToday = i === days.length - 1;
-            return (
-              <span
-                key={d.date}
-                title={d.date}
-                className="h-2 w-2 shrink-0 rounded-full transition-all"
-                style={{
-                  background: d.has ? "var(--color-accent)" : "var(--color-surface-3)",
-                  boxShadow: d.has ? "0 0 6px 0 color-mix(in oklch, var(--color-accent) 55%, transparent)" : "none",
-                  outline: isToday ? "1.5px solid var(--color-accent)" : "none",
-                  outlineOffset: 2,
-                }}
-              />
-            );
-          })}
-        </div>
-      )}
+      <LogTab
+        initialEntries={entries}
+        initialDate={today}
+        weeklyStats={weeklyStats}
+        moodSeries={moodSeries}
+        moodToday={moodToday}
+      />
 
-      {showSearch && (
-        <section className="mx-4 space-y-3 rounded-card glass-1 p-5 animate-spring-in">
-          <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Search past reflections</p>
-          <div className="flex gap-2">
-            <input
-              value={searchQ}
-              onChange={(e) => setSearchQ(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && doSearch()}
-              placeholder="Search by topic, keyword…"
-              className="flex-1 rounded-control border border-line bg-bg-soft px-4 py-3 text-[14px] text-ink placeholder-ink-3 focus:border-accent focus:outline-none min-h-[44px]"
-            />
-            <Button variant="secondary" onClick={doSearch} disabled={searching}>
-              {searching ? "…" : "Go"}
-            </Button>
-          </div>
-          {searchResults != null && (
-            searchResults.length === 0 ? (
-              <p className="text-[14px] text-ink-3">No results found.</p>
-            ) : (
-              <ul className="space-y-3">
-                {searchResults.map((r) => (
-                  <li key={r.id} className="rounded-control border border-line bg-surface-2 p-3.5">
-                    <p className="mb-1.5 font-mono text-[11px] tabular-nums text-ink-3">{r.entry_date}</p>
-                    <p className="text-[14px] leading-relaxed text-ink-2 line-clamp-3">{r.raw_text}</p>
-                  </li>
-                ))}
-              </ul>
-            )
-          )}
-        </section>
-      )}
-
-      {/* Today's prompt + compose area */}
-      <section className="mx-4 rounded-card glass-1 p-5 animate-spring-in" style={{ animationDelay: "80ms" }}>
-        <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Today&apos;s Prompt</p>
-        <p className="mb-4 text-[15px] font-medium leading-relaxed text-ink">{prompt}</p>
-        <div className="h-px bg-line mb-4" />
-
-      <div className="space-y-3">
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          rows={6}
-          placeholder="Write freely — or respond to the prompt above…"
-          className="w-full rounded-control border border-line bg-bg-soft px-4 py-3.5 text-[15px] leading-relaxed text-ink placeholder-ink-3 transition-all duration-200 focus:border-accent focus:outline-none"
-        />
-        <Button
-          variant="glass"
-          onClick={save}
-          disabled={status === "saving" || !text.trim()}
-          className="w-full disabled:active:scale-100"
-        >
-          {status === "saving" ? (
-            <span className="flex items-center justify-center gap-2">
-              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-ink border-t-transparent" />
-              Saving…
-            </span>
-          ) : "Save reflection"}
-        </Button>
-
-        {msg && (
-          <div className={`rounded-control border p-3.5 text-[14px] ${status === "error" ? "border-rose/30 bg-rose/5 text-rose" : "border-line bg-surface-2 text-ink-2"}`}>
-            {msg}
-          </div>
-        )}
-      </div>
-      </section>
-
-      <section className="mx-4 rounded-card glass-1 p-5 animate-spring-in" style={{ animationDelay: "240ms" }}>
-        <p className="mb-4 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Past Reflections</p>
-        {reflections.length ? (
-          <ul className="space-y-3">
-            {reflections.map((r) => (
-              <li key={r.id} className="rounded-control border border-line bg-surface-2 p-3.5">
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="font-mono text-[11px] tabular-nums text-ink-3 shrink-0">{r.entry_date}</span>
-                    {r.readiness_score != null && (
-                      <span className="rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold tabular-nums text-ink-2"
-                        style={{ background: "var(--color-surface-3)" }}>
-                        R{r.readiness_score}
-                      </span>
-                    )}
-                    {r.sleep_score != null && (
-                      <span className="rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold tabular-nums text-ink-2"
-                        style={{ background: "var(--color-surface-3)" }}>
-                        S{r.sleep_score}
-                      </span>
-                    )}
-                    {r.confidence_level != null && (
-                      <span className="rounded px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-ink-3"
-                        style={{ background: "var(--color-surface-3)" }}>
-                        {r.confidence_level}/10
-                      </span>
-                    )}
-                  </div>
-                  {"share" in (typeof navigator !== "undefined" ? navigator : {}) && (
-                    <button
-                      onClick={() => shareReflection(r.raw_text)}
-                      aria-label="Share"
-                      className="text-ink-3 transition-colors hover:text-ink active:scale-95 flex min-h-[36px] min-w-[36px] items-center justify-center shrink-0"
-                    >
-                      <ShareIcon />
-                    </button>
-                  )}
-                </div>
-                <p className="text-[14px] leading-relaxed text-ink-2 line-clamp-4">{r.raw_text}</p>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div className="rounded-control border border-line bg-surface-2 p-4 text-center">
-            <p className="text-[14px] font-medium text-ink">No reflections yet.</p>
-            <p className="mt-1 text-[13px] text-ink-3">Your first entry above starts a streak.</p>
-          </div>
-        )}
-      </section>
+      <ReflectionPanel />
     </main>
   );
 }

@@ -14,9 +14,10 @@ export type TrendMetric =
   | "steps"
   | "active_cal";
 
-// D = trailing 14 days, W = trailing 7 days, M = trailing 30 days.
-// M is a rolling 30-day window, NOT a calendar month (per spec). 6M/Y are later.
-export type TrendRange = "D" | "W" | "M";
+// D = trailing 14 days, W = trailing 7 days, M = trailing 30 days,
+// Q = trailing 90 days. All rolling windows, NOT calendar periods (per spec).
+// 6M/Y are later.
+export type TrendRange = "D" | "W" | "M" | "Q";
 
 export type TrendPoint = { date: string; value: number | null };
 
@@ -75,7 +76,7 @@ const METRICS: Record<TrendMetric, MetricSpec> = {
   active_cal: { unit: "cal", higherIsBetter: true, pick: (r) => num(r.active_cal) },
 };
 
-const RANGE_DAYS: Record<TrendRange, number> = { D: 14, W: 7, M: 30 };
+const RANGE_DAYS: Record<TrendRange, number> = { D: 14, W: 7, M: 30, Q: 90 };
 
 // |delta| within 1% of the baseline magnitude reads as "flat".
 const FLAT_BAND = 0.01;

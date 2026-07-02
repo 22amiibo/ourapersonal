@@ -124,7 +124,7 @@ export default async function WeeklyPage() {
       </header>
 
       {narratives.length > 0 && (
-        <section className="space-y-3 animate-spring-in" style={{ animationDelay: "80ms" }}>
+        <section className="space-y-3 animate-spring-in" style={{ animationDelay: "var(--stagger-1)" }}>
           {narratives.map((n) => (
             <div key={n.month_of} className="mx-4 rounded-card glass-1 p-5">
               <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">
@@ -141,7 +141,7 @@ export default async function WeeklyPage() {
       )}
 
       {weeks.length === 0 ? (
-        <div className="mx-4 rounded-card glass-1 p-5 animate-spring-in text-center" style={{ animationDelay: "160ms" }}>
+        <div className="mx-4 rounded-card glass-1 p-5 animate-spring-in text-center" style={{ animationDelay: "var(--stagger-2)" }}>
           <p className="text-[15px] font-medium text-ink">No data yet.</p>
           <p className="mt-1 text-[13px] text-ink-3">Your weekly patterns appear after 7+ days of Oura data.</p>
         </div>
@@ -160,7 +160,7 @@ export default async function WeeklyPage() {
               ? validSleep.reduce((best, w) => Number(w.sleep_avg) > Number(best.sleep_avg) ? w : best)
               : null;
             return (
-              <section className="mx-4 rounded-card glass-1 p-5 animate-spring-in" style={{ animationDelay: "160ms" }}>
+              <section className="mx-4 rounded-card glass-1 p-5 animate-spring-in" style={{ animationDelay: "var(--stagger-2)" }}>
                 <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">12-Week Overview</p>
                 <div className="grid grid-cols-2 gap-2">
                   {avgSleep && <StatPlain label="Avg Sleep" value={avgSleep} />}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Skeleton } from "@/app/components/ui/Skeleton";
 
 type OuraToday = {
   hrv_avg: number | null;
@@ -40,9 +41,9 @@ export default function Metrics() {
 
   if (loading) {
     return (
-      <div className="flex gap-2 px-4">
+      <div className="flex gap-2">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="skeleton h-[64px] flex-1 rounded-control" />
+          <Skeleton key={i} className="h-[64px] flex-1 rounded-control" />
         ))}
       </div>
     );
@@ -51,7 +52,7 @@ export default function Metrics() {
   const today = data?.today;
 
   return (
-    <div className="flex gap-2 px-4">
+    <div className="flex gap-2">
       {PILLS.map(({ key, label, unit, format }) => {
         const v = today ? (today[key] as number | null) : null;
         return (

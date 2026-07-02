@@ -67,10 +67,11 @@ test("resting_hr is flagged lower-is-better", () => {
   assert.equal(metricSpec("resting_hr").higherIsBetter, false);
 });
 
-test("rangeDays maps D/W/M to 14/7/30", () => {
+test("rangeDays maps D/W/M/Q to 14/7/30/90", () => {
   assert.equal(rangeDays("D"), 14);
   assert.equal(rangeDays("W"), 7);
   assert.equal(rangeDays("M"), 30);
+  assert.equal(rangeDays("Q"), 90);
 });
 
 test("unknown metric and range throw", () => {

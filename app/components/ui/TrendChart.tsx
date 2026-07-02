@@ -83,12 +83,13 @@ export default function TrendChart({ data, labels, min, max, color = "var(--colo
             strokeDasharray="3 3"
           />
         )}
-        {/* Line */}
-        <path d={linePath} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        {/* Dots */}
-        {pts.map(([x, y], i) => (
-          <circle key={`dot-${i}`} cx={x} cy={y} r="3.5" fill={color} pointerEvents="none" opacity={active != null && active !== i ? 0.35 : 1} />
-        ))}
+        {/* Line — traces left→right on reveal (reduced-motion neutralizes) */}
+        <path d={linePath} pathLength={1} className="chart-line-draw" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        {/* Dots — only at low densities; a 90-day line stays a clean line */}
+        {data.length <= 31 &&
+          pts.map(([x, y], i) => (
+            <circle key={`dot-${i}`} cx={x} cy={y} r="3.5" fill={color} pointerEvents="none" opacity={active != null && active !== i ? 0.35 : 1} />
+          ))}
         {/* Active scrubber */}
         {active != null && (
           <g pointerEvents="none">

@@ -7,6 +7,7 @@ import Ring from "@/app/components/ui/Ring";
 import CountUp from "@/app/components/ui/CountUp";
 import HapticReveal from "@/app/components/ui/HapticReveal";
 import Sparkline from "@/app/components/ui/Sparkline";
+import SectionHeader from "@/app/components/ui/SectionHeader";
 import RunButton from "./RunButton";
 import Metrics from "./Metrics";
 import OuraDetails from "./OuraDetails";
@@ -116,9 +117,9 @@ function resolveVerdict(opts: {
 }): Verdict | null {
   if (!opts.hasOura) return null;
   if (opts.readiness != null && opts.readiness < 55)
-    return { message: "Low readiness — keep today easy and prioritize recovery.", cta: { label: "Recovery", href: "/trends" } };
+    return { message: "Low readiness — keep today easy and prioritize recovery.", cta: { label: "Recovery", href: "/health/readiness" } };
   if (opts.hasSleepDebtData && opts.sleepDebtSeconds > 4 * 3600)
-    return { message: `You're carrying ${fmtDuration(opts.sleepDebtSeconds)} of sleep debt.`, cta: { label: "Sleep trend", href: "/trends" } };
+    return { message: `You're carrying ${fmtDuration(opts.sleepDebtSeconds)} of sleep debt.`, cta: { label: "Sleep trend", href: "/health/sleep" } };
   if (!opts.reflectedToday)
     return { message: "Capture today — it sharpens tomorrow's briefing.", cta: { label: "Reflect", href: "/reflect" } };
   return null;
@@ -318,7 +319,7 @@ export default async function DashboardPage() {
       {/* ── Score rings ─────────────────────────────────────── */}
       <section
         className="flex justify-center gap-5 px-5 py-8 animate-score-pop"
-        style={{ animationDelay: "80ms" }}
+        style={{ animationDelay: "var(--stagger-1)" }}
       >
         <HapticReveal />
         <div className="flex flex-col items-center gap-2">
@@ -390,7 +391,7 @@ export default async function DashboardPage() {
       {/* ── Daily Briefing (promoted: the app's core value) ──── */}
       <section
         className="mx-4 mb-3 rounded-card glass-2 p-5 animate-spring-in"
-        style={{ animationDelay: "120ms" }}
+        style={{ animationDelay: "var(--stagger-2)" }}
       >
         <div className="mb-3 flex items-center gap-2">
           <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-ink-3" />
@@ -444,14 +445,68 @@ export default async function DashboardPage() {
         )}
       </section>
 
-      {/* Below the hero, cards flow into two balanced columns on wider
-          screens (≥640px). Mobile is unchanged — every rule is sm:-gated.
-          break-inside-avoid keeps each card whole across the column break. */}
+      {/* Below the hero, secondary cards group into two named sections:
+          "Your Day" (things to act on) and "Your Body" (current state).
+          Each section flows into two balanced columns on ≥640px; mobile is
+          unchanged — every rule is sm:-gated. break-inside-avoid keeps each
+          card whole across the column break. */}
+
+      {/* ── Your Day ────────────────────────────────────────── */}
+      {events.length > 0 && (
+        <SectionHeader className="mt-4 mb-2 px-5 animate-fade-in">Your Day</SectionHeader>
+      )}
+      <div className="sm:columns-2 sm:gap-2 sm:[&>*]:mb-3 sm:[&>*]:break-inside-avoid sm:[&>*]:!mx-2">
+
+      {/* ── Today's Goals ───────────────────────────────────── */}
+      <HabitCheckins />
+
+      {/* ── Coming Up ───────────────────────────────────────── */}
+      {events.length > 0 && (
+        <section
+          className="mx-4 mt-3 rounded-card glass-1 p-5 animate-spring-in"
+          style={{ animationDelay: "var(--stagger-4)" }}
+        >
+          <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">
+            Coming Up
+          </p>
+          <ul className="space-y-0">
+            {(events as { title: string; kind: string; starts_at: string }[]).map((ev, i) => (
+              <li
+                key={i}
+                className={`flex items-center justify-between py-2.5 ${
+                  i < events.length - 1 ? "border-b border-line" : ""
+                }`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span
+                    className="shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-medium"
+                    style={{
+                      background: "var(--color-surface-2)",
+                      color: "var(--color-ink-3)",
+                      letterSpacing: "0.04em",
+                    }}
+                  >
+                    {ev.kind}
+                  </span>
+                  <span className="truncate text-[14px] text-ink">{ev.title}</span>
+                </div>
+                <span className="ml-3 shrink-0 font-mono text-[12px] tabular-nums text-ink-3">
+                  {formatEventDate(ev.starts_at)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      </div>
+
+      {/* ── Your Body ───────────────────────────────────────── */}
+      <SectionHeader className="mt-5 mb-2 px-5 animate-fade-in">Your Body</SectionHeader>
       <div className="sm:columns-2 sm:gap-2 sm:[&>*]:mb-3 sm:[&>*]:break-inside-avoid sm:[&>*]:!mx-2">
 
       {/* ── Wellness Score + Sleep Debt ──────────────────────── */}
       {(wellness != null || hasSleepDebtData) && (
-        <div className="flex items-start gap-3 px-4 mb-3 animate-spring-in" style={{ animationDelay: "180ms" }}>
+        <div className="flex items-start gap-3 px-4 mb-3 animate-spring-in" style={{ animationDelay: "var(--stagger-4)" }}>
           {wellness != null && (() => {
             const g = gradeFromScore(wellness.score);
             return (
@@ -521,7 +576,7 @@ export default async function DashboardPage() {
       )}
 
       {/* ── Compact metrics (HRV, HR, Temp) ─────────────────── */}
-      <div className="px-4 mb-3" style={{ animationDelay: "160ms" }}>
+      <div className="px-4 mb-3">
         <Metrics />
       </div>
 
@@ -532,7 +587,7 @@ export default async function DashboardPage() {
       {predictions.length > 0 && (
         <section
           className="mx-4 mt-4 rounded-card glass-1 p-5 animate-spring-in"
-          style={{ animationDelay: "360ms" }}
+          style={{ animationDelay: "var(--stagger-6)" }}
         >
           <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">
             Predictions
@@ -566,47 +621,6 @@ export default async function DashboardPage() {
         </section>
       )}
 
-      {/* ── Today's Goals ───────────────────────────────────── */}
-      <HabitCheckins />
-
-      {/* ── Coming Up ───────────────────────────────────────── */}
-      {events.length > 0 && (
-        <section
-          className="mx-4 mt-4 rounded-card glass-1 p-5 animate-spring-in"
-          style={{ animationDelay: "440ms" }}
-        >
-          <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">
-            Coming Up
-          </p>
-          <ul className="space-y-0">
-            {(events as { title: string; kind: string; starts_at: string }[]).map((ev, i) => (
-              <li
-                key={i}
-                className={`flex items-center justify-between py-2.5 ${
-                  i < events.length - 1 ? "border-b border-line" : ""
-                }`}
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <span
-                    className="shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-medium"
-                    style={{
-                      background: "var(--color-surface-2)",
-                      color: "var(--color-ink-3)",
-                      letterSpacing: "0.04em",
-                    }}
-                  >
-                    {ev.kind}
-                  </span>
-                  <span className="truncate text-[14px] text-ink">{ev.title}</span>
-                </div>
-                <span className="ml-3 shrink-0 font-mono text-[12px] tabular-nums text-ink-3">
-                  {formatEventDate(ev.starts_at)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
       </div>
     </main>
   );

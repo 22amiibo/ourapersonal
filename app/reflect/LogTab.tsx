@@ -6,6 +6,7 @@ import AlcoholCounter from "@/app/components/inputs/AlcoholCounter";
 import WorkoutSlider from "@/app/components/inputs/WorkoutSlider";
 import MoodSlider from "@/app/components/inputs/MoodSlider";
 import Sparkline from "@/app/components/ui/Sparkline";
+import ErrorState from "@/app/components/ui/ErrorState";
 
 export type IntakeEntry = {
   id: number;
@@ -158,6 +159,8 @@ export default function LogTab({
   const [moodToday, setMoodToday] = useState<number | null>(initialMoodToday);
   const [moodBusy, setMoodBusy] = useState(false);
   const [lastLog, setLastLog] = useState<{ id: number; label: string } | null>(null);
+  // A failed write/read surfaces here with a retry — never a silent no-op.
+  const [actionError, setActionError] = useState<{ heading: string; retry: () => void } | null>(null);
 
   // Which input row is expanded (one at a time).
   const [openInput, setOpenInput] = useState<OpenInput>(null);
@@ -190,8 +193,13 @@ export default function LogTab({
         setTodayEntries((prev) => [entry, ...prev]);
         if (histIsToday) setHistEntries((prev) => [entry, ...prev]);
         setLastLog({ id: entry.id, label: labelFor(type, quantity) });
+        setActionError(null);
         if (type === "caffeine" && new Date(entry.timestamp).getHours() >= 14) setCaffeineWarning(true);
+      } else {
+        setActionError({ heading: `Couldn't save that ${type} log.`, retry: () => logAmount(type, quantity) });
       }
+    } catch {
+      setActionError({ heading: `Couldn't save that ${type} log.`, retry: () => logAmount(type, quantity) });
     } finally {
       setQuickBusy(null);
     }
@@ -208,7 +216,12 @@ export default function LogTab({
       if (res.ok) {
         setMoodSeries((prev) => (moodToday != null && prev.length > 0 ? [...prev.slice(0, -1), mood] : [...prev, mood]));
         setMoodToday(mood);
+        setActionError(null);
+      } else {
+        setActionError({ heading: "Couldn't save your mood.", retry: () => logMood(mood, tags) });
       }
+    } catch {
+      setActionError({ heading: "Couldn't save your mood.", retry: () => logMood(mood, tags) });
     } finally {
       setMoodBusy(false);
     }
@@ -222,18 +235,30 @@ export default function LogTab({
         const { entries: loaded } = (await res.json()) as { entries: IntakeEntry[] };
         setHistEntries(loaded);
         setHistDate(date);
+        setActionError(null);
+      } else {
+        setActionError({ heading: "Couldn't load that day.", retry: () => loadHistDate(date) });
       }
+    } catch {
+      setActionError({ heading: "Couldn't load that day.", retry: () => loadHistDate(date) });
     } finally {
       setHistLoading(false);
     }
   }
 
   async function deleteEntry(id: number) {
-    const res = await fetch(`/api/log/intake?id=${id}`, { method: "DELETE" });
-    if (res.ok) {
-      setHistEntries((prev) => prev.filter((e) => e.id !== id));
-      setTodayEntries((prev) => prev.filter((e) => e.id !== id));
-      setLastLog((prev) => (prev?.id === id ? null : prev));
+    try {
+      const res = await fetch(`/api/log/intake?id=${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setHistEntries((prev) => prev.filter((e) => e.id !== id));
+        setTodayEntries((prev) => prev.filter((e) => e.id !== id));
+        setLastLog((prev) => (prev?.id === id ? null : prev));
+        setActionError(null);
+      } else {
+        setActionError({ heading: "Couldn't remove that entry.", retry: () => deleteEntry(id) });
+      }
+    } catch {
+      setActionError({ heading: "Couldn't remove that entry.", retry: () => deleteEntry(id) });
     }
   }
 
@@ -254,12 +279,7 @@ export default function LogTab({
   ];
 
   return (
-    <main className="mx-auto max-w-md space-y-4 pb-28 pt-5">
-      <header className="px-4 animate-spring-in">
-        <h1 className="text-[22px] font-semibold tracking-tight text-ink">Inputs</h1>
-        <p className="mt-0.5 text-[14px] text-ink-2">Caffeine, alcohol, workouts &amp; mood</p>
-      </header>
-
+    <div className="space-y-4">
       {/* Today status — at-a-glance logged state. Tap a chip to open its input. */}
       <div className="grid grid-cols-4 gap-2 px-4 animate-spring-in">
         {chips.map((c) => (
@@ -282,6 +302,15 @@ export default function LogTab({
         <div className="mx-4 rounded-control border border-amber/30 bg-amber/5 px-4 py-3 text-[13px] text-amber animate-fade-in">
           Heads up — caffeine after 2 pm may affect tonight&apos;s sleep.
         </div>
+      )}
+
+      {actionError && (
+        <ErrorState
+          className="mx-4 animate-fade-in"
+          heading={actionError.heading}
+          body="Check your connection and try again."
+          onRetry={actionError.retry}
+        />
       )}
 
       {/* Input accordion — calm by default, expand on tap. */}
@@ -415,6 +444,6 @@ export default function LogTab({
           )}
         </Disclosure>
       </div>
-    </main>
+    </div>
   );
 }

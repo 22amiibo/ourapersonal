@@ -4,6 +4,8 @@ import { useRef, useState } from "react";
 import type { Article } from "./types";
 import ArticleCard from "./ArticleCard";
 import ArticleReader from "./ArticleReader";
+import ErrorState from "@/app/components/ui/ErrorState";
+import EmptyState from "@/app/components/ui/EmptyState";
 
 const PULL_THRESHOLD = 70;
 
@@ -11,6 +13,7 @@ export default function ArticlesClient({ initial }: { initial: Article[] }) {
   const [articles, setArticles] = useState<Article[]>(initial);
   const [open, setOpen] = useState<Article | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [refreshError, setRefreshError] = useState(false);
   const [pull, setPull] = useState(0);
   const startY = useRef<number | null>(null);
 
@@ -23,7 +26,12 @@ export default function ArticlesClient({ initial }: { initial: Article[] }) {
       if (r.ok) {
         const { articles: next } = (await r.json()) as { articles: Article[] };
         setArticles(next);
+        setRefreshError(false);
+      } else {
+        setRefreshError(true);
       }
+    } catch {
+      setRefreshError(true);
     } finally {
       setRefreshing(false);
       setPull(0);
@@ -55,20 +63,31 @@ export default function ArticlesClient({ initial }: { initial: Article[] }) {
           {refreshing ? "Refreshing…" : pull >= PULL_THRESHOLD ? "Release to refresh" : pull > 0 ? "Pull to refresh" : ""}
         </div>
 
+        {refreshError && (
+          <ErrorState
+            className="mx-4 mb-3 animate-fade-in"
+            heading="Couldn't refresh articles."
+            body="Check your connection and try again."
+            onRetry={refresh}
+          />
+        )}
+
         {articles.length === 0 ? (
-          <div className="mx-4 rounded-card glass-1 p-6 text-center">
-            <p className="text-[15px] font-semibold text-ink">No articles yet</p>
-            <p className="mt-1 text-[13px] text-ink-3">
-              Once your newsletter mailbox is connected, new issues appear here. Pull down to check now.
-            </p>
-            <button
-              type="button"
-              onClick={refresh}
-              disabled={refreshing}
-              className="mt-4 min-h-[44px] rounded-pill bg-accent px-5 py-2.5 text-[14px] font-semibold text-bg active:scale-95 disabled:opacity-40"
-            >
-              {refreshing ? "Checking…" : "Check now"}
-            </button>
+          <div className="mx-4">
+            <EmptyState
+              heading="No articles yet"
+              body="Once your newsletter mailbox is connected, new issues appear here. Pull down to check now."
+              actions={
+                <button
+                  type="button"
+                  onClick={refresh}
+                  disabled={refreshing}
+                  className="min-h-[44px] rounded-pill bg-accent px-5 py-2.5 text-[14px] font-semibold text-bg transition-transform active:scale-95 disabled:opacity-40"
+                >
+                  {refreshing ? "Checking…" : "Check now"}
+                </button>
+              }
+            />
           </div>
         ) : (
           <div className="space-y-3 px-4">
