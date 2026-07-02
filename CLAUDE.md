@@ -102,6 +102,15 @@ fact gate on first Bash) add friction. Don't launch one for changes a direct rea
 review. handoff.md's older "no subagents" rule predates ecc's install; treat review/build-resolver
 agents as the sanctioned exception, keep everything else inline. (2026-07-02)
 
+**agency-agents — optional reference only, not installed.** External 232-agent persona library
+(`github.com/msitarzewski/agency-agents`). Not a workflow here: do not run its installer, do not
+copy agent files, do not route normal tasks to it. Only worth opening for two gaps ecc/superpowers
+don't cover — **big-redesign scoping** (`product-manager`/`product-sprint-prioritizer` framing) and
+**UX flow critique** (`design-ux-architect`/`design-persona-walkthrough`). Its accessibility,
+performance, and QA-evidence agents overlap `ecc:a11y-architect`, `ecc:performance-optimizer`, and
+the `verify` / `superpowers:verification-before-completion` skills already in use here — don't
+duplicate those. Full notes: `docs/ai-agents/agency-agents-reference.md`.
+
 **Ordering that matters:** graphify query → (superpowers process, if big) → edit → `graphify
 update .` → verification (superpowers verification or ecc reviewer) → user handles git/deploy.
 
