@@ -1,253 +1,201 @@
-# Expo Design Guide — Oura App
+# Design Guide — Briefing ("Circadian Glass")
 
-> **Purpose:** the durable design contract for making this app *feel like Expo*
-> (expo.dev — the React Native developer platform). Read this fully before
-> touching UI. It distills Expo's design language and maps every principle onto
-> **our real tokens and utility classes** in `app/globals.css`.
+> **Purpose:** the durable design contract for this app. Read this fully before
+> touching UI. It documents the **actually-shipped** design system and the
+> discipline rules that keep it feeling senior.
 >
-> Source of truth for tokens: `app/globals.css` (`@theme` + `:root`).
-> Source of truth for the visual intent: this file.
+> Source of truth for token *values*: `app/globals.css` (`@theme` + `:root`).
+> Source of truth for visual *intent*: this file.
+>
+> **History note:** this file previously described an aspirational "Expo.dev"
+> restyle (Inter typeface, blue accent, monochrome repaint). That direction was
+> never shipped and is superseded. The shipped, locked system is:
+> **SF Pro Rounded · teal accent `#14b8a6` · Circadian Glass · dark-first.**
+> The filename is kept only so existing references resolve. If a doc or plan
+> mentions Inter or a blue accent as "the design," it is stale — this file wins.
 
 ---
 
-## 0. What we adopt vs. what we keep
+## 1. The system in one paragraph
 
-We are **not** throwing away the app. We keep our soul and adopt Expo's *grammar*.
+A dark-first, Apple-Health-inspired personal intelligence app. Depth comes from
+two tiers of translucent glass over an ambient circadian background — never from
+heavy shadows. SF Pro Rounded gives it warmth; Geist Mono (`tabular-nums`) gives
+every number precision. Teal is the single accent and it is rationed. Amber,
+rose, and blue exist only as *meaning* (warning / danger / sleep-identity),
+never decoration. Motion is a whisper: things settle in once per session and
+respond to touch; nothing bounces for attention.
 
-**Adopt from Expo (the "general rules"):**
-- **Pill-shaped geometry** everywhere interactive — buttons, chips, tabs, badges (radius `9999px`). Soft, organic, approachable.
-- **One typeface, full weight range.** Inter from 400→700 as the *only* sans. Weight **is** the hierarchy — decisive jumps, no ambiguous middles.
-- **Tight negative tracking on large text** (headlines + big numbers): `-0.02em` to `-0.03em`. This is the signature move.
-- **Whisper-soft shadow discipline.** Depth comes from *surface contrast* (elevated surface on a darker/lighter page), not heavy drop shadows or glows.
-- **Monochrome restraint.** Chrome stays neutral. The accent appears **at most twice per screen**. Color is earned by data and meaning, not decoration.
-- **Gallery pacing.** Generous, confident breathing room between sections.
+## 2. What it must never feel like
 
-**Keep (do NOT delete):**
-- The dark default theme + the `@media (prefers-color-scheme: light)` block.
-- `CircadianBackground` and the `body::before` circadian canvas.
-- The `.glass` / `.glass-1` / `.glass-2` translucent system (it's our depth mechanism — we *tune* it, we don't remove it).
-- Geist Mono for numerics (`tabular-nums`).
-- Mobile-first, PWA, `max-w-md`, bottom-sheet modals, `min-h-[44px]` hit targets, `env(safe-area-inset-*)`.
-
----
-
-## 1. Direction toggle
-
-This guide supports two intensities. The prompt that ships alongside this file
-declares which one is active. Default = **A**.
-
-- **A — Expo language on dark glass (default).** Keep dark + glass + circadian.
-  Restyle geometry, type, shadow, spacing, and accent rationing toward Expo.
-  Blue accent kept but disciplined.
-- **B — Full light repaint.** Make light the primary theme using Expo's
-  cool-white canvas and monochrome black CTAs; demote glass to flat white cards
-  with whisper shadows. Bigger change, most literally "Expo." See §9.
+- A generic SaaS dashboard (tables, sidebars, data-dense grids).
+- A random pile of cards — every screen groups content into named sections.
+- Colorful. Teal ≤2 appearances per screen; everything else neutral or semantic.
+- Gamified-childish. The Achievements tab (desaturated metal tiers, no confetti,
+  quiet toast) is the reference bar for restraint — match it, don't exceed it.
+- "AI-generated UI slop": gradient soup, glow-everywhere, oversized radii,
+  arbitrary one-off sizes. The circadian canvas is the **one** sanctioned
+  gradient in the app.
 
 ---
 
-## 2. Token mapping (Expo → our tokens)
+## 3. Color
 
-Expo's reference palette and the equivalent we already have. Where a value should
-change, the **Recommended** column says so. Edit values in `app/globals.css`.
+All values live in `app/globals.css`; use tokens, never raw hex, in components.
 
-| Expo role | Expo value | Our token | Recommended action |
-|---|---|---|---|
-| Page canvas (light) | Cloud Gray `#f0f0f3` | `--color-bg` (light) | Cool-white is already close (`#f2f2f7`). Optionally nudge to `#f0f0f3`. |
-| Elevated surface | Pure White `#ffffff` | `--color-surface` (light) | Already `#ffffff`. Good. |
-| Headline / body ink | Near Black `#1c2024` | `--color-ink` | Keep. (`#08080f` light / `#f5f5fa` dark.) |
-| Secondary text | Slate Gray `#60646c` | `--color-ink-2` | Keep. |
-| Tertiary / meta | Silver `#b0b4ba` | `--color-ink-3` | Keep. |
-| Card border | Border Lavender `#e0e1e6` | `--color-line` | Keep (cool lavender-gray is on-brand). |
-| Accent / focal | (Expo = monochrome black) | `--color-accent` `#3b82f6` | **Keep blue but ration ≤2/screen** (dir A). In dir B, primary CTA = ink, blue demoted to links/focus. |
-| Mono numerics | JetBrains Mono | `--font-mono` (Geist Mono) | Keep Geist Mono. |
-
-**Radius — add a pill token.** In `@theme` and `:root`:
-
-```css
---radius-pill: 9999px;   /* primary actions, chips, tabs, badges */
-/* existing, keep: */
---radius-control: 12px;  /* inputs, secondary tiles */
---radius-card:    20px;  /* cards (already Expo "very rounded") */
---radius-sheet:   28px;  /* bottom sheets */
-```
-
-Add the matching utility in the `@layer utilities` block:
-
-```css
-.rounded-pill { border-radius: var(--radius-pill); }
-```
-
-(`rounded-full` from Tailwind also works and is used today — either is fine.)
-
----
-
-## 3. Typography rules
-
-Inter only. Geist Mono for numbers/IDs/timestamps. **Never** add a third family.
-
-| Role | Size | Weight | Tracking | Line-height | Notes |
-|---|---|---|---|---|---|
-| Display (scores, hero numbers) | `clamp(30px,8.5vw,38px)`+ | 700 | **-0.03em** | 1.04 | Use `.text-display`; push tracking. |
-| Screen title (`<h1>`) | 22px | 600 | -0.02em | 1.1 | e.g. "Daily Log". |
-| Card / section title | 17–18px | 600 | -0.01em | 1.25 | |
-| Body | 14–15px | 400–500 | 0 | 1.4–1.5 | |
-| Label / eyebrow | 11px | 500 | **+0.08em**, UPPERCASE | 1 | already used (`tracking-[0.08em]`). |
-| Micro | 10px | 500 | +0.06em | 1 | de-emphasized meta. |
-| Numerics | mono, `tabular-nums` | 500–600 | -0.01em | — | Geist Mono. |
-
-Rules:
-- Big text gets **negative** tracking; ALL-CAPS labels get **positive** tracking (≥`0.06em`). Never the reverse.
-- Three working weights: **400** read · **500/600** emphasize · **700** announce. Avoid 300 for UI text (too thin at small sizes); the layout already loads it but reserve it for large display only.
-
----
-
-## 4. Buttons — the canonical recipes
-
-Expo has three button tiers. Mapped to our dark-glass theme (dir A):
-
-### 4.1 Primary (max emphasis = Expo's black pill)
-Expo's black-on-white CTA inverts in a dark app to **light-on-dark**, full contrast, monochrome:
-```html
-<button class="rounded-pill bg-ink text-bg px-5 py-3 text-[14px] font-semibold
-               tracking-[-0.01em] transition-transform active:scale-95 min-h-[44px]">
-  Save
-</button>
-```
-Use **one** per screen, for the single most important action.
-
-### 4.2 Accent (one focal action — replaces today's `bg-accent` Save)
-When an action is *the* point of the screen and you want color, use blue — but only here, and never alongside a primary in 4.1:
-```html
-<button class="rounded-pill bg-accent text-bg px-5 py-3 text-[14px] font-semibold
-               transition-transform active:scale-95 min-h-[44px]">
-  Save
-</button>
-```
-
-### 4.3 Secondary (bordered pill — Expo's white-on-border)
-```html
-<button class="rounded-pill border border-line-strong bg-surface-2 px-5 py-3
-               text-[14px] font-medium text-ink transition-transform active:scale-95 min-h-[44px]">
-  Cancel
-</button>
-```
-
-### 4.4 Chip / segmented (already pill — keep, refine)
-Quick-add chips and `FxButtonRow` are correct in spirit. Refinements:
-- Radius `rounded-full`. ✔ (already)
-- Resting: `border border-line bg-surface-2 text-ink`, label Inter **600**.
-- Selected: `border-accent` + a *subtle* accent tint (`bg-accent/15`) — not a glow.
-- Whisper press: `active:scale-95`. No drop shadow on chips.
-
-**Shadow rule for all buttons:** none at rest; depth is the surface + border. No
-`shadow-glow*` on buttons — glows are reserved (see §6).
-
----
-
-## 5. Cards & surfaces
-
-- Standard card = `glass-1` (keep). It already reads as an elevated surface with a
-  hairline border — that *is* the Expo "white card on Cloud Gray" idea, translucent.
-- Tune toward whisper: prefer `--shadow-glass-1` over the heavier `--shadow-glass-2`
-  for ordinary cards. Reserve `glass-2` for one hero/briefing panel per screen.
-- Card radius `rounded-card` (20px) is already "Expo very-rounded." Keep.
-- Internal padding 16–24px. Section gap: bump key separations from `space-y-4`
-  (16px) to `space-y-5`/`space-y-6` where the screen has room — gallery pacing.
-- Border weight: **never heavier than 1px** (we use 0.5px on glass — good).
-
----
-
-## 6. Depth & elevation (whisper discipline)
-
-| Level | Treatment | Use |
+| Role | Token | Rule |
 |---|---|---|
-| Flat | no shadow | page, inline text, chips at rest |
-| Surface | `glass-1` translucent + hairline | standard cards, the 4 Quick-Add tiles |
-| Elevated | `glass-2` | one hero panel / the bottom sheet |
-| Glow | `--shadow-glow*` | **rare**, intentional focus only (e.g. live ring, active score) — never on buttons or every card |
+| Canvas | `--color-bg` | Pure black dark / cool white light. |
+| Surfaces | `--color-surface`, `-2`, `-3` | Ascending elevation tones. |
+| Text | `--color-ink`, `-2`, `-3` | Primary / secondary / tertiary. Never `text-white` in new code — use `text-ink`. |
+| **Accent** | `--color-accent` (teal `#14b8a6`) | **≤2 appearances per screen.** Tab-bar active state counts as one; a focal CTA counts as one. Links, focus rings, and selected chips share the same budget. |
+| Accent (dim) | `--color-accent-dim` | Pressed/secondary accent states. |
+| Semantic | `--color-success / -warning / -danger / -neutral` | Meaning-named; AA-tuned light values exist. Prefer these over raw `--color-amber`/`--color-rose` so meaning never drifts. |
+| Category identity | blue = Sleep, amber = Activity, teal = Recovery | Only on the Health/Trends category surfaces; monochrome everywhere else. |
+| Achievement tiers | `--tier-1`…`--tier-5` | Bronze → diamond, deliberately desaturated. Do not brighten. |
 
-Expo's lesson: **the lift is the contrast, not the shadow.** If a thing looks flat,
-raise the surface tone before you reach for a shadow.
+Semantic color is **earned by state** (a caffeine total going over its limit may
+turn amber), never applied as decoration (a coffee icon is `text-ink-2`, not
+amber).
 
----
+## 4. Typography
 
-## 7. Accent rationing (the discipline that sells "Expo")
+**SF Pro Rounded** (`--font-sans`) is the only sans. **Geist Mono**
+(`--font-mono`, always `tabular-nums`) is for numbers, IDs, timestamps. Never
+add a third family.
 
-Per screen, the blue `--color-accent` may appear **at most twice**. Audit each screen:
-- Tab-bar active state counts as one if that screen owns the tab.
-- A focal CTA counts as one.
-- Links, focus rings, selected chips all draw from the same budget.
+The type scale is tokenized — use it. **No new `text-[Npx]` arbitrary sizes.**
 
-Everything else neutral: `text-ink` / `text-ink-2` / `text-ink-3`, borders `line`.
-Semantic colors (`amber` warning, `rose` over-limit) are **not** accent — they're
-meaning, used only when the state is real.
+| Role | Token | Weight | Tracking |
+|---|---|---|---|
+| Display (hero numbers, page hero) | `--text-display` (clamp 30–38px), utility `.text-display` | 700 | `-0.03em` |
+| Screen title | `--text-title-l` (22px) | 600 | `-0.02em` |
+| Card/section title | `--text-title-m` (18px), utility `.text-title-m` | 600 | `-0.01em` |
+| Body | `--text-body-l/-m/-s` (15/14/13px) | 400–500 | 0 |
+| Label/eyebrow | `--text-label` (11px) | 500 | `+0.08em`, UPPERCASE |
+| Micro | `--text-micro` (10px) | 500 | `+0.06em` |
 
----
+Rules that make it look expensive:
+- Big text gets **negative** tracking; UPPERCASE labels get **positive**
+  tracking. Never the reverse.
+- Three working weights: 400 read · 500/600 emphasize · 700 announce.
+- Reference scale tokens without a utility as
+  `text-[length:var(--text-body-l)]` — still tokenized, still legal.
 
-## 8. The screenshot — Quick Add panel (`app/log/LogTab.tsx`)
+## 5. Surfaces & glass — one vocabulary
 
-This is the panel the user flagged. Apply Expo grammar precisely.
+There are exactly **two** glass classes (the legacy third `.glass` class and its
+tokens — `--surface-glass`, `--glass-border`, `--card-radius: 28px`, etc. — were
+removed in the Phase-0 cleanup; do not reintroduce them):
 
-**Before (today):** quick-add pill chips with mono qty; a `grid-cols-4` of
-`rounded-control glass-1` tiles whose icons are **multicolor** (amber coffee, rose
-martini, **blue** lightning, ink note); 10px labels.
+| Class | Use |
+|---|---|
+| `.glass-1` | The standard card surface. Pair with `rounded-card`. |
+| `.glass-2` | Elevated: the **one** hero panel per screen (Daily Briefing, Ask-your-data composer) and bottom sheets. **Max one per screen.** |
 
-**After (Expo):**
+- Depth = surface-tone contrast + hairline (0.5px) border, not shadow weight.
+  If something looks flat, raise its surface tone before reaching for a shadow.
+- `shadow-glow*` is reserved for rare live/active states (a live ring, an
+  earned award) — never on buttons, never ambient.
+- `ui/GlassCard.tsx` is the shared card wrapper (glass-1 + rounded-card + press
+  state). Prefer it over hand-rolling card chrome.
+- Borders never heavier than 1px anywhere.
 
-1. **Eyebrow** "QUICK ADD" — keep `text-[10px] uppercase tracking-[0.08em] text-ink-3`. ✔ on-brand.
-2. **Chips** — keep `rounded-full`, raise label to `text-[13px] font-semibold`,
-   qty stays mono `text-[11px] text-ink-3`. Resting border `border-line`; pressed
-   `active:scale-95`. Horizontal scroll preserved (`no-scrollbar`).
-3. **The 4 action tiles** — the headline change:
-   - **Icons go monochrome neutral.** Drop `text-amber` / `text-rose` / `text-accent`
-     on the tile icons; render all four monoline at `text-ink-2` (stroke 1.75).
-     This is the single biggest "now it looks like Expo" move. *(Semantic color
-     still appears where it means something — e.g. the Caffeine day-total turning
-     amber/rose over limits — just not as decoration on the picker buttons.)*
-   - Radius: `rounded-control` → `rounded-[18px]` (softer, between control and card).
-   - Surface: keep `glass-1`; **no glow**. Label `text-[11px] font-medium text-ink-2`.
-   - Keep `min-h-[64px]` and `active:scale-[0.97]`.
-4. **Day-total cards** (Caffeine / Alcohol) — already Expo-correct (mono tabular
-   numbers, eyebrow label, semantic color only past thresholds). Leave as-is; just
-   confirm radius `rounded-card`.
-5. **Save button** in the bottom sheet — switch to the §4.1 ink pill (or §4.2 accent
-   pill if you want the one allowed pop of blue here). Cancel → §4.3 secondary pill.
-6. **Rhythm** — bump the gap between the totals row and the picker to `gap`/`space-y-5`
-   for a touch more air.
+## 6. Radius
 
-Net effect: the picker reads as a calm, monochrome, pill-and-whisper control —
-color now lives only in the *data* (your caffeine number going amber), exactly the
-Expo move.
+| Token | Value | Use |
+|---|---|---|
+| `--radius-pill` | 9999px | Every interactive control: buttons, chips, tabs, badges. |
+| `--radius-control` | 12px | Inputs, small stat tiles. |
+| `--radius-card` | 20px | All content cards. |
+| `--radius-sheet` | 28px | Bottom sheets only. |
 
----
+No `rounded-[Npx]` arbitrary values in touched code. An off-scale radius needs a
+one-line comment explaining why, or it's a bug.
 
-## 9. Variant B — full light repaint (only if the prompt says so)
+## 7. Buttons
 
-If dir B is active:
-- Flip default to light: set `viewport.themeColor` and `body` background to the
-  light canvas; treat the existing `@media light` block as the primary theme.
-- Page `--color-bg: #f0f0f3`, cards flat `#ffffff` + `--elev-ring` hairline +
-  whisper shadow (`rgba(0,0,0,.08) 0 3px 6px`). Demote `.glass-*` to these flat cards.
-- Primary CTA = **pure black pill** (`#000` bg, white text). Blue (`#0d74ce`)
-  becomes link-only.
-- Remove/!important-off the circadian breathing in light (already done in CSS).
-- Everything else (type, geometry, spacing, rationing) is identical to dir A.
+Three tiers, all pill-shaped, all `min-h-[44px]`, all `active:scale-95`:
 
----
+1. **Accent** — `rounded-pill bg-accent text-bg font-semibold`. The single focal
+   action of a screen. Counts against the teal budget.
+2. **Secondary** — `rounded-pill border border-line-strong bg-surface-2 text-ink font-medium`.
+3. **Tertiary/text** — plain `text-ink-2`, no chrome.
 
-## 10. Do / Don't
+Chips/segmented controls: resting `border-line bg-surface-2 text-ink`; selected
+`border-accent` + subtle tint (`color-mix` ~15% accent) — a tint, not a glow.
+**No shadows on any button at rest.**
+
+## 8. Layout & spacing — gallery pacing
+
+- Mobile-first, `max-w-md`, `env(safe-area-inset-*)` respected; primary target
+  device is iPhone 15 Pro Max.
+- Card internal padding 16–24px (`p-4`/`p-5`).
+- Section gaps `space-y-5`/`space-y-6` — generous, confident air between groups.
+- Screens read as **named sections**, not stacked one-off cards.
+- Hit targets ≥44px.
+
+## 9. Charts & data
+
+- Hand-rolled SVG only — no charting library.
+- Rings are reserved for the 3 headline daily scores.
+- Hairline gridlines; non-active series muted (`rgba(255,255,255,.20)`-class
+  values via tokens); accent color only on the active/selected series.
+- Every number in Geist Mono `tabular-nums`.
+- Any correlation/pattern claim carries the evidence chip pattern
+  ("{n} evidence · {pct}% conf") and a thin-data caveat when applicable
+  ("Limited data — keep logging for sharper answers.").
+
+## 10. Motion — whisper, not flashy
+
+- Vocabulary (all in `globals.css`): `spring-in`, `fade-up`, `score-pop`,
+  `slide-up`, `sheet-up`, `drawer-in`, `page-enter`, ring draw-on, count-up.
+- Entrances fire **once per browser-tab session** (RevealGate +
+  `data-revealed`) — never on every tab switch.
+- Press feedback: `active:scale-95` / `active:scale-[0.97]` everywhere
+  touchable.
+- `prefers-reduced-motion` is neutralized globally in CSS — every new animation
+  must remain inside that guard.
+- Nothing loops, bounces, or glows for attention. The achievement unlock toast
+  (slide-up, ~3.2s hold, max 3 queued, no confetti) is the ceiling for
+  celebration.
+
+## 11. States
+
+- **Loading:** use the shared `.skeleton` shimmer / `ui/Skeleton.tsx` with
+  reserved heights (zero layout shift) — not spinners or label swaps.
+- **Empty:** real empty states with a heading, one line of copy, and up to two
+  CTAs (the Insights tab's pattern is the template). Never fake/placeholder
+  data.
+- **Errors:** no silent failures — every failed write surfaces a visible,
+  retryable error.
+
+## 12. Accessibility
+
+- AA contrast in **both** themes; the light theme
+  (`@media (prefers-color-scheme: light)`) has AA-tuned token overrides — new
+  colors must get a light-mode counterpart in the same PR.
+- 44px minimum hit targets; visible focus states drawing from the accent
+  budget; reduced-motion respected (see §10).
+
+## 13. Do / Don't
 
 **Do**
-- Pills for every interactive control; `rounded-card` (20) for cards.
-- Inter weight as hierarchy; Geist Mono `tabular-nums` for every number.
-- Negative tracking on large text; positive on UPPERCASE labels.
-- Depth from surface contrast; whisper shadows only.
-- Accent ≤2× per screen; neutral chrome otherwise.
+- Tokens for every color, size, radius, shadow — `app/globals.css` is the only
+  place values live.
+- Pills for interactive, `rounded-card` for content, `glass-1` by default.
+- Negative tracking on large text, positive on UPPERCASE labels.
+- One `glass-2` hero per screen, maximum.
+- Reuse `app/components/ui/*` primitives before building anything new.
 
 **Don't**
-- ❌ Multicolor decorative icons in pickers/chrome (the old Quick-Add icons).
+- ❌ New `text-[Npx]`, `rounded-[Npx]`, or raw hex in components.
+- ❌ Multicolor decorative icons in pickers/chrome — monochrome `text-ink-2`,
+  color only where it carries meaning.
 - ❌ `shadow-glow*` on buttons or as ambient decoration.
-- ❌ A third typeface, or Inter 300 for small UI text.
-- ❌ Sharp corners (<8px) on interactive elements.
-- ❌ Gradients as decoration (the circadian canvas is the one sanctioned gradient).
-- ❌ Touching `app/api/**`, the DB schema, auth, or PWA/service-worker wiring for a *visual* task.
+- ❌ A third typeface, or reintroducing the removed `.glass`/`--card-radius`
+  legacy system.
+- ❌ Gradients as decoration — the circadian canvas is the only one.
+- ❌ More than 2 teal moments per screen.
+- ❌ Touching `app/api/**`, DB schema, auth, or PWA/service-worker wiring for a
+  visual task.

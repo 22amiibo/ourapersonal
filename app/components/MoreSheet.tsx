@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
-import { SECONDARY_NAV } from "./nav/secondaryNav";
+import { SECONDARY_NAV, isRouteActive } from "./nav/registry";
+import NavIcon from "./nav/NavIcon";
 
 const Chevron = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
@@ -31,7 +32,7 @@ export default function MoreSheet({ open, onClose }: { open: boolean; onClose: (
 
   return (
     <div
-      className="fixed inset-0 z-40 flex items-end justify-center animate-scrim-in"
+      className="fixed inset-0 z-[70] flex items-end justify-center animate-scrim-in"
       style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(2px)" }}
       onClick={onClose}
       role="dialog"
@@ -46,7 +47,7 @@ export default function MoreSheet({ open, onClose }: { open: boolean; onClose: (
         <p className="mb-2 px-2 text-[11px] font-medium uppercase tracking-[0.1em] text-ink-3">More</p>
         <nav className="flex flex-col gap-1">
           {SECONDARY_NAV.map((item) => {
-            const active = path === item.href || path.startsWith(item.href + "/");
+            const active = isRouteActive(item, path);
             return (
               <Link
                 key={item.href}
@@ -65,7 +66,7 @@ export default function MoreSheet({ open, onClose }: { open: boolean; onClose: (
                     color: active ? "var(--color-accent)" : "var(--color-ink-2)",
                   }}
                 >
-                  {item.icon}
+                  <NavIcon id={item.id} />
                 </span>
                 <span className="min-w-0 flex-1 text-[15px] font-semibold text-ink">{item.label}</span>
                 <span className="shrink-0 text-ink-3"><Chevron /></span>

@@ -2,42 +2,16 @@
 
 import { useRouter, usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { NAV_ROUTES, type NavRoute } from "./nav/registry";
+import NavIcon from "./nav/NavIcon";
 
 // A spotlight-style command palette. Two ways in:
 //   • Keyboard: ⌘K / Ctrl+K (desktop / external keyboards).
 //   • Pull-down: drag down from the very top of the page (touch), the way
 //     iOS Spotlight opens — natural on the iPhone PWA where there's no ⌘K.
 // It's a pure navigator (no data mutation), so it can live globally in layout.
-
-type Command = {
-  label: string;
-  hint: string;
-  href: string;
-  keywords: string;
-  icon: React.ReactNode;
-};
-
-function I({ d }: { d: string }) {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d={d} />
-    </svg>
-  );
-}
-
-const COMMANDS: Command[] = [
-  { label: "Summary", hint: "Today's briefing & rings", href: "/dashboard", keywords: "home dashboard briefing today readiness", icon: <I d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 1 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8z" /> },
-  { label: "Trends", hint: "Metric highlights & detail", href: "/trends", keywords: "charts graphs metrics history sleep hrv", icon: <I d="M6 20v-7M12 20V8M18 20V4" /> },
-  { label: "Observations", hint: "Reflections & AI notes", href: "/observations", keywords: "observations notes ai insight", icon: <I d="M9 18h6M10 22h4M12 2a7 7 0 0 1 7 7c0 2.6-1.4 4.9-3.5 6.2V17a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-1.8A7 7 0 0 1 12 2z" /> },
-  { label: "Inputs", hint: "Log caffeine & alcohol", href: "/log", keywords: "inputs log caffeine alcohol intake add", icon: <I d="M12 3v18M3 12h18" /> },
-  { label: "Articles", hint: "Newsletter reader", href: "/articles", keywords: "articles newsletter read email", icon: <I d="M4 5h16v14H4zM7 9h10M7 13h7" /> },
-  { label: "Achievements", hint: "Awards & milestones", href: "/achievements", keywords: "achievements awards milestones badges streaks trophies progress", icon: <I d="M12 3l2.4 5 5.6.6-4 4 1 5.4-5-2.8-5 2.8 1-5.4-4-4 5.6-.6z" /> },
-  { label: "Reflect", hint: "Write tonight's reflection", href: "/reflect", keywords: "reflect journal write evening reflection", icon: <I d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" /> },
-  { label: "Insights", hint: "Discovered patterns", href: "/insights", keywords: "insights patterns intelligence ask", icon: <I d="M9 18h6M10 22h4M12 2a7 7 0 0 1 7 7c0 2.6-1.4 4.9-3.5 6.2V17a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-1.8A7 7 0 0 1 12 2z" /> },
-  { label: "Weekly", hint: "Weekly review", href: "/weekly", keywords: "weekly review summary rollup", icon: <I d="M3 5h18v16H3zM3 9h18M8 3v4M16 3v4" /> },
-  { label: "Settings", hint: "Connections & account", href: "/settings", keywords: "settings oura connect account preferences", icon: <I d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2l-.4-2.6H9l-.4 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 4 12a7 7 0 0 0 .1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2l.4 2.6h4l.4-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6A7 7 0 0 0 19 12z" /> },
-];
+// Destinations, hints, and search keywords all come from the shared nav
+// registry — the palette never keeps its own route list.
 
 export default function CommandPalette() {
   const router = useRouter();
@@ -47,10 +21,10 @@ export default function CommandPalette() {
   const [sel, setSel] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const results = useMemo(() => {
+  const results = useMemo<NavRoute[]>(() => {
     const term = q.trim().toLowerCase();
-    if (!term) return COMMANDS;
-    return COMMANDS.filter(
+    if (!term) return NAV_ROUTES;
+    return NAV_ROUTES.filter(
       (c) => c.label.toLowerCase().includes(term) || c.keywords.includes(term)
     );
   }, [q]);
@@ -179,7 +153,9 @@ export default function CommandPalette() {
                     className="flex w-full items-center gap-3 rounded-control px-3 py-2.5 text-left transition-colors min-h-[44px]"
                     style={active ? { background: "color-mix(in oklch, var(--color-accent) 16%, transparent)" } : undefined}
                   >
-                    <span style={{ color: active ? "var(--color-accent)" : "var(--color-ink-2)" }}>{c.icon}</span>
+                    <span style={{ color: active ? "var(--color-accent)" : "var(--color-ink-2)" }}>
+                      <NavIcon id={c.id} size={18} />
+                    </span>
                     <span className="flex-1">
                       <span className="block text-[14px] font-medium text-ink">{c.label}</span>
                       <span className="block text-[12px] text-ink-3">{c.hint}</span>

@@ -32,7 +32,7 @@ export default function QuoteBanner({
         className="shrink-0 transition-opacity hover:opacity-60 active:opacity-40"
         aria-label="Dismiss"
       >
-        <ChevronRight size={14} style={{ color: "var(--text-muted)" }} />
+        <ChevronRight size={14} style={{ color: "var(--color-ink-2)" }} />
       </button>
     </div>
   );

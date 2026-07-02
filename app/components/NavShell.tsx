@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
-import { NAV_ALL } from "./nav/secondaryNav";
+import { NAV_ROUTES, isRouteActive } from "./nav/registry";
+import NavIcon from "./nav/NavIcon";
+import MoreButton from "./MoreButton";
 
 // Sliding push-panel navigation. Opening translates the whole app shell to the
 // right (the page stays partially visible — not replaced by an overlay) while a
@@ -13,6 +15,10 @@ import { NAV_ALL } from "./nav/secondaryNav";
 // Wraps the app's content so a single client-side `open` state can drive both
 // the panel and the shell transform. The bottom TabBar (inside `children`)
 // rides along with the shell, keeping the push cohesive.
+//
+// The shell also owns the two global fixed controls: the burger (top-left,
+// opens the rail) and the More gear (top-right, opens the More sheet) — so
+// every screen, not just the dashboard, can reach secondary destinations.
 export default function NavShell({ children }: { children: ReactNode }) {
   const path = usePathname();
   const [open, setOpen] = useState(false);
@@ -44,6 +50,16 @@ export default function NavShell({ children }: { children: ReactNode }) {
         </button>
       )}
 
+      {/* Global More entry — reachable from every screen, not just Summary. */}
+      {!hidden && !open && (
+        <div
+          className="fixed right-3 z-[60]"
+          style={{ top: "calc(env(safe-area-inset-top) + 0.5rem)" }}
+        >
+          <MoreButton />
+        </div>
+      )}
+
       {/* Left rail — slim, vertically stacked items, independently scrollable.
           A burger at the top doubles as the close button. */}
       {!hidden && (
@@ -64,11 +80,8 @@ export default function NavShell({ children }: { children: ReactNode }) {
               </svg>
             </button>
             <nav className="mt-2 flex flex-col gap-0.5 font-sans">
-              {NAV_ALL.map((item) => {
-                const active =
-                  path === item.href ||
-                  path.startsWith(item.href + "/") ||
-                  (item.href === "/dashboard" && path === "/");
+              {NAV_ROUTES.map((item) => {
+                const active = isRouteActive(item, path);
                 return (
                   <Link
                     key={item.href}
@@ -85,7 +98,7 @@ export default function NavShell({ children }: { children: ReactNode }) {
                         color: active ? "var(--color-accent)" : "var(--color-ink-2)",
                       }}
                     >
-                      {item.icon}
+                      <NavIcon id={item.id} />
                     </span>
                     <span
                       className="max-w-full truncate font-sans text-[10.5px] font-semibold"

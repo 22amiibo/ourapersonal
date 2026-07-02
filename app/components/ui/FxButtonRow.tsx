@@ -48,7 +48,7 @@ export default function FxButtonRow({
                 : "1px solid var(--color-line)",
               backdropFilter: "blur(16px)",
               WebkitBackdropFilter: "blur(16px)",
-              color: isActive ? "var(--color-accent)" : "var(--text-muted)",
+              color: isActive ? "var(--color-accent)" : "var(--color-ink-2)",
             }}
           >
             <Icon size={14} />

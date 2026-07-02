@@ -3,8 +3,10 @@
 import { useState } from "react";
 import MoreSheet from "./MoreSheet";
 
-// Settings / Weekly / Insights moved out of the bottom bar (now 5 primary tabs).
-// Apple-Health pattern: a gear in the Summary header opens the rest.
+// The global "More" entry — a gear that opens the secondary-destination
+// sheet (Weekly, Articles, Trends, Observations, Inputs, Sources, Settings).
+// Mounted once, app-wide, by NavShell; the destination list lives in
+// nav/registry.ts.
 export default function MoreButton() {
   const [open, setOpen] = useState(false);
   return (
@@ -12,7 +14,7 @@ export default function MoreButton() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label="More — Weekly, Insights, Settings"
+        aria-label="More — Weekly, Articles, Settings and other destinations"
         aria-haspopup="dialog"
         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-2 transition-transform active:scale-90"
         style={{

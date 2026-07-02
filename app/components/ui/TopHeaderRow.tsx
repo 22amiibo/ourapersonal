@@ -30,7 +30,7 @@ export default function TopHeaderRow({
     <div className="flex flex-col gap-3 px-5">
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-0.5">
-          <span className="text-[13px] font-normal" style={{ color: "var(--text-muted)" }}>
+          <span className="text-[13px] font-normal" style={{ color: "var(--color-ink-2)" }}>
             {greet}
           </span>
           <span className="text-[17px] font-bold text-white">{username}</span>

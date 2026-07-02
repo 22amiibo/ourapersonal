@@ -8,7 +8,6 @@ import CountUp from "@/app/components/ui/CountUp";
 import HapticReveal from "@/app/components/ui/HapticReveal";
 import Sparkline from "@/app/components/ui/Sparkline";
 import RunButton from "./RunButton";
-import MoreButton from "@/app/components/MoreButton";
 import Metrics from "./Metrics";
 import OuraDetails from "./OuraDetails";
 import HabitCheckins from "./HabitCheckins";
@@ -278,7 +277,6 @@ export default async function DashboardPage() {
           <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-ink-3">
             {new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
           </p>
-          <MoreButton />
         </div>
         <h1 className="text-display font-semibold text-ink text-balance">
           {dayState}

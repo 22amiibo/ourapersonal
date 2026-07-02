@@ -3,103 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { PRIMARY_NAV, isRouteActive } from "./nav/registry";
+import NavIcon from "./nav/NavIcon";
 
-type Tab = {
-  href: string;
-  label: string;
-  // Active when the current path equals href, or starts with href + "/".
-  // Summary also matches "/" (root redirects to /dashboard).
-  match?: (path: string) => boolean;
-  icon: (active: boolean) => React.ReactNode;
-};
-
-const sw = (active: boolean) => (active ? 2.2 : 1.75);
-
-// Six tabs, replacing the previous Today/Health/Reflect/Log + More set.
-// Apple-Health structure, Briefing's own teal icon set.
-const TABS: Tab[] = [
-  {
-    href: "/dashboard",
-    label: "Summary",
-    match: (p) => p === "/dashboard" || p === "/" || p.startsWith("/dashboard/"),
-    icon: (active) => (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-        strokeWidth={sw(active)} strokeLinecap="round" strokeLinejoin="round">
-        {active
-          ? <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 1 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8z" fill="currentColor" fillOpacity=".18" />
-          : null}
-        <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 1 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8z" />
-      </svg>
-    ),
-  },
-  {
-    href: "/trends",
-    label: "Trends",
-    icon: (active) => (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-        strokeWidth={sw(active)} strokeLinecap="round" strokeLinejoin="round">
-        <line x1="6" y1="20" x2="6" y2="13" />
-        <line x1="12" y1="20" x2="12" y2="8" />
-        <line x1="18" y1="20" x2="18" y2="4" />
-      </svg>
-    ),
-  },
-  {
-    href: "/observations",
-    label: "Observations",
-    icon: (active) => (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-        strokeWidth={sw(active)} strokeLinecap="round" strokeLinejoin="round">
-        {active
-          ? <path d="M12 2a7 7 0 0 1 7 7c0 2.6-1.4 4.9-3.5 6.2V17a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-1.8A7 7 0 0 1 12 2z" fill="currentColor" fillOpacity=".18" />
-          : null}
-        <path d="M9 18h6M10 22h4M12 2a7 7 0 0 1 7 7c0 2.6-1.4 4.9-3.5 6.2V17a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-1.8A7 7 0 0 1 12 2z" />
-      </svg>
-    ),
-  },
-  {
-    href: "/log",
-    label: "Inputs",
-    icon: (active) => (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-        strokeWidth={sw(active)} strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="9" />
-        <line x1="12" y1="8" x2="12" y2="16" />
-        <line x1="8" y1="12" x2="16" y2="12" />
-      </svg>
-    ),
-  },
-  {
-    href: "/articles",
-    label: "Articles",
-    icon: (active) => (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-        strokeWidth={sw(active)} strokeLinecap="round" strokeLinejoin="round">
-        {active
-          ? <rect x="3" y="4" width="18" height="16" rx="2.5" fill="currentColor" fillOpacity=".15" />
-          : null}
-        <rect x="3" y="4" width="18" height="16" rx="2.5" />
-        <line x1="7" y1="9" x2="17" y2="9" />
-        <line x1="7" y1="13" x2="14" y2="13" />
-      </svg>
-    ),
-  },
-  {
-    href: "/achievements",
-    label: "Awards",
-    // Line-style award medal (circle + ribbon tails) — not a 3-D trophy.
-    icon: (active) => (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-        strokeWidth={sw(active)} strokeLinecap="round" strokeLinejoin="round">
-        {active
-          ? <circle cx="12" cy="8" r="6" fill="currentColor" fillOpacity=".18" />
-          : null}
-        <circle cx="12" cy="8" r="6" />
-        <path d="M15.5 13.5 17 22l-5-3-5 3 1.5-8.5" />
-      </svg>
-    ),
-  },
-];
+// The 5 primary tabs (Today / Health / Insights / Reflect / Progress) come
+// from the shared nav registry — this file owns only the bar's presentation.
+// Secondary destinations live behind the global More sheet and the rail.
 
 const HIDE_THRESHOLD = 12;
 
@@ -113,13 +22,13 @@ function ActiveDot() {
   );
 }
 
-// One source of truth for every tab chip — guarantees all six are identical.
+// One source of truth for every tab chip — guarantees all tabs are identical.
 const CHIP_CLASS =
   "relative flex flex-col items-center justify-center gap-1 transition-all duration-200 active:scale-90";
 
 function chipStyle(active: boolean): React.CSSProperties {
   const base: React.CSSProperties = {
-    // Equal flex cells (min-w-0) so all six always share one row and shrink
+    // Equal flex cells (min-w-0) so all tabs always share one row and shrink
     // to fit any iPhone width — never wrapping a tab to a second line.
     height: 54,
     minWidth: 0,
@@ -147,11 +56,6 @@ function chipStyle(active: boolean): React.CSSProperties {
     boxShadow: "inset 0 1px 0 rgba(255,255,255,0.26), inset 0 -1px 0 rgba(0,0,0,0.22), 0 2px 5px rgba(0,0,0,0.28)",
     color: "rgba(255,255,255,0.55)",
   };
-}
-
-function isActive(tab: Tab, path: string): boolean {
-  if (tab.match) return tab.match(path);
-  return path === tab.href || path.startsWith(tab.href + "/");
 }
 
 export default function TabBar() {
@@ -207,8 +111,8 @@ export default function TabBar() {
             "0 12px 40px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.14), inset 0 -1px 0 rgba(0,0,0,0.32)",
         }}
       >
-        {TABS.map((t) => {
-          const active = isActive(t, path);
+        {PRIMARY_NAV.map((t) => {
+          const active = isRouteActive(t, path);
           return (
             <Link
               key={t.href}
@@ -220,7 +124,10 @@ export default function TabBar() {
               className={`${CHIP_CLASS} flex-1 ${active ? "text-accent" : ""}`}
               style={chipStyle(active)}
             >
-              <span className="relative">{t.icon(active)}{active && <ActiveDot />}</span>
+              <span className="relative">
+                <NavIcon id={t.id} size={22} active={active} />
+                {active && <ActiveDot />}
+              </span>
               <span
                 className="max-w-full overflow-hidden text-[9px] font-medium tracking-[0.02em] text-ellipsis"
                 style={{ lineHeight: 1, whiteSpace: "nowrap" }}

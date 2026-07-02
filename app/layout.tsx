@@ -40,14 +40,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: REVEAL_BOOT }} />
       </head>
       <body className="flex min-h-dvh flex-col bg-bg font-sans text-ink antialiased">
-        <svg style={{ display: "none" }}>
-          <defs>
-            <filter id="noise-filter">
-              <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves={3} stitchTiles="stitch" />
-              <feComposite operator="in" in2="SourceGraphic" />
-            </filter>
-          </defs>
-        </svg>
         <CircadianBackground />
         <NavShell>
           <StatusBar />
