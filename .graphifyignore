@@ -1,0 +1,6 @@
+# Keep the knowledge graph from ingesting its own generated output.
+# OuraVault is the exported Obsidian vault (lives inside the repo) — scanning it
+# would create a feedback loop that re-ingests every generated note.
+OuraVault/
+# graphify's own outputs (graph.json, GRAPH_REPORT.md, HTML, backups) are not corpus.
+graphify-out/
