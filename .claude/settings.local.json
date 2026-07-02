@@ -5,12 +5,14 @@
       "Bash(curl -s http://localhost:3000)",
       "Bash(pkill -f \"next dev\")",
       "Bash(curl -s http://localhost:3000/dashboard)",
-      "PowerShell(Stop-Process *)",
-      "PowerShell(Get-Process *)",
-      "PowerShell(taskkill *)",
-      "PowerShell(npx eslint app/components/TabBar.tsx app/api/log/intake/route.ts app/api/oura/route.ts app/api/calendar/route.ts app/api/briefing/run/route.ts app/api/cron/daily/route.ts)",
-      "PowerShell(npx tsc --noEmit -p tsconfig.json 2>&1 | Select-Object -First 60)",
-      "Bash(node *)"
+      "Bash(node *)",
+      "Bash(command -v graphify)",
+      "Bash(graphify --version)",
+      "Bash(graphify --help)",
+      "Bash(claude --version)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(command -v uv)",
+      "Bash(python3 -c \"import graphify; print\\('graphify importable', graphify.__file__\\)\")"
     ]
   },
   "enabledMcpjsonServers": [

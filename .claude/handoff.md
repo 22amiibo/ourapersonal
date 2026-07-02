@@ -4,6 +4,14 @@
 
 This file is the single source of truth for project state. If you are a fresh chat, read this top-to-bottom before doing anything.
 
+> **Environment update (2026-07-02):** this working copy now lives on a Mac at
+> `/Users/noahmartz/Desktop/Oura/repo` and **has no `.git` directory** — git commands resolve to an
+> unrelated repo rooted at `/Users/noahmartz` (remote `22amiibo/anotherone`). Do NOT commit/push
+> from here until the user re-clones or re-inits against `22amiibo/ourapersonal`. The "Local path"
+> below and the root junk-files note are stale for this machine (the junk files are gone). Newest
+> shipped-state notes (Rounds 3+4: Awards tab, motion, semantic tokens) are in
+> `docs/round3-questions.md`. Navigation/index docs now live in root `CLAUDE.md` + per-folder READMEs.
+
 ---
 
 ## What this project is
@@ -82,3 +90,20 @@ Vercel project **`ourapersonal`** (team `22amiibos-projects`). Production is cur
 
 ## Repo hygiene note
 Repo root has stray empty junk files from earlier shell mishaps (`,`, `0`, `55)`, `path`, `bg-bg-soft`, `number`, `teal`, `v4`, `${weekAgo}`, `git`). They are not source and are safe to delete; left untouched so far.
+
+---
+
+## graphify → OuraVault auto-sync (set up 2026-07-02)
+The knowledge graph (`graphify-out/`) and the OuraVault Obsidian vault stay up to date automatically. **Nothing to run day-to-day.**
+
+- **Code commit / branch switch** → git hooks rebuild the graph incrementally (AST, free, no LLM) **and re-export OuraVault**. Instant.
+- **Doc/markdown commit** → hooks can't run an LLM, so they write a flag (`graphify-out/.oura_docs_pending`). The Claude Code **SessionStart hook** (`.claude/hooks/graphify-docs-check.sh`, wired in `.claude/settings.json`) surfaces it next session; run `/graphify --update` + `graphify export obsidian --dir <repo>/OuraVault`, then clear the flag. (Docs lag until then — that's the one non-zero-touch bit. A `GEMINI_API_KEY` would make it instant.)
+
+**Restoring after a fresh clone / new machine / wiped hooks** (git hooks are NOT version-controlled):
+```
+sh .claude/hooks/install-graphify-hooks.sh          # recreate ~/.git/hooks wrappers
+sh .claude/hooks/install-graphify-hooks.sh status   # check
+```
+If `graphify-out/graph.json` is missing, build once in Claude Code: `/graphify . --obsidian --obsidian-dir <repo>/OuraVault`.
+
+**Load-bearing, do not break:** `.graphifyignore` must keep excluding `OuraVault/` + `graphify-out/` (the vault lives in-repo; without this graphify re-ingests its own notes → runaway graph growth). Hooks use incremental `_rebuild_code(changed_paths=…)`, never a full `graphify update .` (a full scan drops the semantic doc nodes). Both generated dirs are gitignored. No LLM API key is set — doc semantics only run inside a Claude session.
