@@ -22,10 +22,10 @@ export async function sendPushToUser(
   userId: number,
   title: string,
   body: string,
-  opts?: { respectQuietHours?: boolean; tz?: string },
-) {
-  if (!ensureConfigured()) return;
-  if (opts?.respectQuietHours && opts.tz && inQuietHours(opts.tz)) return;
+  opts?: { respectQuietHours?: boolean; tz?: string; url?: string; tag?: string },
+): Promise<number> {
+  if (!ensureConfigured()) return 0;
+  if (opts?.respectQuietHours && opts.tz && inQuietHours(opts.tz)) return 0;
   const subs = await sql`
     SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE user_id = ${userId}
   `;
@@ -34,7 +34,7 @@ export async function sendPushToUser(
     try {
       await webpush.sendNotification(
         { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
-        JSON.stringify({ title, body }),
+        JSON.stringify({ title, body, url: opts?.url, tag: opts?.tag }),
       );
     } catch (e: unknown) {
       if ((e as { statusCode?: number }).statusCode === 410) {
@@ -42,4 +42,5 @@ export async function sendPushToUser(
       }
     }
   }
+  return subs.length;
 }

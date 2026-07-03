@@ -59,7 +59,7 @@ export async function GET(req: Request) {
       ? `Don't break your ${streak}-day streak — reflect before bed.`
       : "How was your day? Take a moment to reflect.";
 
-    await sendPushToUser(USER_ID, "Evening reflection", body);
+    await sendPushToUser(USER_ID, "Evening reflection", body, { url: "/reflect", tag: "evening-reflection" });
     return NextResponse.json({ ok: true, ...results });
   } catch (e) {
     return NextResponse.json({ ok: false, error: String(e) }, { status: 500 });

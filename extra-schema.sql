@@ -35,6 +35,11 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Web Push iOS Home Screen work: record when a subscription was last confirmed and
+-- what device registered it, for debugging stale/duplicate subscriptions.
+ALTER TABLE push_subscriptions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+ALTER TABLE push_subscriptions ADD COLUMN IF NOT EXISTS user_agent TEXT;
+
 -- =============================================================
 -- Phase 1.3: WebAuthn / passkey credentials
 -- =============================================================

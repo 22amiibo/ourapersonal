@@ -7,8 +7,11 @@ export default function ServiceWorkerRegistration() {
     if (!("serviceWorker" in navigator)) return;
 
     navigator.serviceWorker.register("/sw.js").then((reg) => {
-      // Flush offline queue on focus
-      const flush = () => reg.active?.postMessage({ type: "FLUSH_QUEUE" });
+      // Flush offline queue and clear the Home Screen icon badge on focus
+      const flush = () => {
+        reg.active?.postMessage({ type: "FLUSH_QUEUE" });
+        reg.active?.postMessage({ type: "CLEAR_BADGE" });
+      };
       window.addEventListener("focus", flush, { passive: true });
       flush();
       return () => window.removeEventListener("focus", flush);

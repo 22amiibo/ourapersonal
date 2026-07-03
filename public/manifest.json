@@ -2,6 +2,7 @@
   "name": "Briefing",
   "short_name": "Briefing",
   "description": "Your daily recovery briefing.",
+  "id": "/dashboard",
   "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",

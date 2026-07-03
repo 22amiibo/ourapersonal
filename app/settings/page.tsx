@@ -88,7 +88,7 @@ export default function SettingsPage() {
   const [windDownMsg, setWindDownMsg] = useState("");
 
   const [ouraConnected, setOuraConnected] = useState<boolean | null>(null);
-  const [notifStatus, setNotifStatus] = useState<"idle" | "granted" | "denied" | "unsupported">("idle");
+  const [notifStatus, setNotifStatus] = useState<"idle" | "granted" | "denied" | "unsupported" | "needsInstall">("idle");
   const [notifLoading, setNotifLoading] = useState(false);
   const [notifMsg, setNotifMsg] = useState("");
 
@@ -126,7 +126,15 @@ export default function SettingsPage() {
     if (!("Notification" in window) || !("serviceWorker" in navigator)) {
       setNotifStatus("unsupported");
     } else {
-      setNotifStatus(Notification.permission === "granted" ? "granted" : Notification.permission === "denied" ? "denied" : "idle");
+      const isStandalone =
+        window.matchMedia("(display-mode: standalone)").matches ||
+        (navigator as Navigator & { standalone?: boolean }).standalone === true;
+      const pushAvailable = "PushManager" in window;
+      if (!pushAvailable && !isStandalone) {
+        setNotifStatus("needsInstall");
+      } else {
+        setNotifStatus(Notification.permission === "granted" ? "granted" : Notification.permission === "denied" ? "denied" : "idle");
+      }
     }
   }, [loadGoals]);
 
@@ -189,6 +197,39 @@ export default function SettingsPage() {
       });
       setNotifStatus("granted");
       setNotifMsg("Notifications enabled.");
+    } catch (e) {
+      setNotifMsg(`Failed: ${String(e)}`);
+    } finally {
+      setNotifLoading(false);
+    }
+  }
+
+  async function disableNotifications() {
+    setNotifLoading(true);
+    setNotifMsg("");
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        await fetch(`/api/push/subscribe?endpoint=${encodeURIComponent(sub.endpoint)}`, { method: "DELETE" });
+        await sub.unsubscribe();
+      }
+      setNotifStatus("idle");
+      setNotifMsg("Notifications disabled.");
+    } catch (e) {
+      setNotifMsg(`Failed: ${String(e)}`);
+    } finally {
+      setNotifLoading(false);
+    }
+  }
+
+  async function sendTestNotification() {
+    setNotifLoading(true);
+    setNotifMsg("");
+    try {
+      const res = await fetch("/api/push/test", { method: "POST" });
+      const d = await res.json();
+      setNotifMsg(d.ok ? "Test notification sent — check your device." : d.error || "Failed to send test.");
     } catch (e) {
       setNotifMsg(`Failed: ${String(e)}`);
     } finally {
@@ -282,14 +323,33 @@ export default function SettingsPage() {
         <SettingsCard>
           {notifStatus === "unsupported" ? (
             <Row noBorder>
-              <p className="text-[14px] text-ink-2">Web Push requires installing this app to your home screen on iOS 16.4+.</p>
+              <p className="text-[14px] text-ink-2">Push notifications aren&apos;t supported in this browser.</p>
+            </Row>
+          ) : notifStatus === "needsInstall" ? (
+            <Row noBorder>
+              <p className="text-[14px] text-ink-2">
+                Add Briefing to your Home Screen first — tap <span className="text-ink">Share</span> → <span className="text-ink">Add to Home Screen</span>,
+                then open it from there to enable notifications.
+              </p>
             </Row>
           ) : notifStatus === "granted" ? (
             <Row noBorder>
-              <p className="text-[14px] text-ink">Enabled</p>
-              <div className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-ink-3" />
-                <span className="text-[13px] text-ink-2">Active</span>
+              <div className="w-full space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-[14px] text-ink">Enabled</p>
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-accent" />
+                    <span className="text-[13px] text-accent">Active</span>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="secondary" onClick={sendTestNotification} disabled={notifLoading} className="flex-1">
+                    {notifLoading ? "Sending…" : "Send Test"}
+                  </Button>
+                  <Button variant="secondary" onClick={disableNotifications} disabled={notifLoading} className="flex-1">
+                    {notifLoading ? "…" : "Disable"}
+                  </Button>
+                </div>
               </div>
             </Row>
           ) : notifStatus === "denied" ? (

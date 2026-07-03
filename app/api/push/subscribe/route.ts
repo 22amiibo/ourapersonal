@@ -19,12 +19,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid subscription" }, { status: 400 });
   }
 
+  const userAgent = req.headers.get("user-agent");
+
   try {
     await sql`
-      INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth, created_at)
-      VALUES (${USER_ID}, ${endpoint}, ${p256dh}, ${auth}, NOW())
+      INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth, created_at, updated_at, user_agent)
+      VALUES (${USER_ID}, ${endpoint}, ${p256dh}, ${auth}, NOW(), NOW(), ${userAgent})
       ON CONFLICT (endpoint) DO UPDATE
-        SET p256dh = EXCLUDED.p256dh, auth = EXCLUDED.auth, created_at = NOW()
+        SET p256dh = EXCLUDED.p256dh, auth = EXCLUDED.auth, updated_at = NOW(), user_agent = EXCLUDED.user_agent
     `;
     return NextResponse.json({ ok: true });
   } catch (e) {
