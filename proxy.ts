@@ -22,6 +22,8 @@ export const config = {
     "/weekly/:path*",
     "/health/:path*",
     "/log/:path*",
+    "/api/achievements/:path*",
+    "/api/anomalies/:path*",
     "/api/reflections/:path*",
     "/api/briefing/:path*",
     "/api/calendar/:path*",

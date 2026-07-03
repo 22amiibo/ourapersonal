@@ -12,6 +12,7 @@ const ZERO: AchievementStats = {
   reflectionStreak: 0,
   moodLogTotal: 0,
   nights8h: 0,
+  sleep7hStreak: 0,
   sleepDebtCleared: 0,
   optimalDays: 0,
   readiness70Streak: 0,

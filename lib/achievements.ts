@@ -19,6 +19,7 @@ export type AchievementStats = {
   reflectionStreak: number; // consecutive days ending today/yesterday with a reflection
   moodLogTotal: number; // total mood entries
   nights8h: number; // nights with ≥8h asleep
+  sleep7hStreak: number; // consecutive nights ending today/yesterday with ≥7h asleep
   sleepDebtCleared: number; // 1 when the last-7-night debt is ≤ 0, else 0
   optimalDays: number; // days readiness ≥ 85
   readiness70Streak: number; // consecutive days readiness ≥ 70
@@ -52,6 +53,7 @@ export type EvaluatedAchievement = AchievementDef & {
   progress: number; // current capped at goal (for display)
   pct: number; // 0..1 toward the goal
   unlocked: boolean;
+  rarityLabel?: string; // personal frequency, e.g. "1 in 12 days" (day-level stats only)
 };
 
 export const CATEGORY_LABEL: Record<AchievementCategory, string> = {
@@ -86,6 +88,7 @@ export const FAMILY_LABEL: Record<string, string> = {
   steps: "Daily Steps",
   "step-days": "10K Step Days",
   nights8h: "Full Nights",
+  "sleep-streak": "Sleep Streak",
   "peak-readiness": "Peak Days",
   "readiness-streak": "Readiness Streak",
   "reflection-total": "Reflections",
@@ -125,6 +128,12 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: "nights8h-30", title: "Sleep Champion", description: "Get 30 nights of 8h+ sleep.", category: "sleep", stat: "nights8h", goal: 30, unit: "nights", family: "nights8h", tier: 3 },
   { id: "nights8h-60", title: "Restored", description: "Get 60 nights of 8h+ sleep.", category: "sleep", stat: "nights8h", goal: 60, unit: "nights", family: "nights8h", tier: 4 },
   { id: "nights8h-100", title: "Sleep Master", description: "Get 100 nights of 8h+ sleep.", category: "sleep", stat: "nights8h", goal: 100, unit: "nights", family: "nights8h", tier: 5 },
+
+  // ── Sleep · Consecutive ≥7h nights ────────────────────────────────────────
+  { id: "sleep-streak-3", title: "Settling In", description: "Sleep 7+ hours 3 nights running.", category: "sleep", stat: "sleep7hStreak", goal: 3, unit: "nights", family: "sleep-streak", tier: 1 },
+  { id: "sleep-streak-7", title: "Rhythm", description: "Sleep 7+ hours 7 nights running.", category: "sleep", stat: "sleep7hStreak", goal: 7, unit: "nights", family: "sleep-streak", tier: 2 },
+  { id: "sleep-streak-14", title: "Deep Rhythm", description: "Sleep 7+ hours 14 nights running.", category: "sleep", stat: "sleep7hStreak", goal: 14, unit: "nights", family: "sleep-streak", tier: 3 },
+  { id: "sleep-streak-30", title: "Circadian Lock", description: "Sleep 7+ hours 30 nights running.", category: "sleep", stat: "sleep7hStreak", goal: 30, unit: "nights", family: "sleep-streak", tier: 5 },
 
   // ── Sleep · Debt ──────────────────────────────────────────────────────────
   { id: "debt-free", title: "Debt Free", description: "Clear your weekly sleep debt.", category: "sleep", stat: "sleepDebtCleared", goal: 1 },

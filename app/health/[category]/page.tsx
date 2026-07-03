@@ -7,6 +7,8 @@ import { computeTrends, type TrendResult } from "@/lib/trends";
 import CategoryDetailClient from "@/app/components/health/CategoryDetailClient";
 import { categoryFor, hrvZone } from "@/app/components/health/categories";
 import CalendarHeatmap from "@/app/components/ui/CalendarHeatmap";
+import Sparkline from "@/app/components/ui/Sparkline";
+import { getRecentWeather } from "@/lib/weather";
 
 // Per-user data backed by the DB — render per request, never prerender at build.
 export const dynamic = "force-dynamic";
@@ -84,6 +86,40 @@ async function sleepExtras(): Promise<ReactNode> {
       <StageBar label="Deep" pct={stages.deep_pct} color="var(--color-accent)" optimal="15–20%" />
       <StageBar label="Light" pct={stages.light_pct} color="var(--color-ink-3)" optimal="~55%" />
       <StageBar label="Awake" pct={stages.awake_pct} color="var(--color-rose)" optimal="<5%" />
+    </section>
+  );
+}
+
+// Local weather next to sleep — same 14-day window as the default trend view.
+// Stored in °C, shown in °F (single US user). Renders nothing until the
+// weather_daily table has data (migration + location + first sync).
+async function weatherExtras(): Promise<ReactNode> {
+  const days = await getRecentWeather(USER_ID, 14);
+  const highs = days.map((d) => d.temp_hi).filter((v): v is number => v != null);
+  if (highs.length < 2) return null;
+  const toF = (c: number) => Math.round((c * 9) / 5 + 32);
+  const latest = days[days.length - 1];
+  return (
+    <section className="rounded-card glass-1 p-5">
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-3">Weather · Daily High</p>
+        <span className="text-[11px] text-ink-3">{highs.length} days</span>
+      </div>
+      <div className="mt-3 flex items-end gap-4">
+        <div>
+          <p className="font-mono text-[30px] font-semibold tabular-nums tracking-[-0.02em] text-ink leading-none">
+            {latest.temp_hi != null ? toF(latest.temp_hi) : "–"}
+            <span className="ml-1 text-[13px] font-normal text-ink-3">°F</span>
+          </p>
+          {latest.condition && <p className="mt-1 text-[11px] text-ink-3">{latest.condition}</p>}
+        </div>
+        <div className="flex-1">
+          <Sparkline values={highs.map(toF)} width={180} height={40} color="var(--color-amber)" />
+        </div>
+      </div>
+      <p className="mt-2 text-[11px] leading-relaxed text-ink-3">
+        Eyeball it against the sleep chart above — hot stretches often show up as lighter sleep.
+      </p>
     </section>
   );
 }
@@ -168,8 +204,15 @@ export default async function HealthCategoryPage({
 
   let extras: ReactNode = null;
   try {
-    if (category.key === "sleep") extras = await sleepExtras();
-    else if (category.key === "readiness") extras = await readinessExtras();
+    if (category.key === "sleep") {
+      const [stages, weather] = await Promise.all([sleepExtras(), weatherExtras()]);
+      extras = (
+        <>
+          {stages}
+          {weather}
+        </>
+      );
+    } else if (category.key === "readiness") extras = await readinessExtras();
     else if (category.key === "heart") extras = await heartExtras();
   } catch {
     extras = null;

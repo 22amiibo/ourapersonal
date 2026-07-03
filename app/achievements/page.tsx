@@ -1,18 +1,16 @@
 import { sql } from "@/lib/db";
-import { USER_ID, userTz } from "@/lib/jobs";
-import { localDateStr } from "@/lib/dates";
+import { USER_ID } from "@/lib/jobs";
 import {
-  ACHIEVEMENTS,
   evaluateAchievements,
-  currentDayStreak,
   CATEGORY_LABEL,
   TIER_LABEL,
   TIER_TOKEN,
   type AchievementCategory,
-  type AchievementStats,
   type EvaluatedAchievement,
   type Tier,
 } from "@/lib/achievements";
+import { gatherAchievementStats } from "@/lib/achievement-stats";
+import { attachRarity } from "@/lib/achievements-rarity";
 import UnlockToast, { type UnlockedAward } from "./UnlockToast";
 import CategoryTray from "./CategoryTray";
 import EmptyState from "@/app/components/ui/EmptyState";
@@ -20,23 +18,6 @@ import EmptyState from "@/app/components/ui/EmptyState";
 // Per-user, data-backed — render per request. Everything here is pure SQL/JS
 // (zero AI tokens), matching the app's flat-cost rule.
 export const dynamic = "force-dynamic";
-
-const ZERO_STATS: AchievementStats = {
-  reflectionTotal: 0,
-  reflectionStreak: 0,
-  moodLogTotal: 0,
-  nights8h: 0,
-  sleepDebtCleared: 0,
-  optimalDays: 0,
-  readiness70Streak: 0,
-  workoutTotal: 0,
-  workoutDays: 0,
-  stepDaysOver10k: 0,
-  bestSteps: 0,
-  briefingsTotal: 0,
-  bestHrv: 0,
-  bestReadiness: 0,
-};
 
 // Fixed category order — activity & sleep lead (most data-rich), personal bests close.
 const CATEGORY_ORDER: AchievementCategory[] = [
@@ -48,112 +29,37 @@ const CATEGORY_ORDER: AchievementCategory[] = [
   "milestone",
 ];
 
-// Gather the achievement stats. Each query is isolated in try/catch so a single
-// missing/optional table (mood_logs, intake_log…) degrades to 0 rather than
-// 500-ing the whole page.
-async function gatherStats(): Promise<AchievementStats> {
-  const tz = await userTz();
-  const today = localDateStr(tz);
-  const stats: AchievementStats = { ...ZERO_STATS };
+// Personal records set today — surfaced through the same unlock toast so a
+// fresh record greets the user on their next visit. Optional table; degrade
+// to none when the migration hasn't been run.
+const RECORD_LABEL: Record<string, string> = {
+  resting_hr_min: "Lowest resting HR",
+  deep_sleep_max: "Longest deep sleep",
+};
 
+async function recordsSetToday(): Promise<UnlockedAward[]> {
   try {
-    const [tot, days] = await Promise.all([
-      sql`SELECT COUNT(*)::int AS n FROM reflections WHERE user_id = ${USER_ID}`,
-      sql`SELECT to_char(entry_date, 'YYYY-MM-DD') AS d FROM reflections
-          WHERE user_id = ${USER_ID} ORDER BY entry_date DESC LIMIT 90`,
-    ]);
-    stats.reflectionTotal = Number((tot[0] as { n: number }).n);
-    stats.reflectionStreak = currentDayStreak((days as { d: string }[]).map((r) => r.d), today);
+    const rows = await sql`
+      SELECT metric, best_value::float8, to_char(best_date, 'YYYY-MM-DD') AS best_date,
+             previous_value::float8, to_char(previous_date, 'YYYY-MM-DD') AS previous_date
+      FROM personal_records
+      WHERE user_id = ${USER_ID} AND updated_at >= NOW() - INTERVAL '1 day'
+        AND previous_value IS NOT NULL`;
+    return (rows as {
+      metric: string;
+      best_value: number;
+      best_date: string;
+      previous_value: number | null;
+      previous_date: string | null;
+    }[]).map((r) => ({
+      id: `record-${r.metric}`,
+      title: `${RECORD_LABEL[r.metric] ?? r.metric}: ${r.best_value}`,
+      previousValue: r.previous_value ?? undefined,
+      previousDate: r.previous_date ?? undefined,
+    }));
   } catch {
-    /* reflections unavailable */
+    return [];
   }
-
-  try {
-    const m = await sql`SELECT COUNT(*)::int AS n FROM mood_logs WHERE user_id = ${USER_ID}`;
-    stats.moodLogTotal = Number((m[0] as { n: number }).n);
-  } catch {
-    /* mood_logs not migrated */
-  }
-
-  try {
-    const a = await sql`
-      SELECT
-        (COUNT(*) FILTER (WHERE total_sleep_seconds >= 28800))::int AS nights8h,
-        (COUNT(*) FILTER (WHERE readiness_score >= 85))::int AS optimal_days,
-        COALESCE(MAX(hrv_avg), 0)::float8 AS best_hrv,
-        COALESCE(MAX(readiness_score), 0)::float8 AS best_readiness
-      FROM oura_daily WHERE user_id = ${USER_ID}`;
-    const r = a[0] as { nights8h: number; optimal_days: number; best_hrv: number; best_readiness: number };
-    stats.nights8h = Number(r.nights8h);
-    stats.optimalDays = Number(r.optimal_days);
-    stats.bestHrv = Math.round(Number(r.best_hrv));
-    stats.bestReadiness = Math.round(Number(r.best_readiness));
-  } catch {
-    /* oura_daily unavailable */
-  }
-
-  try {
-    const days = await sql`
-      SELECT to_char(day, 'YYYY-MM-DD') AS d, readiness_score
-      FROM oura_daily WHERE user_id = ${USER_ID} ORDER BY day DESC LIMIT 90`;
-    const ge70 = (days as { d: string; readiness_score: number | null }[])
-      .filter((x) => x.readiness_score != null && x.readiness_score >= 70)
-      .map((x) => x.d);
-    stats.readiness70Streak = currentDayStreak(ge70, today);
-  } catch {
-    /* skip */
-  }
-
-  // Isolated — the jsonb steps cast can throw on dirty payloads, so guard the
-  // cast with a numeric regex and read both the 10k-day count and best day.
-  try {
-    const s = await sql`
-      SELECT
-        (COUNT(*) FILTER (WHERE (raw_payload->>'steps')::numeric >= 10000))::int AS n,
-        COALESCE(MAX((raw_payload->>'steps')::numeric), 0)::int AS best
-      FROM oura_daily
-      WHERE user_id = ${USER_ID} AND raw_payload->>'steps' ~ '^[0-9]+(\.[0-9]+)?$'`;
-    const r = s[0] as { n: number; best: number };
-    stats.stepDaysOver10k = Number(r.n);
-    stats.bestSteps = Number(r.best);
-  } catch {
-    /* steps not present */
-  }
-
-  try {
-    const d = await sql`
-      SELECT COALESCE(SUM(total_sleep_seconds), 0)::bigint AS total, COUNT(*)::int AS nights
-      FROM oura_daily
-      WHERE user_id = ${USER_ID} AND day >= (CURRENT_DATE - INTERVAL '7 days')
-        AND total_sleep_seconds IS NOT NULL`;
-    const r = d[0] as { total: number; nights: number };
-    const nights = Number(r.nights);
-    const debt = 7 * 8 * 3600 - Number(r.total);
-    stats.sleepDebtCleared = nights >= 3 && debt <= 0 ? 1 : 0;
-  } catch {
-    /* skip */
-  }
-
-  try {
-    const w = await sql`
-      SELECT (COUNT(*) FILTER (WHERE type = 'workout'))::int AS total,
-             (COUNT(DISTINCT DATE(timestamp)) FILTER (WHERE type = 'workout'))::int AS days
-      FROM intake_log WHERE user_id = ${USER_ID}`;
-    const r = w[0] as { total: number; days: number };
-    stats.workoutTotal = Number(r.total);
-    stats.workoutDays = Number(r.days);
-  } catch {
-    /* intake_log unavailable */
-  }
-
-  try {
-    const b = await sql`SELECT COUNT(*)::int AS n FROM briefings WHERE user_id = ${USER_ID}`;
-    stats.briefingsTotal = Number((b[0] as { n: number }).n);
-  } catch {
-    /* skip */
-  }
-
-  return stats;
 }
 
 // A filled medal — the "finalized" mark for an earned award. Tinted with the
@@ -240,9 +146,21 @@ function AchievementCard({ a, date }: { a: EvaluatedAchievement; date?: string }
         </div>
         <p className="relative mt-2 text-[14px] font-semibold leading-tight text-ink">{a.title}</p>
         <p className="relative mt-0.5 text-[11px] leading-snug text-ink-3">{a.description}</p>
-        <p className="relative mt-2 text-[10px] font-semibold uppercase tracking-wide" style={{ color: metal }}>
-          {date ? `Earned ${fmtShortDate(date)}` : "Earned"}
-        </p>
+        <div className="relative mt-2 flex items-center justify-between">
+          <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: metal }}>
+            {date ? `Earned ${fmtShortDate(date)}` : "Earned"}
+          </p>
+          <a
+            href={`/api/achievements/card?id=${encodeURIComponent(a.id)}`}
+            download={`${a.id}.png`}
+            className="text-[10px] font-semibold uppercase tracking-wide text-ink-3 underline-offset-2 hover:underline"
+          >
+            Share
+          </a>
+        </div>
+        {a.rarityLabel && (
+          <p className="relative mt-1 text-[10px] text-ink-3">{a.rarityLabel}</p>
+        )}
       </div>
     );
   }
@@ -262,6 +180,7 @@ function AchievementCard({ a, date }: { a: EvaluatedAchievement; date?: string }
         <div className="h-full rounded-full" style={{ width: `${Math.round(a.pct * 100)}%`, background: "var(--color-accent)" }} />
       </div>
       <p className="mt-1.5 font-mono text-[10px] tabular-nums text-ink-3">{progressCaption(a)}</p>
+      {a.rarityLabel && <p className="mt-1 text-[10px] text-ink-3">{a.rarityLabel}</p>}
     </div>
   );
 }
@@ -354,24 +273,28 @@ async function recordUnlocks(
 }
 
 export default async function AchievementsPage() {
-  const stats = await gatherStats();
-  const evaluated = evaluateAchievements(stats);
+  const stats = await gatherAchievementStats();
+  const evaluated = await attachRarity(evaluateAchievements(stats));
 
   const earned = evaluated.filter((a) => a.unlocked);
   const total = evaluated.length;
   const pctEarned = total > 0 ? Math.round((earned.length / total) * 100) : 0;
 
-  const { dates, newIds } = await recordUnlocks(earned.map((a) => a.id));
+  const [{ dates, newIds }, todayRecords] = await Promise.all([
+    recordUnlocks(earned.map((a) => a.id)),
+    recordsSetToday(),
+  ]);
 
   // A flood of "new" unlocks means a first-load backfill, not genuine moments —
   // only celebrate when a handful crossed the line, and cap the reveal at 3.
-  const toastAwards: UnlockedAward[] =
+  const unlockToasts: UnlockedAward[] =
     newIds.length > 0 && newIds.length <= 4
       ? evaluated
           .filter((a) => newIds.includes(a.id))
           .slice(0, 3)
           .map((a) => ({ id: a.id, title: a.title, tier: a.tier }))
       : [];
+  const toastAwards = [...unlockToasts, ...todayRecords.slice(0, 2)];
 
   const visible = evaluated.filter((a) => !a.hidden);
   const secrets = evaluated.filter((a) => a.hidden);

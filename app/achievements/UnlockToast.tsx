@@ -3,7 +3,24 @@
 import { useEffect, useState } from "react";
 import { TIER_LABEL, TIER_TOKEN, type Tier } from "@/lib/achievements";
 
-export type UnlockedAward = { id: string; title: string; tier?: Tier };
+export type UnlockedAward = {
+  id: string;
+  title: string;
+  tier?: Tier;
+  // Personal-record extras: shows a "Previous best" second line when present.
+  previousValue?: number;
+  previousDate?: string; // YYYY-MM-DD
+};
+
+// "2026-06-12" → "Jun 12" (UTC, no Date drift).
+function fmtShortDate(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+}
 
 // A subtle, one-at-a-time slide-up for awards earned on this very load. The
 // server decides what's "newly earned" (rows freshly inserted into
@@ -52,6 +69,12 @@ export default function UnlockToast({ awards }: { awards: UnlockedAward[] }) {
             {a.tier ? `${TIER_LABEL[a.tier]} unlocked` : "Award unlocked"}
           </p>
           <p className="text-[14px] font-semibold text-ink">{a.title}</p>
+          {a.previousValue != null && (
+            <p className="text-[11px] text-ink-3">
+              Previous best: {a.previousValue}
+              {a.previousDate ? ` (${fmtShortDate(a.previousDate)})` : ""}
+            </p>
+          )}
         </div>
       </div>
     </div>

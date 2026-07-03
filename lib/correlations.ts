@@ -74,8 +74,25 @@ function correlate(
   };
 }
 
+// Trailing-7-night sleep-debt days: for each oura day, sum the 7 nights ending
+// there against an 8h/night target (same formula as the dashboard); a day is
+// "high debt" when more than 3h behind. Pure JS over the already-fetched rows.
+function highSleepDebtDays(oura: OuraRow[]): Set<string> {
+  const asc = [...oura].sort((a, b) => (a.day < b.day ? -1 : 1));
+  const out = new Set<string>();
+  for (let i = 0; i < asc.length; i++) {
+    const window = asc.slice(Math.max(0, i - 6), i + 1);
+    const slept = window.reduce((s, r) => s + (Number(r.total_sleep_seconds) || 0), 0);
+    const nights = window.filter((r) => r.total_sleep_seconds != null).length;
+    if (nights >= 3 && nights * 8 * 3600 - slept > 3 * 3600) out.add(asc[i].day.slice(0, 10));
+  }
+  return out;
+}
+
+type ReflectionMetaRow = { day: string; topics: string[] | null; sentiment: number | null };
+
 export async function computeCorrelations(userId: number): Promise<CorrelationResult[]> {
-  const [ouraRows, intakeRows] = await Promise.all([
+  const [ouraRows, intakeRows, reflectionRows] = await Promise.all([
     sql`
       SELECT to_char(day, 'YYYY-MM-DD') AS day, sleep_score, readiness_score,
              hrv_avg, total_sleep_seconds
@@ -89,10 +106,18 @@ export async function computeCorrelations(userId: number): Promise<CorrelationRe
       FROM intake_log WHERE user_id = ${userId}
       ORDER BY timestamp DESC LIMIT 1000
     `,
+    // Optional intelligence-layer table — degrade to no tag correlations.
+    sql`
+      SELECT to_char(r.entry_date, 'YYYY-MM-DD') AS day, m.topics, m.sentiment::float8 AS sentiment
+      FROM reflections r JOIN reflection_metadata m ON m.reflection_id = r.id
+      WHERE r.user_id = ${userId}
+      ORDER BY r.entry_date DESC LIMIT 365
+    `.catch(() => []),
   ]);
 
   const oura = ouraRows as OuraRow[];
   const intake = intakeRows as IntakeRow[];
+  const reflections = reflectionRows as ReflectionMetaRow[];
 
   const alcoholDays = new Set(intake.filter((r) => r.type === "alcohol").map((r) => r.day));
   const caffeine14Days = new Set(
@@ -110,6 +135,49 @@ export async function computeCorrelations(userId: number): Promise<CorrelationRe
     correlate("workout_readiness", "workout → next-day readiness", workoutDays, (r) => r.readiness_score, oura, 1),
     correlate("workout_hrv", "workout → next-day HRV", workoutDays, (r) => r.hrv_avg, oura, 1),
   ];
+
+  // Readiness on high-sleep-debt days (same-day: the debt already exists).
+  const debtDays = highSleepDebtDays(oura);
+  if (debtDays.size >= MIN_N) {
+    results.push(
+      correlate("sleepdebt_readiness", "high sleep debt → readiness", debtDays, (r) => r.readiness_score, oura, 0),
+    );
+  }
+
+  // Reflection tags → next-day readiness. Top 5 tags by distinct-day count,
+  // each needing at least MIN_N days — bounded, no AI, tags come from the
+  // already-extracted reflection_metadata.topics array.
+  if (reflections.length > 0) {
+    const tagDays = new Map<string, Set<string>>();
+    for (const r of reflections) {
+      for (const t of r.topics ?? []) {
+        const tag = t.trim().toLowerCase();
+        if (!tag) continue;
+        const set = tagDays.get(tag) ?? new Set<string>();
+        set.add(r.day);
+        tagDays.set(tag, set);
+      }
+    }
+    const topTags = [...tagDays.entries()]
+      .filter(([, days]) => days.size >= MIN_N)
+      .sort((a, b) => b[1].size - a[1].size)
+      .slice(0, 5);
+    for (const [tag, days] of topTags) {
+      results.push(
+        correlate(`tag_${tag}_readiness`, `"${tag}" days → next-day readiness`, days, (r) => r.readiness_score, oura, 1),
+      );
+    }
+
+    // Positive-sentiment days (AI-scored -1..1) → next-day readiness.
+    const positiveDays = new Set(
+      reflections.filter((r) => r.sentiment != null && r.sentiment >= 0.3).map((r) => r.day),
+    );
+    if (positiveDays.size >= MIN_N) {
+      results.push(
+        correlate("sentiment_readiness", "positive reflection → next-day readiness", positiveDays, (r) => r.readiness_score, oura, 1),
+      );
+    }
+  }
 
   return results;
 }

@@ -681,3 +681,40 @@ CREATE TABLE IF NOT EXISTS articles (
 
 CREATE INDEX IF NOT EXISTS articles_source_published
 ON articles(source_id, published_at DESC);
+
+-- =============================================================
+-- Feature round 2026-07: anomaly notes, weather, personal records
+-- =============================================================
+
+-- Anomaly annotations: user-supplied context for a flagged day, fed back
+-- into the AI briefing as bounded extra context.
+ALTER TABLE anomaly_events ADD COLUMN IF NOT EXISTS user_note TEXT;
+ALTER TABLE anomaly_events ADD COLUMN IF NOT EXISTS note_added_at TIMESTAMPTZ;
+
+-- Daily weather (Open-Meteo, metric units: °C / mm). Location comes from
+-- the settings table keys 'lat' / 'lon'.
+CREATE TABLE IF NOT EXISTS weather_daily (
+  user_id     INTEGER NOT NULL,
+  day         DATE NOT NULL,
+  temp_hi     NUMERIC,
+  temp_lo     NUMERIC,
+  humidity    NUMERIC,
+  condition   TEXT,
+  precip_mm   NUMERIC,
+  raw_payload JSONB,
+  synced_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (user_id, day)
+);
+
+-- Personal records: raw metric all-time bests with the superseded previous
+-- best kept for "beat your record of X set on Y" copy. Checked daily in cron.
+CREATE TABLE IF NOT EXISTS personal_records (
+  user_id         INTEGER NOT NULL,
+  metric          TEXT NOT NULL,
+  best_value      NUMERIC NOT NULL,
+  best_date       DATE NOT NULL,
+  previous_value  NUMERIC,
+  previous_date   DATE,
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (user_id, metric)
+);

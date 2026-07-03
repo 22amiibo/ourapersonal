@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import AskData from "./AskData";
+import AnomalyList, { type AnomalyRow } from "./AnomalyList";
 import ObservationsClient from "@/app/components/observations/ObservationsClient";
 import EmptyState from "@/app/components/ui/EmptyState";
 
@@ -46,9 +47,13 @@ const TABS: { value: InsightsTab; label: string }[] = [
 
 export default function InsightsClient({
   insights,
+  anomalies = [],
+  accuracy = null,
   initialTab = "ask",
 }: {
   insights: InsightRow[];
+  anomalies?: AnomalyRow[];
+  accuracy?: { count: number; avgAccuracy: number } | null;
   initialTab?: InsightsTab;
 }) {
   const [tab, setTab] = useState<InsightsTab>(initialTab);
@@ -97,6 +102,20 @@ export default function InsightsClient({
         <AskData />
       ) : (
         <div className="space-y-4">
+          {/* ── Prediction accuracy (running self-check) ────── */}
+          {accuracy && accuracy.count > 0 && (
+            <p className="mx-4 text-[12px] leading-relaxed text-ink-3 animate-fade-in">
+              Predictions so far:{" "}
+              <span className="font-semibold tabular-nums text-ink-2">
+                {Math.round(accuracy.avgAccuracy * 100)}% accurate
+              </span>{" "}
+              over {accuracy.count} evaluated call{accuracy.count === 1 ? "" : "s"}.
+            </p>
+          )}
+
+          {/* ── Unusual days (anomalies + user notes) ───────── */}
+          <AnomalyList anomalies={anomalies} />
+
           {/* ── Discovered insights ─────────────────────────── */}
           {insights.length === 0 ? (
             <div className="mx-4 animate-spring-in">

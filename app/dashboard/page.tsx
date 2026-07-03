@@ -212,7 +212,7 @@ export default async function DashboardPage() {
   const trend = trendRows as TrendRow[];
   const readinessTrend = trend.map((r) => r.readiness_score ?? 0);
   const sleepTrend = trend.map((r) => r.sleep_score ?? 0);
-  const activityTrend = trend.map((r) => r.activity_score ?? 0);
+  const activityTrend = trend.map((r) => Number(r.activity_score ?? 0));
 
   type PredictionRow = { prediction_type: string; prediction: string; confidence: number; target_date: string };
   const predictions = predictionRows as PredictionRow[];
