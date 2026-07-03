@@ -23,7 +23,7 @@ export async function GET() {
   try {
     const [userRows, settingsRows, ouraRows] = await Promise.all([
       sql`SELECT timezone FROM users WHERE id = ${USER_ID}`,
-      sql`SELECT key, value FROM settings WHERE key IN ('wind_down_time', 'lat', 'lon')`,
+      sql`SELECT key, value FROM settings WHERE key IN ('wind_down_time', 'lat', 'lon', 'zip')`,
       sql`SELECT 1 FROM integrations WHERE user_id = ${USER_ID} AND provider = 'oura' AND status = 'active' LIMIT 1`,
     ]);
     const timezone = (userRows[0] as { timezone?: string })?.timezone || "America/New_York";
@@ -34,6 +34,7 @@ export async function GET() {
     return NextResponse.json({
       timezone,
       wind_down_time: settingsMap.wind_down_time ?? null,
+      zip: settingsMap.zip ?? null,
       lat: settingsMap.lat ?? null,
       lon: settingsMap.lon ?? null,
       ouraConnected,
@@ -91,19 +92,55 @@ export async function POST(req: Request) {
   if (b.location !== undefined) {
     if (b.location === null) {
       try {
-        await sql`DELETE FROM settings WHERE key IN ('lat', 'lon')`;
+        await sql`DELETE FROM settings WHERE key IN ('lat', 'lon', 'zip')`;
         return NextResponse.json({ ok: true });
       } catch (e) {
         return NextResponse.json({ error: String(e) }, { status: 500 });
       }
     }
-    const loc = b.location as { lat?: unknown; lon?: unknown };
+    const loc = b.location as { zip?: unknown; lat?: unknown; lon?: unknown };
+
+    // Preferred path: a US zip code, geocoded server-side (zippopotam.us —
+    // free, no API key) so the user never has to know their own lat/lon.
+    if (loc.zip !== undefined) {
+      if (typeof loc.zip !== "string" || !/^\d{5}$/.test(loc.zip)) {
+        return NextResponse.json({ error: "zip must be a 5-digit US zip code" }, { status: 400 });
+      }
+      let lat: number, lon: number;
+      try {
+        const res = await fetch(`https://api.zippopotam.us/us/${loc.zip}`);
+        if (!res.ok) {
+          return NextResponse.json({ error: "zip code not found" }, { status: 400 });
+        }
+        const data = await res.json();
+        const place = data.places?.[0];
+        lat = Number(place?.latitude);
+        lon = Number(place?.longitude);
+        if (Number.isNaN(lat) || Number.isNaN(lon)) {
+          return NextResponse.json({ error: "zip code lookup failed" }, { status: 400 });
+        }
+      } catch (e) {
+        return NextResponse.json({ error: String(e) }, { status: 500 });
+      }
+      try {
+        await sql`
+          INSERT INTO settings (key, value) VALUES ('zip', ${loc.zip}), ('lat', ${String(lat)}), ('lon', ${String(lon)})
+          ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+        `;
+        return NextResponse.json({ ok: true, lat, lon });
+      } catch (e) {
+        return NextResponse.json({ error: String(e) }, { status: 500 });
+      }
+    }
+
+    // Fallback: direct lat/lon (kept for API completeness, not exposed in the UI).
     const lat = Number(loc.lat);
     const lon = Number(loc.lon);
     if (Number.isNaN(lat) || Number.isNaN(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
-      return NextResponse.json({ error: "location must be { lat: -90..90, lon: -180..180 }" }, { status: 400 });
+      return NextResponse.json({ error: "location must be { zip } or { lat: -90..90, lon: -180..180 }" }, { status: 400 });
     }
     try {
+      await sql`DELETE FROM settings WHERE key = 'zip'`;
       await sql`
         INSERT INTO settings (key, value) VALUES ('lat', ${String(lat)}), ('lon', ${String(lon)})
         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value

@@ -86,8 +86,7 @@ export default function SettingsPage() {
   const [windDownTime, setWindDownTime] = useState("");
   const [windDownSaving, setWindDownSaving] = useState(false);
   const [windDownMsg, setWindDownMsg] = useState("");
-  const [lat, setLat] = useState("");
-  const [lon, setLon] = useState("");
+  const [zip, setZip] = useState("");
   const [locSaving, setLocSaving] = useState(false);
   const [locMsg, setLocMsg] = useState("");
 
@@ -123,8 +122,7 @@ export default function SettingsPage() {
     fetch("/api/settings").then((r) => r.json()).then((d) => {
       if (d.timezone) setTimezone(d.timezone);
       if (d.wind_down_time) setWindDownTime(d.wind_down_time);
-      if (d.lat) setLat(d.lat);
-      if (d.lon) setLon(d.lon);
+      if (d.zip) setZip(d.zip);
       setOuraConnected(d.ouraConnected ?? false);
     }).catch(() => {});
     loadGoals();
@@ -172,11 +170,7 @@ export default function SettingsPage() {
     const res = await fetch("/api/settings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(
-        lat.trim() && lon.trim()
-          ? { location: { lat: Number(lat), lon: Number(lon) } }
-          : { location: null },
-      ),
+      body: JSON.stringify(zip.trim() ? { location: { zip: zip.trim() } } : { location: null }),
     });
     const d = await res.json();
     setLocMsg(d.ok ? "Location saved — weather sync starts on the next daily job." : d.error || "Error");
@@ -425,26 +419,17 @@ export default function SettingsPage() {
           <Row noBorder>
             <div className="w-full space-y-3">
               <p className="text-[13px] text-ink-2">
-                Latitude/longitude for daily weather sync (overlays on sleep trends). Leave blank to disable.
+                Zip code for daily weather sync (overlays on sleep trends). Leave blank to disable.
               </p>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={lat}
-                  onChange={(e) => setLat(e.target.value)}
-                  placeholder="Latitude, e.g. 40.71"
-                  className="w-1/2 rounded-control border border-line bg-bg px-4 py-3 font-mono text-[14px] text-ink focus:border-accent focus:outline-none min-h-[44px]"
-                />
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={lon}
-                  onChange={(e) => setLon(e.target.value)}
-                  placeholder="Longitude, e.g. -74.01"
-                  className="w-1/2 rounded-control border border-line bg-bg px-4 py-3 font-mono text-[14px] text-ink focus:border-accent focus:outline-none min-h-[44px]"
-                />
-              </div>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={5}
+                value={zip}
+                onChange={(e) => setZip(e.target.value.replace(/\D/g, ""))}
+                placeholder="Zip code, e.g. 10001"
+                className="w-full rounded-control border border-line bg-bg px-4 py-3 font-mono text-[14px] text-ink focus:border-accent focus:outline-none min-h-[44px]"
+              />
               <Button variant="primary" onClick={saveLocation} disabled={locSaving} className="w-full">
                 {locSaving ? "Saving…" : "Save Location"}
               </Button>
