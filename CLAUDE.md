@@ -25,8 +25,10 @@ Only when the task needs them: `.claude/briefing-build-spec.md` + `.claude/imple
 ## ⚠️ Environment gotchas (this machine — verify before any git operation)
 - **This folder IS the canonical project repo.** `git rev-parse --show-toplevel` resolves here
   (`~/Desktop/Oura/repo`), remote `origin` is `22amiibo/ourapersonal`, default branch `master`.
-  Commits/pushes from here version and can deploy this project. **Ask the user before any
-  commit/push** regardless — this note only fixes a stale claim that the folder was unsafe.
+  Commits/pushes from here version and can deploy this project. **Standing authorization:**
+  after finishing a big feature or implementation phase, commit + push (both branches, see
+  below) without asking first. For small/exploratory edits outside a completed feature/phase,
+  ask first as usual.
 - Deploys: git author email must be `2wohundredamiibo2@gmail.com`, and push BOTH branches:
   `git push origin master && git push origin master:main`.
 - Untracked `.ts`/`.tsx` files silently break Vercel builds (local passes, CI module-not-found).
