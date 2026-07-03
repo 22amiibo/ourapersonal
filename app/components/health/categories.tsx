@@ -120,3 +120,11 @@ export function hrvZone(
   if (ratio >= 0.90) return { label: "Below baseline", color: "var(--color-amber)" };
   return { label: "Recovery needed", color: "var(--color-rose)" };
 }
+
+// Resting heart rate zone — simple, well-established bands (no personal
+// baseline data exists for resting HR the way it does for HRV).
+export function restingHrZone(bpm: number): { label: string; color: string } {
+  if (bpm <= 60) return { label: "Optimal", color: "var(--color-accent)" };
+  if (bpm <= 70) return { label: "Within range", color: "var(--color-ink-2)" };
+  return { label: "Elevated", color: "var(--color-amber)" };
+}

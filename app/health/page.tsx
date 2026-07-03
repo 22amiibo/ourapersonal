@@ -1,19 +1,25 @@
+import Link from "next/link";
 import { sql } from "@/lib/db";
 import { USER_ID } from "@/lib/jobs";
 import { computeCorrelations } from "@/lib/correlations";
 import { daysAgoStr } from "@/lib/dates";
-import { formatValue } from "@/app/components/trends/metricMeta";
-import { HEALTH_CATEGORIES } from "@/app/components/health/categories";
-import CategoryRow from "@/app/components/health/CategoryRow";
+import { summarizeTrend, trendSentiment, type TrendPoint } from "@/lib/trends";
+import { zoneFor, zoneColor, zoneLabel } from "@/lib/scores";
+import { formatValue, SENTIMENT_COLOR } from "@/app/components/trends/metricMeta";
+import { hrvZone, restingHrZone } from "@/app/components/health/categories";
+import HealthMetricCard from "@/app/components/health/HealthMetricCard";
+import Ring from "@/app/components/ui/Ring";
+import MetricBarChart from "@/app/components/trends/MetricBarChart";
 import SectionHeader from "@/app/components/ui/SectionHeader";
 import CorrelationBar from "@/app/components/ui/CorrelationBar";
 
 // Per-user data backed by the DB — render per request, never prerender at build.
 export const dynamic = "force-dynamic";
 
-// Apple-Health-style browse screen: signals worth acting on, then one row per
-// category (Sleep / Readiness / Activity / Heart & Body) that drills into
-// /health/[category], then records + correlation patterns below the fold.
+// "Option 3A" overview dashboard: a 2×2 metric-card grid (Readiness / Sleep /
+// Resting HR / HRV), a wide Activity card (steps + ring), a Key Insights
+// callout, then signals, records and correlation patterns below the fold.
+// Each card drills into /health/[category].
 
 type DayRow = {
   day: string;
@@ -22,6 +28,8 @@ type DayRow = {
   hrv_avg: number | null;
   resting_hr: number | null;
   activity_score: number | null;
+  steps: number | null;
+  total_sleep_seconds: number | null;
 };
 
 type HrvBaseline = { baseline_30d: number; current_7d: number } | null;
@@ -99,6 +107,8 @@ function headlineValue(rows: DayRow[], metric: string): number | null {
       : metric === "readiness" ? r.readiness_score
       : metric === "activity_score" ? r.activity_score
       : metric === "hrv" ? r.hrv_avg
+      : metric === "resting_hr" ? r.resting_hr
+      : metric === "steps" ? r.steps
       : null;
     if (v != null) return Number(v);
   }
@@ -112,6 +122,8 @@ function sparkValues(rows: DayRow[], metric: string): number[] {
       : metric === "readiness" ? r.readiness_score
       : metric === "activity_score" ? r.activity_score
       : metric === "hrv" ? r.hrv_avg
+      : metric === "resting_hr" ? r.resting_hr
+      : metric === "steps" ? r.steps
       : null;
     return v == null ? 0 : Number(v);
   });
@@ -124,7 +136,9 @@ export default async function HealthPage() {
   const [rowsDesc, hrvRows, bestSleepRows, bestReadinessRows, bestHrvRows] = await Promise.all([
     sql`
       SELECT to_char(day, 'YYYY-MM-DD') AS day, sleep_score, readiness_score, hrv_avg, resting_hr,
-             (raw_payload->>'activity_score')::numeric AS activity_score
+             (raw_payload->>'activity_score')::numeric AS activity_score,
+             (raw_payload->>'steps')::numeric AS steps,
+             total_sleep_seconds
       FROM oura_daily WHERE user_id = ${USER_ID} ORDER BY day DESC LIMIT 90
     `,
     sql`
@@ -178,10 +192,65 @@ export default async function HealthPage() {
   const alerts = detectAlerts(allDays, hrvBaseline, streak);
   const hasData = allDays.length > 0;
 
+  // ── Overview grid: headline + status + spark for the four small cards ──
+  const readinessValue = headlineValue(allDays, "readiness");
+  const sleepValue = headlineValue(allDays, "sleep_score");
+  const hrvValue = headlineValue(allDays, "hrv");
+  const restingHrValue = headlineValue(allDays, "resting_hr");
+  const activityValue = headlineValue(allDays, "activity_score");
+  const stepsValue = headlineValue(allDays, "steps");
+
+  const readinessZone = readinessValue == null ? null : zoneFor(readinessValue);
+  const sleepZone = sleepValue == null ? null : zoneFor(sleepValue);
+  const hrvStatus =
+    hrvBaseline && hrvBaseline.baseline_30d > 0
+      ? hrvZone(hrvBaseline.baseline_30d, hrvBaseline.current_7d)
+      : null;
+  const restingHrStatus = restingHrValue == null ? null : restingHrZone(restingHrValue);
+
+  // Sleep card subtitle — most recent night's real duration ("7h 23m asleep").
+  let sleepSubtitle: string | null = null;
+  for (let i = allDays.length - 1; i >= 0; i--) {
+    const s = allDays[i].total_sleep_seconds;
+    if (s != null && Number(s) > 0) {
+      const mins = Math.round(Number(s) / 60);
+      sleepSubtitle = `${Math.floor(mins / 60)}h ${String(mins % 60).padStart(2, "0")}m asleep`;
+      break;
+    }
+  }
+
+  // ── Wide Activity card: mini step bars (last 7 days) ──
+  const stepsSpark = allDays.slice(-7).map((d) => (d.steps == null ? null : Number(d.steps)));
+
+  // ── Key Insights callout: 7d-vs-prior-7d readiness, real data only ──
+  const toPoints = (rows: DayRow[]): TrendPoint[] =>
+    rows.map((r) => ({ date: r.day, value: r.readiness_score }));
+  const last7 = allDays.slice(-7);
+  const prior7 = allDays.slice(-14, -7);
+  const enoughForInsight =
+    last7.filter((r) => r.readiness_score != null).length >= 4 &&
+    prior7.filter((r) => r.readiness_score != null).length >= 4;
+  const insight = enoughForInsight
+    ? summarizeTrend("readiness", "W", toPoints(last7), toPoints(prior7), "")
+    : null;
+  const insightSentiment = insight ? trendSentiment("readiness", insight.direction) : null;
+  const insightColor = insightSentiment ? SENTIMENT_COLOR[insightSentiment] : "var(--color-ink-3)";
+  const insightHeadline =
+    insightSentiment === "good"
+      ? "Your recovery is trending up"
+      : insightSentiment === "bad"
+        ? "Your recovery is trending down"
+        : "Your recovery is holding steady";
+  const insightBody = insight
+    ? `Readiness averaged ${Math.round(insight.average)} this week, ${insight.delta >= 0 ? "+" : ""}${Math.round(insight.delta)} vs the week before.`
+    : null;
+
   return (
     <main className="mx-auto max-w-md pb-28 pt-5">
-      <header className="px-5 pb-3 animate-fade-in">
-        <h1 className="text-display font-semibold text-ink">Health</h1>
+      <header className="px-5 pb-4 pt-2 animate-fade-in">
+        <h1 className="text-[13px] font-semibold uppercase tracking-[0.18em] text-ink">
+          Health Overview
+        </h1>
         {streak >= 2 && (
           <p className="mt-1 text-[13px] font-medium text-amber">{streak}-day sleep streak</p>
         )}
@@ -196,9 +265,103 @@ export default async function HealthPage() {
         </div>
       ) : (
         <>
+          {/* ── Metric grid (Option 3A dashboard cards) ─────── */}
+          <div
+            className="mx-4 grid grid-cols-2 gap-3 animate-spring-in"
+            style={{ animationDelay: "var(--stagger-1)" }}
+          >
+            <HealthMetricCard
+              href="/health/readiness"
+              label="Readiness"
+              value={readinessValue == null ? null : String(Math.round(readinessValue))}
+              statusLabel={readinessZone ? zoneLabel[readinessZone] : null}
+              statusColor={readinessZone ? zoneColor[readinessZone] : "var(--color-ink-3)"}
+              spark={sparkValues(allDays, "readiness")}
+            />
+            <HealthMetricCard
+              href="/health/sleep"
+              label="Sleep Score"
+              value={sleepValue == null ? null : String(Math.round(sleepValue))}
+              statusLabel={sleepZone ? zoneLabel[sleepZone] : null}
+              statusColor={sleepZone ? zoneColor[sleepZone] : "var(--color-ink-3)"}
+              spark={sparkValues(allDays, "sleep_score")}
+              subtitle={sleepSubtitle}
+            />
+            <HealthMetricCard
+              href="/health/heart"
+              label="Resting HR"
+              value={restingHrValue == null ? null : String(Math.round(restingHrValue))}
+              unit="BPM"
+              statusLabel={restingHrStatus?.label ?? null}
+              statusColor={restingHrStatus?.color ?? "var(--color-ink-3)"}
+              spark={sparkValues(allDays, "resting_hr")}
+            />
+            <HealthMetricCard
+              href="/health/heart"
+              label="HRV"
+              value={hrvValue == null ? null : String(Math.round(hrvValue))}
+              unit="ms"
+              statusLabel={hrvStatus?.label ?? null}
+              statusColor={hrvStatus?.color ?? "var(--color-ink-3)"}
+              spark={sparkValues(allDays, "hrv")}
+            />
+          </div>
+
+          {/* ── Activity (wide card: steps + mini bars + ring) ── */}
+          <Link
+            href="/health/activity"
+            className="mx-4 mt-3 flex items-center justify-between gap-4 rounded-card glass-1 p-5 transition-transform active:scale-[0.99] animate-spring-in"
+            style={{ animationDelay: "var(--stagger-2)" }}
+          >
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-ink-3">Activity</p>
+              <p className="mt-1.5 font-mono text-[22px] font-semibold tabular-nums text-ink">
+                {stepsValue == null ? "—" : formatValue("steps", stepsValue, "")}
+              </p>
+              <p className="text-[11px] text-ink-3">Steps</p>
+              <div className="mt-2">
+                <MetricBarChart
+                  values={stepsSpark}
+                  labels={stepsSpark.map(() => "")}
+                  accent
+                  height={56}
+                />
+              </div>
+            </div>
+            <Ring
+              score={activityValue}
+              size={84}
+              stroke={7}
+              label="Activity"
+              color="var(--color-amber)"
+              countKey="activity-overview"
+            />
+          </Link>
+
+          {/* ── Key Insights ─────────────────────────────────── */}
+          {insight && insightBody && (
+            <section
+              className="mx-4 mt-3 flex items-start gap-3 rounded-card glass-1 p-4 animate-spring-in"
+              style={{ animationDelay: "var(--stagger-3)" }}
+            >
+              <span
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+                style={{ background: `color-mix(in oklch, ${insightColor} 16%, transparent)`, color: insightColor }}
+              >
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M3 17l6-6 4 4 8-8M21 7v6h-6" />
+                </svg>
+              </span>
+              <div className="min-w-0">
+                <p className="text-[13px] font-semibold text-ink">{insightHeadline}</p>
+                <p className="mt-0.5 text-[12px] leading-relaxed text-ink-3">{insightBody}</p>
+              </div>
+            </section>
+          )}
+
           {/* ── Signals ─────────────────────────────────────── */}
           {alerts.length > 0 && (
-            <section className="mx-4 mb-4 space-y-2 animate-spring-in" style={{ animationDelay: "var(--stagger-1)" }}>
+            <section className="mx-4 mb-4 space-y-2 animate-spring-in" style={{ animationDelay: "var(--stagger-4)" }}>
               {alerts.map((alert, i) => (
                 <div
                   key={i}
@@ -238,26 +401,11 @@ export default async function HealthPage() {
             </section>
           )}
 
-          {/* ── Category rows ───────────────────────────────── */}
-          <div className="mx-4 space-y-3 animate-spring-in" style={{ animationDelay: "var(--stagger-2)" }}>
-            {HEALTH_CATEGORIES.map((c) => {
-              const v = headlineValue(allDays, c.headlineMetric);
-              return (
-                <CategoryRow
-                  key={c.key}
-                  category={c}
-                  headline={v == null ? null : formatValue(c.headlineMetric, v, c.headlineMetric === "hrv" ? "ms" : "")}
-                  spark={sparkValues(allDays, c.headlineMetric)}
-                />
-              );
-            })}
-          </div>
-
           {/* ── Personal Records ────────────────────────────── */}
           {hasRecords && (
             <>
               <SectionHeader className="mt-6 mb-2 px-5">Records</SectionHeader>
-              <section className="mx-4 rounded-card glass-1 p-5 animate-spring-in" style={{ animationDelay: "var(--stagger-3)" }}>
+              <section className="mx-4 rounded-card glass-1 p-5 animate-spring-in" style={{ animationDelay: "var(--stagger-6)" }}>
                 <div className="grid grid-cols-3 gap-2">
                   {bestSleep && (
                     <div className="rounded-control border border-line bg-surface-2 p-3">
@@ -289,7 +437,7 @@ export default async function HealthPage() {
           {significantCorrelations.length > 0 && (
             <>
               <SectionHeader className="mt-6 mb-2 px-5">Patterns</SectionHeader>
-              <section className="mx-4 rounded-card glass-1 p-5 space-y-5 animate-spring-in" style={{ animationDelay: "var(--stagger-4)" }}>
+              <section className="mx-4 rounded-card glass-1 p-5 space-y-5 animate-spring-in" style={{ animationDelay: "var(--stagger-6)" }}>
                 {significantCorrelations.map((r, i) => (
                   <div key={r.id}>
                     {i > 0 && <div className="h-px bg-line mb-5" />}

@@ -23,12 +23,12 @@ Only when the task needs them: `.claude/briefing-build-spec.md` + `.claude/imple
 `extra-schema.sql` (all non-core tables).
 
 ## ⚠️ Environment gotchas (this machine — verify before any git operation)
-- **This folder has NO `.git`.** Git commands resolve to a repo rooted at `/Users/noahmartz`
-  (remote `22amiibo/anotherone`). Committing/pushing from here does NOT version or deploy this
-  project — it dumps files into an unrelated home-directory repo. The canonical project repo is
-  `22amiibo/ourapersonal` (see handoff.md). **Ask the user before any commit/push.**
-- Deploys (from a proper clone): git author email must be `2wohundredamiibo2@gmail.com`, and push
-  BOTH branches: `git push origin master && git push origin master:main`.
+- **This folder IS the canonical project repo.** `git rev-parse --show-toplevel` resolves here
+  (`~/Desktop/Oura/repo`), remote `origin` is `22amiibo/ourapersonal`, default branch `master`.
+  Commits/pushes from here version and can deploy this project. **Ask the user before any
+  commit/push** regardless — this note only fixes a stale claim that the folder was unsafe.
+- Deploys: git author email must be `2wohundredamiibo2@gmail.com`, and push BOTH branches:
+  `git push origin master && git push origin master:main`.
 - Untracked `.ts`/`.tsx` files silently break Vercel builds (local passes, CI module-not-found).
 - Hooks in `.claude/settings.json` enforce graphify-before-read/grep. `OuraVault/` is the exported
   Obsidian vault (user data — never edit or ingest; it's in `.graphifyignore`).
