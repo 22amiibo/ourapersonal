@@ -22,7 +22,9 @@ async function getTz() {
 }
 
 function trendDir(vals: number[]): "up" | "down" | "flat" {
-  const valid = vals.filter((v) => v > 0);
+  // Bounded to [0,100]: an Oura score can't exceed 100, but a malformed
+  // raw_payload value (bad sync/parse) shouldn't be averaged in as if it were.
+  const valid = vals.filter((v) => v > 0 && v <= 100);
   if (valid.length < 4) return "flat";
   const half = Math.floor(valid.length / 2);
   const recent = valid.slice(half);
@@ -34,7 +36,7 @@ function trendDir(vals: number[]): "up" | "down" | "flat" {
 }
 
 function weekDelta(vals: number[]): number | null {
-  const valid = vals.filter((v) => v > 0);
+  const valid = vals.filter((v) => v > 0 && v <= 100);
   if (valid.length < 4) return null;
   const half = Math.floor(valid.length / 2);
   const recent = valid.slice(half);
@@ -334,7 +336,7 @@ export default async function DashboardPage() {
               {readinessDelta !== null && (
                 <p className="font-mono text-[10px] font-medium tabular-nums"
                   style={{ color: readinessDelta > 0 ? "var(--color-accent)" : readinessDelta < 0 ? "var(--color-rose)" : "var(--color-ink-3)" }}>
-                  {readinessDelta > 0 ? "+" : ""}{readinessDelta} wk
+                  {readinessDelta > 0 ? "+" : ""}{readinessDelta} vs last wk
                 </p>
               )}
             </div>
@@ -352,7 +354,7 @@ export default async function DashboardPage() {
               {sleepDelta !== null && (
                 <p className="font-mono text-[10px] font-medium tabular-nums"
                   style={{ color: sleepDelta > 0 ? "var(--color-accent-blue)" : sleepDelta < 0 ? "var(--color-rose)" : "var(--color-ink-3)" }}>
-                  {sleepDelta > 0 ? "+" : ""}{sleepDelta} wk
+                  {sleepDelta > 0 ? "+" : ""}{sleepDelta} vs last wk
                 </p>
               )}
             </div>
@@ -370,7 +372,7 @@ export default async function DashboardPage() {
               {activityDelta !== null && (
                 <p className="font-mono text-[10px] font-medium tabular-nums"
                   style={{ color: activityDelta > 0 ? "var(--color-amber)" : activityDelta < 0 ? "var(--color-rose)" : "var(--color-ink-3)" }}>
-                  {activityDelta > 0 ? "+" : ""}{activityDelta} wk
+                  {activityDelta > 0 ? "+" : ""}{activityDelta} vs last wk
                 </p>
               )}
             </div>
